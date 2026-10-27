@@ -20,13 +20,13 @@ Ein replaybares, solo-playbares Strategiedspiel, in dem Regieren wirklich spielb
 | M5 UI-Polish | 14 | 54 | 5 neue Spieler ≥ 5 Turns ohne Tutorial | **Gate braucht echte Testpersonen** → Rekrutierung ab M3 starten |
 | M6 Finish | 13 | 41 | Seedbare Replaybarkeit; Save-Migration + Backup-Fallback getestet | Could-Audio ist verschiebbar |
 
-Summe Must+Should: **377 Tage** (Must allein 332, Could 27, alle 404) — Größenordnung, kein Termin. Die ältere ~336-Zahl war ein Zählfehler; gültig ist 377.
+Summe Must+Should: **377 Tage** (Must allein 332, Could 27, alle 404) — Größenordnung, kein Termin. Die ältere ~336-Zahl war ein Zählfehler; gültig ist 377. US-M0-01 ist bereits gebaut (Commit c77d497) → M0 verbleibt ≈ 61 Tage.
 
 ## M0-Sprint-Zerlegung (Build-Order architektur.md §7)
 
 | Sprint | Stories | Fokus | Exit-Kriterium |
 |---|---|---|---|
-| S0-A Fundament | US-M0-01, 02, 03, 04 (~9 Tage) | Monorepo, GameState, seedbarer RNG, Invariant/Clamp | Repo baut & testet; kein NaN möglich |
+| S0-A Fundament | US-M0-01 ✅, 02, 03, 04 (~4 Tage restlich) | US-M0-01 bereits fertig (Commit c77d497, Monorepo-Skelett); GameState, seedbarer RNG, Invariant/Clamp | Repo baut & testet; kein NaN möglich |
 | S0-B Mechanik | US-M0-05, 07, 08, 09, 10, 06, 11 (~17 Tage) | Tick-Mechaniken → Zufriedenheitsformel → reiner `tick()` | Formel als reine Funktion; 06 nach 05+07 |
 | S0-C Content + CLI | US-M0-13, 15, 14 (~11 Tage) | Basis-Content, Lagebericht, kompletter Terminal-Loop | Spiel von Jahr 1 bis Ende im CLI durchspielbar |
 | S0-D Beweise | US-M0-16, 17, 18 (~13 Tage) | Golden-Replay, AutoSim-Harness, Score-Spread-Fixture | Gate erfüllt; **Kurven an @ralf für Verschleiß-Abgleich** |
@@ -47,7 +47,8 @@ Summe Must+Should: **377 Tage** (Must allein 332, Could 27, alle 404) — Größ
 | D3 | **Could-Stories (27 Tage) aus dem V1-Kernpfad genommen** | M4-Can, M5-2 Can, M6-3 Can (u. a. Audio) | mitbauen | V1-Gates sind Must+Should; Could bleibt verschiebbar, schützt den Sprint |
 | D4 | **M5-Usability-Test wird ab M3 vorbereitet** | Gate „5 neue Spieler ohne Tutorial“ = einzige nicht automatisch prüfbare Abnahme | Test erst in M5 starten | Rekrutierung (Beta-Liste, Freundeskreis, 5 Nicht-Spieler) braucht Vorlauf; ohne Planung ist das Gate blockiert |
 | D5 | **Größen-Watchliste: US-M4-02, US-M6-05** | könnten bei genauerer Schätzung L (>5 Tage) werden | jetzt neu schätzen | beim Decomposing neu schätzen, Backlog dann korrigieren — keine L-Stories ohne neue Zahlen |
-| D6 | **Datenkorrekturen durch PO ausgeführt** | `backlog.csv`: 3 `depends_on`-Zellen mit `, ` statt `;` (US-M0-06, US-M2-10, US-M2-11) → maschinenlesbar gemacht; `handoff-backlog.md`: Kopfzahl „99 Stories“ → 100, veraltete Roster-Zeile entfernt | an Reto zurückgeben | triviale Faktenkorrekturen, Review-Inhalt unverändert |
+| D6 | **Datenkorrekturen: PO + BA abgeschlossen** | Separator-Konvention: mehrwertige CSV-Zellen mit `;` (PO normalisierte US-M0-06/10/11; von Reto als Convention übernommen). Reto bereinigte **6** stale Gap-Annotationen (US-M1-07/G3, US-M2-11/G8, US-M2-12/G7, US-M3-02/G2, US-M5-09/G1, US-M5-11/G5) in beiden Quellen. `handoff-backlog.md`: „99 Stories“ → 100. Dependencies: **18 Stories → 21 Kanten** (die 3 mehrwertigen Zeilen zählen doppelt), zyklenfrei | nur 2 Annotationen angenommen | 100 ↔ 100 ↔ 100 nach Retos Clean; meine Zählung 18 Kanten war Separator-bedingt zu niedrig |
+| D7 | **Baseline-Commit `docs/` ausgeführt (ad0fb8e)** | Review-Artefacts + PO-Plan waren uncommitted; US-M0-01 ist bereits committet (c77d497) | Commit dem Build-Team überlassen | saubere Working-Tree-Baseline vor dem Build; Commit ist lokal und revertingbar |
 
 ## Risiken (Pre-Mortem, Kurzform)
 1. **Balance nicht balancierbar** (Konzept §11): erst der Harness zeigt es → S0-D ist der Entscheidungs Punkt; wenn Naiv-Strategien zu früh verlieren, justiert Ralf Werte, nicht Mechanik.
