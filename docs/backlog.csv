@@ -4,7 +4,7 @@ US-M0-02,M0,M,M,core/state,FR-001,"Als Kern-Entwickler will ich ein unveränderl
 US-M0-03,M0,M,S,core/RNG,FR-004,"Als Tester will ich den seedbaren RNG (mulberry32) im GameState statt global, damit derselbe Seed denselben Verlauf erzeugt.",
 US-M0-04,M0,M,S,core/invariant,FR-002,"Als QA will ich Clamp auf 0–100 an allen Effekten und einen Invariant-Check nach jedem Tick mit Regel-ID im Fehlerfall, damit schlechte Regelwerte nie NaN erzeugen.",
 US-M0-05,M0,M,M,core/tick + content,FR-005/006,"Als Spieler will ich, dass Indikatoren jährlich nach `budget_wirkung + ereignis_delta − verschleiss` laufen, damit Nichtstun bestraft wird.",
-US-M0-06,M0,M,M,core/tick,FR-007/008,"Als Designer der Balance will ich die Zufriedenheitsformel aus Konzept §2B als eine reine Funktion ohne Zusatz-Terme, damit das Balance-Risiko des Konzepts (§11) messbar wird.","US-M0-05, US-M0-07"
+US-M0-06,M0,M,M,core/tick,FR-007/008,"Als Designer der Balance will ich die Zufriedenheitsformel aus Konzept §2B als eine reine Funktion ohne Zusatz-Terme, damit das Balance-Risiko des Konzepts (§11) messbar wird.",US-M0-05;US-M0-07
 US-M0-07,M0,M,S,core/tick,FR-010,"Als Spieler will ich, dass die Steuerlast der Konstitution die Gruppenzufriedenheit mindert, damit das Steuermodell echte Folgen hat.",
 US-M0-08,M0,M,M,core/state,FR-009,"Als Spieler will ich, dass die letzten 3 Beschlüsse nachwirken, damit kurzfristige Konsequenzen sichtbar sind und „Optimal-Pflanzen“ verhindert wird.",
 US-M0-09,M0,M,S,core/tick,FR-011,"Als Spieler will ich, dass jede Entscheidung politisches Kapital kostet und sich nach Legitimität regeneriert, damit Machterhalt das Spielziel ist.",
@@ -23,7 +23,7 @@ US-M1-03,M1,M,M,core/tick,FR-015/014,Als Spieler will ich die drei Formen präsi
 US-M1-04,M1,M,M,content/base,FR-017,"Als Spieler will ich ~8 Konstitutions-Entscheidungen (Grundrechte, Gewaltenteilung, Wahlrecht, Pressefreiheit, Zentral/föderal, Steuermodell, Staatsreligion/Weltlichkeit) mit sichtbaren Sofort-Effekten.",US-M1-01
 US-M1-05,M1,M,M,core/tick,FR-017,"Als Spieler will ich, dass die Konstitution die baseline-Zufriedenheit der Gruppen sofort verschiebt, damit der erste Einfluss auf die Bevölkerung spürbar ist.",
 US-M1-06,M1,M,M,core/tick,FR-017,"Als Spieler will ich, dass die Konstitution dauerhaft Event-Wahrscheinlichkeiten und Gruppen-Modifikatoren verändert, damit der Setup das ganze Spiel prägt.",
-US-M1-07,M1,M,M,core/tick,FR-016 (benötigt Entscheidung G3),"Als Spieler in parlamentarischer Form will ich, dass Gesetze eine Mehrheit im Parlament brauchen, damit die Regierungsform echte politische Kosten erzeugt.",
+US-M1-07,M1,M,M,core/tick,FR-016,"Als Spieler in parlamentarischer Form will ich, dass Gesetze eine Mehrheit im Parlament brauchen, damit die Regierungsform echte politische Kosten erzeugt.",
 US-M1-08,M1,S,S,core/tick,FR-014,Als Spieler in parlamentarischer Form will ich ein Misstrauens-Votum bei niedriger Legitimität.,
 US-M1-09,M1,M,M,core + content,FR-014,"Als Spieler in der Diktatur will ich eine Putsch-Roll aus Elite-/Militärzufriedenheit und Legitimität, inkl. „Elite“ als Gruppe.",
 US-M1-10,M1,M,M,core/tick,FR-019,"Als Spieler will ich Legitimität aus Zufriedenheit + Konstitutionstreue − Skandalen/Zensur, damit Machterhalt messbar ist.",
@@ -40,14 +40,14 @@ US-M2-06,M2,S,S,core/events,FR-025,"Als Spieler will ich, dass unzufriedene Unte
 US-M2-07,M2,S,S,content/base,FR-019,"Als Spieler will ich Skandal-Events, deren Wahrscheinlichkeit von Pressefreiheit/Zensur abhängt.",US-M2-02
 US-M2-08,M2,M,M,core/tick,FR-020,Als Spieler will ich die Oppositions-Berechnung aus unzufriedenen Gruppen × Gewicht × Radikalisierungsgrad.,
 US-M2-09,M2,M,M,core/tick,FR-021,"Als Spieler will ich die Radikalisierungskurve (Extremismus-Anteil mit Rechts/Links-Spektrum), damit Unzufriedenheit in Machtverlust münden kann.",
-US-M2-10,M2,M,M,core/events,FR-022,"Als Spieler will ich, dass erstarkender Extremismus bei Wahlen eine Populismus-Agenda erzwingt, die liberale Gruppen sinkt — statt „nur appeasen“.","US-M2-08, US-M2-09"
-US-M2-11,M2,M,M,core/tick,FR-023 (benötigt Entscheidung G8),"Als Spieler will ich, dass eine extremistische Machtergreifung das Spiel beendet oder Koalitionsdruck erzeugt.","US-M2-08, US-M2-09"
-US-M2-12,M2,M,M,core/tick,FR-023 (benötigt Entscheidung G7),Als Spieler will ich Staatsbankrott als Niederlage (Schuldenlimit + Zins-Kurve).,
+US-M2-10,M2,M,M,core/events,FR-022,"Als Spieler will ich, dass erstarkender Extremismus bei Wahlen eine Populismus-Agenda erzwingt, die liberale Gruppen sinkt — statt „nur appeasen“.",US-M2-08;US-M2-09
+US-M2-11,M2,M,M,core/tick,FR-023,"Als Spieler will ich, dass eine extremistische Machtergreifung das Spiel beendet oder Koalitionsdruck erzeugt.",US-M2-08;US-M2-09
+US-M2-12,M2,M,M,core/tick,FR-023,Als Spieler will ich Staatsbankrott als Niederlage (Schuldenlimit + Zins-Kurve).,
 US-M2-13,M2,S,S,cli,FR-041,"Als Spieler will ich News-Einträge für jede Krise im CLI, damit die Krise erzählt wird.",
 US-M2-14,M2,M,M,cli/test,FR-026,als QA will ich einen Krisen-Harness: über 20 Seeds müssen Krisen auftreten und Ketten immer aufgelöst oder verfallen werden.,
 US-M2-15,M2,M,S,cli/test,FR-004,"als QA will ich einen Golden-Test mit Seed, der eine Pandemie enthält, damit Event-RNG deterministisch bleibt.",
 US-M3-01,M3,M,M,core/rules,FR-030/031/032,"als Modder will ich das vollständige `decision`-Schema: `cost {budget, politisches_kapital}`, `effects` (indikator/gruppe), `constraints`, `cooldown`, `diminishing_at`.",
-US-M3-02,M3,M,M,core/tick,FR-028 (benötigt Entscheidung G2),"Als Spieler will ich die Vorhersage einer Karte als Dry-Run von `tick` auf einer State-Kopie, ohne den echten RNG zu verbrauchen.",
+US-M3-02,M3,M,M,core/tick,FR-028,"Als Spieler will ich die Vorhersage einer Karte als Dry-Run von `tick` auf einer State-Kopie, ohne den echten RNG zu verbrauchen.",
 US-M3-03,M3,M,S,core/eval,FR-032,"Als Spieler will ich, dass Karten mit verletzten Constraints nicht wählbar sind (Regierungsform, `erfordert: indikator`).",
 US-M3-04,M3,M,S,core/state,FR-030,"Als Spieler will ich Cooldowns pro Entscheidung im State geführt, damit dieselbe Karte nicht jedes Jahr spielbar ist.",
 US-M3-05,M3,M,S,core/tick,FR-031,als QA will ich `diminishing_at`: oberhalb der Schwelle wirkt der Delta reduziert (Konzept: ab 70 nur noch +1).,
@@ -79,9 +79,9 @@ US-M5-05,M5,M,M,app,FR-012,als Spieler will ich Budget-Slider mit Einnahmen-/Def
 US-M5-06,M5,M,S,app,FR-011,"als Spieler will ich einen Politisches-Kapital-Balken, damit der Engpass sichtbar ist.",
 US-M5-07,M5,M,M,app,FR-028,als Spieler will ich Decision-Karten mit vollständiger Vorhersage (`+4 Bildung · +6 Jugend · −2 Unternehmen · 10 Budget · 2 PK`).,US-M3-02
 US-M5-08,M5,M,M,app + content,FR-041,"als Spieler will ich den News-Feed als Primärinterface, das Zahlen erzählt.",
-US-M5-09,M5,M,M,core + app,FR-043 (benötigt Entscheidung G1),als Spieler will ich auf jeder Gruppe den Tooltip „Wer ist sauer und warum?“ mit den 2 wichtigsten Gründen.,
+US-M5-09,M5,M,M,core + app,FR-043,als Spieler will ich auf jeder Gruppe den Tooltip „Wer ist sauer und warum?“ mit den 2 wichtigsten Gründen.,
 US-M5-10,M5,S,M,app,FR-019/020/021,"als Spieler will ich das Machtregister sehen (Legitimität, Opposition, Extremismus-Anteil, Schulden).",
-US-M5-11,M5,C,M,app,FR-044 (Konflikt G5),"als Spieler will ich Berater, deren Genauigkeit mit dem Forschungslevel steigt.",
+US-M5-11,M5,C,M,app,FR-044,"als Spieler will ich Berater, deren Genauigkeit mit dem Forschungslevel steigt.",
 US-M5-12,M5,M,M,Test,"Gate M5, NFR-Usability",als Product Owner will ich einen Onboarding-Test mit 5 neuen Spielern ohne Tutorial (≥ 5 Turns erfolgreich).,
 US-M5-13,M5,C,S,app,Annahme A-05,als Spieler will ich das Dashboard auf Tablet nutzen (Layout ab 768 px).,
 US-M5-14,M5,S,M,app,NFR-Accessibility,als Spieler will ich Tastatur-Navigation und suffizienten Kontrast in der Heatmap.,

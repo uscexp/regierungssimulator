@@ -1,8 +1,7 @@
 # Backlog-Übergabe — „Staatslenker“ V1
 
-**Zweck:** Übergabe an Product Owner (Backlog-Pflege) und Task Decomposer (Work Breakdown).
-**In diesem Install existieren keine Agents für Product Owner oder Task Decomposer** (Roster: `@hermes`, `@padu`, `@ralf`) — die Übergabe läuft über diese Dateien an Haui.
-**Autoritative Quellen:** `spielkonzept.md` §12 (Werte, Ralf) · `architektur.md` §3/§3a + ADR-001…010 (Struktur, Pädu) · `spezifikation.md` (Requirements + Stories) · `akzeptanzkriterien.md` (Testbarkeit) · `balance-werte.md` (nachgerechnete Werte) · `backlog.csv` (99 Stories, maschinenlesbar).
+**Zweck:** Übergabe an Product Owner (@trix, Backlog-Pflege) und Task Decomposer (Work Breakdown). Der Product Owner ist in diesem Install vorhanden (`@trix`); ein dedizierter Task Decomposer existiert nicht — die Work Breakdown steuert der PO gemeinsam mit dem Build-Team.
+**Autoritative Quellen:** `spielkonzept.md` §12 (Werte, Ralf) · `architektur.md` §3/§3a + ADR-001…010 (Struktur, Pädu) · `spezifikation.md` (Requirements + Stories) · `akzeptanzkriterien.md` (Testbarkeit) · `balance-werte.md` (nachgerechnete Werte) · `backlog.csv` (100 Stories, maschinenlesbar).
 
 ---
 

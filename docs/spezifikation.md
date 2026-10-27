@@ -202,7 +202,7 @@ Legende: **MoSCoW** (M=Must, S=Should, C=Could, W=Won't), **Größe** S = ≤ 2 
 | US-M1-04 | Als Spieler will ich ~8 Konstitutions-Entscheidungen (Grundrechte, Gewaltenteilung, Wahlrecht, Pressefreiheit, Zentral/föderal, Steuermodell, Staatsreligion/Weltlichkeit) mit sichtbaren Sofort-Effekten. | content/base | M | M | FR-017 |
 | US-M1-05 | Als Spieler will ich, dass die Konstitution die baseline-Zufriedenheit der Gruppen sofort verschiebt, damit der erste Einfluss auf die Bevölkerung spürbar ist. | core/tick | M | M | FR-017 |
 | US-M1-06 | Als Spieler will ich, dass die Konstitution dauerhaft Event-Wahrscheinlichkeiten und Gruppen-Modifikatoren verändert, damit der Setup das ganze Spiel prägt. | core/tick | M | M | FR-017 |
-| US-M1-07 | Als Spieler in parlamentarischer Form will ich, dass Gesetze eine Mehrheit im Parlament brauchen, damit die Regierungsform echte politische Kosten erzeugt. | core/tick | M | M | FR-016 (benötigt Entscheidung G3) |
+| US-M1-07 | Als Spieler in parlamentarischer Form will ich, dass Gesetze eine Mehrheit im Parlament brauchen, damit die Regierungsform echte politische Kosten erzeugt. | core/tick | M | M | FR-016 |
 | US-M1-08 | Als Spieler in parlamentarischer Form will ich ein Misstrauens-Votum bei niedriger Legitimität. | core/tick | S | S | FR-014 |
 | US-M1-09 | Als Spieler in der Diktatur will ich eine Putsch-Roll aus Elite-/Militärzufriedenheit und Legitimität, inkl. „Elite“ als Gruppe. | core + content | M | M | FR-014 |
 | US-M1-10 | Als Spieler will ich Legitimität aus Zufriedenheit + Konstitutionstreue − Skandalen/Zensur, damit Machterhalt messbar ist. | core/tick | M | M | FR-019 |
@@ -228,8 +228,8 @@ Legende: **MoSCoW** (M=Must, S=Should, C=Could, W=Won't), **Größe** S = ≤ 2 
 | US-M2-08 | Als Spieler will ich die Oppositions-Berechnung aus unzufriedenen Gruppen × Gewicht × Radikalisierungsgrad. | core/tick | M | M | FR-020 |
 | US-M2-09 | Als Spieler will ich die Radikalisierungskurve (Extremismus-Anteil mit Rechts/Links-Spektrum), damit Unzufriedenheit in Machtverlust münden kann. | core/tick | M | M | FR-021 |
 | US-M2-10 | Als Spieler will ich, dass erstarkender Extremismus bei Wahlen eine Populismus-Agenda erzwingt, die liberale Gruppen sinkt — statt „nur appeasen“. | core/events | M | M | FR-022 |
-| US-M2-11 | Als Spieler will ich, dass eine extremistische Machtergreifung das Spiel beendet oder Koalitionsdruck erzeugt. | core/tick | M | M | FR-023 (benötigt Entscheidung G8) |
-| US-M2-12 | Als Spieler will ich Staatsbankrott als Niederlage (Schuldenlimit + Zins-Kurve). | core/tick | M | M | FR-023 (benötigt Entscheidung G7) |
+| US-M2-11 | Als Spieler will ich, dass eine extremistische Machtergreifung das Spiel beendet oder Koalitionsdruck erzeugt. | core/tick | M | M | FR-023 |
+| US-M2-12 | Als Spieler will ich Staatsbankrott als Niederlage (Schuldenlimit + Zins-Kurve). | core/tick | M | M | FR-023 |
 | US-M2-13 | Als Spieler will ich News-Einträge für jede Krise im CLI, damit die Krise erzählt wird. | cli | S | S | FR-041 |
 | US-M2-14 | als QA will ich einen Krisen-Harness: über 20 Seeds müssen Krisen auftreten und Ketten immer aufgelöst oder verfallen werden. | cli/test | M | M | FR-026 |
 | US-M2-15 | als QA will ich einen Golden-Test mit Seed, der eine Pandemie enthält, damit Event-RNG deterministisch bleibt. | cli/test | M | S | FR-004 |
@@ -242,7 +242,7 @@ Legende: **MoSCoW** (M=Must, S=Should, C=Could, W=Won't), **Größe** S = ≤ 2 
 | ID | Story | Schicht | MoSCoW | Größe | FR |
 |---|---|---|---|---|---|
 | US-M3-01 | als Modder will ich das vollständige `decision`-Schema: `cost {budget, politisches_kapital}`, `effects` (indikator/gruppe), `constraints`, `cooldown`, `diminishing_at`. | core/rules | M | M | FR-030/031/032 |
-| US-M3-02 | Als Spieler will ich die Vorhersage einer Karte als Dry-Run von `tick` auf einer State-Kopie, ohne den echten RNG zu verbrauchen. | core/tick | M | M | FR-028 (benötigt Entscheidung G2) |
+| US-M3-02 | Als Spieler will ich die Vorhersage einer Karte als Dry-Run von `tick` auf einer State-Kopie, ohne den echten RNG zu verbrauchen. | core/tick | M | M | FR-028 |
 | US-M3-03 | Als Spieler will ich, dass Karten mit verletzten Constraints nicht wählbar sind (Regierungsform, `erfordert: indikator`). | core/eval | M | S | FR-032 |
 | US-M3-04 | Als Spieler will ich Cooldowns pro Entscheidung im State geführt, damit dieselbe Karte nicht jedes Jahr spielbar ist. | core/state | M | S | FR-030 |
 | US-M3-05 | als QA will ich `diminishing_at`: oberhalb der Schwelle wirkt der Delta reduziert (Konzept: ab 70 nur noch +1). | core/tick | M | S | FR-031 |
@@ -289,9 +289,9 @@ Legende: **MoSCoW** (M=Must, S=Should, C=Could, W=Won't), **Größe** S = ≤ 2 
 | US-M5-06 | als Spieler will ich einen Politisches-Kapital-Balken, damit der Engpass sichtbar ist. | app | M | S | FR-011 |
 | US-M5-07 | als Spieler will ich Decision-Karten mit vollständiger Vorhersage (`+4 Bildung · +6 Jugend · −2 Unternehmen · 10 Budget · 2 PK`). | app | M | M | FR-028 |
 | US-M5-08 | als Spieler will ich den News-Feed als Primärinterface, das Zahlen erzählt. | app + content | M | M | FR-041 |
-| US-M5-09 | als Spieler will ich auf jeder Gruppe den Tooltip „Wer ist sauer und warum?“ mit den 2 wichtigsten Gründen. | core + app | M | M | FR-043 (benötigt Entscheidung G1) |
+| US-M5-09 | als Spieler will ich auf jeder Gruppe den Tooltip „Wer ist sauer und warum?“ mit den 2 wichtigsten Gründen. | core + app | M | M | FR-043 |
 | US-M5-10 | als Spieler will ich das Machtregister sehen (Legitimität, Opposition, Extremismus-Anteil, Schulden). | app | S | M | FR-019/020/021 |
-| US-M5-11 | als Spieler will ich Berater, deren Genauigkeit mit dem Forschungslevel steigt. | app | C | M | FR-044 (Konflikt G5) |
+| US-M5-11 | als Spieler will ich Berater, deren Genauigkeit mit dem Forschungslevel steigt. | app | C | M | FR-044 |
 | US-M5-12 | als Product Owner will ich einen Onboarding-Test mit 5 neuen Spielern ohne Tutorial (≥ 5 Turns erfolgreich). | Test | M | M | Gate M5, NFR-Usability |
 | US-M5-13 | als Spieler will ich das Dashboard auf Tablet nutzen (Layout ab 768 px). | app | C | S | Annahme A-05 |
 | US-M5-14 | als Spieler will ich Tastatur-Navigation und suffizienten Kontrast in der Heatmap. | app | S | M | NFR-Accessibility |
