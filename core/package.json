@@ -5,6 +5,10 @@
   "type": "module",
   "description": "Deterministische Simulations-Engine — reines TypeScript, kein DOM (ADR-002)",
   "exports": {
-    ".": "./src/index.ts"
+    ".": "./dist/index.js"
+  },
+  "types": "./dist/index.d.ts",
+  "scripts": {
+    "build": "tsc -b ."
   }
 }

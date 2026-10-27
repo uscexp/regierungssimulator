@@ -1,0 +1,5 @@
+# Design-Doku wird von Ralf/Trix/Pädu authored — Prettier-Churn dort ist Review-Rauschen, kein Code.
+docs/
+node_modules/
+dist/
+package-lock.json
