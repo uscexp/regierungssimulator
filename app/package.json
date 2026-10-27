@@ -1,0 +1,7 @@
+{
+  "name": "@staatslenker/app",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Svelte 5 + Vite Dashboard (M5) — Adapter: sieht nur Snapshots, sendet Actions"
+}

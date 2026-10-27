@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="de"><head><meta charset="utf-8"><title>Meilenstein-Ladder Staatslenker</title>
+<style>
+.wrap{display:flex;flex-direction:column;gap:10px;font-size:14px}
+.mile{display:flex;gap:12px;align-items:flex-start;padding:9px 10px;border:1px solid var(--border);border-radius:10px}
+.ms{font-weight:600;min-width:52px}
+.bar{display:flex;gap:6px;align-items:center}
+.chip{padding:2px 7px;border:1px solid var(--border);border-radius:999px;font-size:12px}
+.must{background:color-mix(in srgb, var(--accent) 22%, transparent)}
+.gate{color:var(--muted-foreground);font-size:12px;line-height:1.35}
+.track{display:flex;gap:4px;margin-top:6px}
+.cell{width:8px;height:8px;border-radius:2px;background:var(--accent);opacity:.55}
+.cell.s{background:var(--muted-foreground);opacity:.35}
+.cell.c{background:var(--border)}
+.hint{color:var(--muted-foreground);font-size:12px;margin-top:2px}
+</style></head>
+<body>
+<div class="wrap">
+<div class="mile" data-hermes-send="Erkläre Milestone M0 und seine Stories">
+  <div class="ms">M0</div>
+  <div style="flex:1">
+    <div class="bar"><span class="chip must">16 Must</span><span class="chip">2 Should</span><span class="chip">0 Could</span><span class="chip">18 Stories</span><span class="chip">~66 Tage</span></div>
+    <div class="track"><i class="cell"></i><i class="cell"></i><i class="cell"></i><i class="cell"></i><i class="cell"></i><i class="cell"></i><i class="cell"></i><i class="cell"></i><i class="cell"></i><i class="cell"></i><i class="cell"></i><i class="cell"></i><i class="cell"></i><i class="cell"></i><i class="cell"></i><i class="cell"></i><i class="cell s"></i><i class="cell s"></i></div>
+    <div class="gate">Gate: Spiel komplett im Terminal + Golden-Hash + Harness</div>
+  </div>
+</div>
+<div class="mile" data-hermes-send="Erkläre Milestone M1 und seine Stories">
+  <div class="ms">M1</div>
+  <div style="flex:1">
+    <div class="bar"><span class="chip must">12 Must</span><span class="chip">2 Should</span><span class="chip">0 Could</span><span class="chip">14 Stories</span><span class="chip">~67 Tage</span></div>
+    <div class="track"><i class="cell"></i><i class="cell"></i><i class="cell"></i><i class="cell"></i><i class="cell"></i><i class="cell"></i><i class="cell"></i><i class="cell"></i><i class="cell"></i><i class="cell"></i><i class="cell"></i><i class="cell"></i><i class="cell s"></i><i class="cell s"></i></div>
+    <div class="gate">Gate: Konstitution ändert Wahlmechanik & Event-Wahrsch.</div>
+  </div>
+</div>
+<div class="mile" data-hermes-send="Erkläre Milestone M2 und seine Stories">
+  <div class="ms">M2</div>
+  <div style="flex:1">
+    <div class="bar"><span class="chip must">12 Must</span><span class="chip">3 Should</span><span class="chip">0 Could</span><span class="chip">15 Stories</span><span class="chip">~63 Tage</span></div>
+    <div class="track"><i class="cell"></i><i class="cell"></i><i class="cell"></i><i class="cell"></i><i class="cell"></i><i class="cell"></i><i class="cell"></i><i class="cell"></i><i class="cell"></i><i class="cell"></i><i class="cell"></i><i class="cell"></i><i class="cell s"></i><i class="cell s"></i><i class="cell s"></i></div>
+    <div class="gate">Gate: Krisen ändern Zufriedenheit · Druck + Populismus nie gleichzeitig</div>
+  </div>
+</div>
+<div class="mile" data-hermes-send="Erkläre Milestone M3 und seine Stories">
+  <div class="ms">M3</div>
+  <div style="flex:1">
+    <div class="bar"><span class="chip must">14 Must</span><span class="chip">1 Should</span><span class="chip">0 Could</span><span class="chip">15 Stories</span><span class="chip">~45 Tage</span></div>
+    <div class="track"><i class="cell"></i><i class="cell"></i><i class="cell"></i><i class="cell"></i><i class="cell"></i><i class="cell"></i><i class="cell"></i><i class="cell"></i><i class="cell"></i><i class="cell"></i><i class="cell"></i><i class="cell"></i><i class="cell"></i><i class="cell"></i><i class="cell s"></i></div>
+    <div class="gate">Gate: keine dominante Strategie · Vorhersage == echter Tick · 2–5 Slots, Coverage slot-begrenzt</div>
+  </div>
+</div>
+<div class="mile" data-hermes-send="Erkläre Milestone M4 und seine Stories">
+  <div class="ms">M4</div>
+  <div style="flex:1">
+    <div class="bar"><span class="chip must">8 Must</span><span class="chip">2 Should</span><span class="chip">1 Could</span><span class="chip">11 Stories</span><span class="chip">~41 Tage</span></div>
+    <div class="track"><i class="cell"></i><i class="cell"></i><i class="cell"></i><i class="cell"></i><i class="cell"></i><i class="cell"></i><i class="cell"></i><i class="cell"></i><i class="cell s"></i><i class="cell s"></i><i class="cell c"></i></div>
+    <div class="gate">Gate: Pack ohne Code changebar, kaputte Packs atomisch abgewiesen</div>
+  </div>
+</div>
+<div class="mile" data-hermes-send="Erkläre Milestone M5 und seine Stories">
+  <div class="ms">M5</div>
+  <div style="flex:1">
+    <div class="bar"><span class="chip must">10 Must</span><span class="chip">2 Should</span><span class="chip">2 Could</span><span class="chip">14 Stories</span><span class="chip">~54 Tage</span></div>
+    <div class="track"><i class="cell"></i><i class="cell"></i><i class="cell"></i><i class="cell"></i><i class="cell"></i><i class="cell"></i><i class="cell"></i><i class="cell"></i><i class="cell"></i><i class="cell"></i><i class="cell s"></i><i class="cell s"></i><i class="cell c"></i><i class="cell c"></i></div>
+    <div class="gate">Gate: 5 neue Spieler ≥ 5 Turns ohne Tutorial</div>
+  </div>
+</div>
+<div class="mile" data-hermes-send="Erkläre Milestone M6 und seine Stories">
+  <div class="ms">M6</div>
+  <div style="flex:1">
+    <div class="bar"><span class="chip must">7 Must</span><span class="chip">3 Should</span><span class="chip">3 Could</span><span class="chip">13 Stories</span><span class="chip">~41 Tage</span></div>
+    <div class="track"><i class="cell"></i><i class="cell"></i><i class="cell"></i><i class="cell"></i><i class="cell"></i><i class="cell"></i><i class="cell"></i><i class="cell s"></i><i class="cell s"></i><i class="cell s"></i><i class="cell c"></i><i class="cell c"></i><i class="cell c"></i></div>
+    <div class="gate">Gate: Replaybar mit seedbarer RNG, Save-Migration grün</div>
+  </div>
+</div>
+<div class="hint">100 Stories aus backlog.csv · Schichten: core/tick (22), app (16), content/base (11), cli (6), cli/test (6), core/rules (5), core/state (3), core/events (3) · Klick auf einen Meilenstein öffnet die Stories.</div>
+</div></body></html>

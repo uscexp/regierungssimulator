@@ -1,0 +1,13 @@
+{
+  "name": "@staatslenker/cli",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Text-UI für M0 + AutoSim-Balance-Harness",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "dev": "node src/index.ts"
+  }
+}

@@ -1,0 +1,101 @@
+id,milestone,priority,size,layer,requirement_refs,story,depends_on
+US-M0-01,M0,M,S,Repo,Architektur §4,"Als Entwickler will ich ein Monorepo mit `core/` + `cli/` in TypeScript strict, npm workspaces, ESLint/Prettier und vitest, damit der Kern ohne UI gebaut und getestet werden kann.",
+US-M0-02,M0,M,M,core/state,FR-001,"Als Kern-Entwickler will ich ein unveränderliches `GameState` mit 5 Indikatoren, 3 Gruppen (Zufriedenheit + Gewicht), Budget, PK, Legitimität, Schulden, Jahr, RNG-State und leerem Konstitutions-Feld, damit der Turn eine Snapshot-Funktion sein kann.",
+US-M0-03,M0,M,S,core/RNG,FR-004,"Als Tester will ich den seedbaren RNG (mulberry32) im GameState statt global, damit derselbe Seed denselben Verlauf erzeugt.",
+US-M0-04,M0,M,S,core/invariant,FR-002,"Als QA will ich Clamp auf 0–100 an allen Effekten und einen Invariant-Check nach jedem Tick mit Regel-ID im Fehlerfall, damit schlechte Regelwerte nie NaN erzeugen.",
+US-M0-05,M0,M,M,core/tick + content,FR-005/006,"Als Spieler will ich, dass Indikatoren jährlich nach `budget_wirkung + ereignis_delta − verschleiss` laufen, damit Nichtstun bestraft wird.",
+US-M0-06,M0,M,M,core/tick,FR-007/008,"Als Designer der Balance will ich die Zufriedenheitsformel aus Konzept §2B als eine reine Funktion ohne Zusatz-Terme, damit das Balance-Risiko des Konzepts (§11) messbar wird.","US-M0-05, US-M0-07"
+US-M0-07,M0,M,S,core/tick,FR-010,"Als Spieler will ich, dass die Steuerlast der Konstitution die Gruppenzufriedenheit mindert, damit das Steuermodell echte Folgen hat.",
+US-M0-08,M0,M,M,core/state,FR-009,"Als Spieler will ich, dass die letzten 3 Beschlüsse nachwirken, damit kurzfristige Konsequenzen sichtbar sind und „Optimal-Pflanzen“ verhindert wird.",
+US-M0-09,M0,M,S,core/tick,FR-011,"Als Spieler will ich, dass jede Entscheidung politisches Kapital kostet und sich nach Legitimität regeneriert, damit Machterhalt das Spielziel ist.",
+US-M0-10,M0,M,M,core/tick,FR-012,"Als Spieler will ich Budget verteilen mit Einnahmen = Steuermodell × Wirtschaft und einem Schuldenlimit, damit Deficit eine Grenze hat.",
+US-M0-11,M0,M,M,core/tick,FR-003,"Als Kern-Entwickler will ich `tick(state, action, rules, rng) → Snapshot` als pure Funktion mit Action-API als einziger Schreibstraße.",US-M0-02
+US-M0-12,M0,M,M,core/tick,FR-013,"Als Spieler will ich alle 4 Jahre eine Wahl, deren Verlust das Spiel beendet, damit der Kern-Loop ein Ende hat.",
+US-M0-13,M0,M,S,content/base,FR-034,"Als Content-Autor will ich den M0-Basis-Content (5 Indikatoren, 3 Gruppen, 5 Basis-Entscheidungen) als TS-Objekte gegen das Zod-Schema, damit der Loop spielbaren Content hat.",
+US-M0-14,M0,M,M,cli,FR-048,"Als Spieler will ich das Spiel komplett im Terminal spielen (Lagebericht → Budget → Karten → Auflösung → Machtcheck), damit M0 ohne UI abgenommen werden kann.",US-M0-11
+US-M0-15,M0,S,S,cli,FR-041,"Als Spieler will ich im CLI einen textuellen Lagebericht pro Turn, damit die Zahlen erzählt statt getabellt werden.",
+US-M0-16,M0,M,M,cli/test,"FR-004, NFR-001","Als QA will ich einen Golden-Replay-Test (fester Seed → 100 Jahre → State-Hash) im CI, damit Determinismus-Regressionen sofort auffallen.",
+US-M0-17,M0,M,M,cli,FR-049,"als Balance-Analyst will ich den AutoSim-Harness (3 Naiv-Strategien × 20 Seeds × 30 Jahre), damit die Formel vor dem Content balanciert wird.",
+US-M0-18,M0,S,S,cli/test,FR-049,"als Balance-Analyst will ich den Score-Spread als Fixture im Repo, damit jede spätere Regel gegen eine Baseline geprüft wird.",
+US-M1-01,M1,M,M,core/rules,FR-034,"Als Modder will ich die Regel-Typen `constitution`, `regierung`, `wahlregel` im Zod-Schema, damit Setup-Mechanik deklarativ ist.",
+US-M1-02,M1,M,M,core + cli,FR-015/047,"Als Spieler will ich als ersten Spielzug die Regierungsform wählen, damit die Baseline des Spiels feststeht.",
+US-M1-03,M1,M,M,core/tick,FR-015/014,Als Spieler will ich die drei Formen präsidentielle / parlamentarisch / Diktatur mit Amtsmodus und eigener Machtverlust-Mechanik.,
+US-M1-04,M1,M,M,content/base,FR-017,"Als Spieler will ich ~8 Konstitutions-Entscheidungen (Grundrechte, Gewaltenteilung, Wahlrecht, Pressefreiheit, Zentral/föderal, Steuermodell, Staatsreligion/Weltlichkeit) mit sichtbaren Sofort-Effekten.",US-M1-01
+US-M1-05,M1,M,M,core/tick,FR-017,"Als Spieler will ich, dass die Konstitution die baseline-Zufriedenheit der Gruppen sofort verschiebt, damit der erste Einfluss auf die Bevölkerung spürbar ist.",
+US-M1-06,M1,M,M,core/tick,FR-017,"Als Spieler will ich, dass die Konstitution dauerhaft Event-Wahrscheinlichkeiten und Gruppen-Modifikatoren verändert, damit der Setup das ganze Spiel prägt.",
+US-M1-07,M1,M,M,core/tick,FR-016 (benötigt Entscheidung G3),"Als Spieler in parlamentarischer Form will ich, dass Gesetze eine Mehrheit im Parlament brauchen, damit die Regierungsform echte politische Kosten erzeugt.",
+US-M1-08,M1,S,S,core/tick,FR-014,Als Spieler in parlamentarischer Form will ich ein Misstrauens-Votum bei niedriger Legitimität.,
+US-M1-09,M1,M,M,core + content,FR-014,"Als Spieler in der Diktatur will ich eine Putsch-Roll aus Elite-/Militärzufriedenheit und Legitimität, inkl. „Elite“ als Gruppe.",
+US-M1-10,M1,M,M,core/tick,FR-019,"Als Spieler will ich Legitimität aus Zufriedenheit + Konstitutionstreue − Skandalen/Zensur, damit Machterhalt messbar ist.",
+US-M1-11,M1,M,M,core/rules/eval,FR-013,"als QA will ich die Wahlregel-Auswertung (Termin, Wahlvolk, Ergebnis aus Zufriedenheit) typisiert, damit Wahlen je Form unterschiedlich sind.",
+US-M1-12,M1,S,M,core/tick,FR-018,"Als Spieler will ich, dass die Konstitution nur per Referendum mit hohem Risiko änderbar ist, damit der Setup Gewicht behält.",
+US-M1-13,M1,M,M,cli,FR-047,Als Spieler will ich die Setup-Phase im CLI bedienen (Form + Konstitution vor Turn 1).,
+US-M1-14,M1,M,M,core/test,Gate M1,"als QA will ich Regressionstests, die belegen: zwei verschiedene Konstitutionen erzeugen verschiedene Wahlmechanik und Event-Wahrscheinlichkeiten.",
+US-M2-01,M2,M,M,core/eval,FR-027 (ADR-004),"als QA will ich typisierte Prädikate (Indikator-Vergleich, Gruppen-Zufriedenheit, Schulden, OR-Liste) statt eines Interpreters, damit Modds keine arbitrary Bedingungen einschleusen.",
+US-M2-02,M2,M,M,core/events,FR-025,"Als Spieler will ich eine Event-Registry, die Bedingungen prüft und mit dem Seed würfelt, damit Krisen datengetrieben und replaybar sind.",US-M2-01
+US-M2-03,M2,M,M,core/events + rules,FR-025/026,"als QA will ich Event-Ketten mit Stufen, Options als Decision-Cards, Tiefen-Limit und garantiertem Exit, damit keine Endlosschleife entsteht.",
+US-M2-04,M2,M,M,content/base,FR-025,Als Spieler will ich die Pandemie-Kette (Ausbruch → Ausbreitung → Gegenmaßnahmen-Pfad) mit Konflikt zwischen Gesundheits- und Wirtschaftszufriedenheit.,US-M2-02
+US-M2-05,M2,M,M,content/base,FR-025/012,Als Spieler will ich die Finanzkrise bei `wirtschaft < 40` OR `schulden > 60 %` mit der Wahl Sparen vs. Stimulus.,US-M2-02
+US-M2-06,M2,S,S,core/events,FR-025,"Als Spieler will ich, dass unzufriedene Unternehmen Kapitalflucht auslösen und die Wirtschaft sinkt.",
+US-M2-07,M2,S,S,content/base,FR-019,"Als Spieler will ich Skandal-Events, deren Wahrscheinlichkeit von Pressefreiheit/Zensur abhängt.",US-M2-02
+US-M2-08,M2,M,M,core/tick,FR-020,Als Spieler will ich die Oppositions-Berechnung aus unzufriedenen Gruppen × Gewicht × Radikalisierungsgrad.,
+US-M2-09,M2,M,M,core/tick,FR-021,"Als Spieler will ich die Radikalisierungskurve (Extremismus-Anteil mit Rechts/Links-Spektrum), damit Unzufriedenheit in Machtverlust münden kann.",
+US-M2-10,M2,M,M,core/events,FR-022,"Als Spieler will ich, dass erstarkender Extremismus bei Wahlen eine Populismus-Agenda erzwingt, die liberale Gruppen sinkt — statt „nur appeasen“.","US-M2-08, US-M2-09"
+US-M2-11,M2,M,M,core/tick,FR-023 (benötigt Entscheidung G8),"Als Spieler will ich, dass eine extremistische Machtergreifung das Spiel beendet oder Koalitionsdruck erzeugt.","US-M2-08, US-M2-09"
+US-M2-12,M2,M,M,core/tick,FR-023 (benötigt Entscheidung G7),Als Spieler will ich Staatsbankrott als Niederlage (Schuldenlimit + Zins-Kurve).,
+US-M2-13,M2,S,S,cli,FR-041,"Als Spieler will ich News-Einträge für jede Krise im CLI, damit die Krise erzählt wird.",
+US-M2-14,M2,M,M,cli/test,FR-026,als QA will ich einen Krisen-Harness: über 20 Seeds müssen Krisen auftreten und Ketten immer aufgelöst oder verfallen werden.,
+US-M2-15,M2,M,S,cli/test,FR-004,"als QA will ich einen Golden-Test mit Seed, der eine Pandemie enthält, damit Event-RNG deterministisch bleibt.",
+US-M3-01,M3,M,M,core/rules,FR-030/031/032,"als Modder will ich das vollständige `decision`-Schema: `cost {budget, politisches_kapital}`, `effects` (indikator/gruppe), `constraints`, `cooldown`, `diminishing_at`.",
+US-M3-02,M3,M,M,core/tick,FR-028 (benötigt Entscheidung G2),"Als Spieler will ich die Vorhersage einer Karte als Dry-Run von `tick` auf einer State-Kopie, ohne den echten RNG zu verbrauchen.",
+US-M3-03,M3,M,S,core/eval,FR-032,"Als Spieler will ich, dass Karten mit verletzten Constraints nicht wählbar sind (Regierungsform, `erfordert: indikator`).",
+US-M3-04,M3,M,S,core/state,FR-030,"Als Spieler will ich Cooldowns pro Entscheidung im State geführt, damit dieselbe Karte nicht jedes Jahr spielbar ist.",
+US-M3-05,M3,M,S,core/tick,FR-031,als QA will ich `diminishing_at`: oberhalb der Schwelle wirkt der Delta reduziert (Konzept: ab 70 nur noch +1).,
+US-M3-06,M3,M,M,core/tick,FR-029,"Als Spieler will ich pro Jahr 2–5 Karten aus dem Katalog (Slots nach Lage), ausgewählt nach Seed + Lage, damit der Katalog nicht komplett sichtbar ist.",US-M3-15
+US-M3-07,M3,M,S,content/base,FR-033,Als Content-Autor will ich das Themen-Pack Bildung/Forschung (~6 Karten).,US-M3-01
+US-M3-08,M3,M,S,content/base,FR-033,Als Content-Autor will ich das Themen-Pack Wirtschaft/Budget (~6 Karten).,US-M3-01
+US-M3-09,M3,M,S,content/base,FR-033,Als Content-Autor will ich das Themen-Pack Soziales/Gesundheit (~6 Karten).,US-M3-01
+US-M3-10,M3,M,S,content/base,FR-033,Als Content-Autor will ich das Themen-Pack Sicherheit/Justiz (~6 Karten).,US-M3-01
+US-M3-11,M3,S,S,content/base,FR-033,Als Content-Autor will ich das Themen-Pack Reformen/Verfassungsnahe (~6 Karten).,US-M3-01
+US-M3-12,M3,M,M,content/base,"FR-011, NFR-Balance","als Balance-Analyst will ich die PK-Kosten so budgetieren, dass nicht alle guten Karten in einem Jahr spielbar sind.",US-M3-01
+US-M3-13,M3,M,M,cli/test,Gate M3,"als Balance-Analyst will ich den Harness mit ≥ 5 Strategien und dem Score-Spread-Report, damit keine Strategie dominiert.",
+US-M3-14,M3,M,S,core/test,FR-028,als QA will ich einen Vorhersage-Konsistenz-Test: Dry-Run-Ergebnis == Ergebnis des folgenden echten Ticks.,
+US-M4-01,M4,M,S,core/rules,FR-038,"als Modder will ich `schema_version` im Pack-Header und im Regel-Schema, damit Modds über Versionen migrieren können.",
+US-M4-02,M4,M,M,loader,FR-036,"als Modder will ich einen YAML-Loader (js-yaml + Zod), der ein Pack atomisch validiert (alles-oder-nichts).",
+US-M4-03,M4,M,M,loader,FR-037,als Modder will ich eine Fehlerliste mit Datei und Zeile; das Base-Pack bleibt unverändert und das Spiel läuft weiter.,
+US-M4-04,M4,M,M,core/rules,FR-035,"als Modder will ich Tag-Referenzen für `gruppe`/`indik`, damit ein Pack an bestehende Regeln andockt, ohne Balance zu brechen.",
+US-M4-05,M4,M,S,core/rules,FR-031,"als QA will ich `diminishing_at` als Pflichtfeld im Schema, damit unausgewogene Packs zur Load-Zeit abgewiesen werden.",
+US-M4-06,M4,M,M,loader,FR-036,als Modder will ich eine klare Merge-Policy für Namenskonflikte (Override vs. Shadow) zwischen Base und Pack.,
+US-M4-07,M4,M,M,loader + content,Gate M4,"als Modder will ich ein Beispiel-Pack (neue Gruppe + neue Entscheidung), das ohne Code-Änderung geladen wird.",
+US-M4-08,M4,S,M,cli,FR-036,als Spieler will ich im CLI Packs laden/listen/aktivieren/deaktivieren.,
+US-M4-09,M4,M,M,cli/test,NFR-Erweiterbarkeit,"als QA will ich den Balance-Harness gegen alle geladenen Packs, damit ein Pack die Balance nicht zerstört.",
+US-M4-10,M4,S,S,Doku,FR-036,als Modder will ich eine Pack-Dokumentation (`references/mod-format.md`) mit gültigen Beispielen und Fehlerfällen.,
+US-M4-11,M4,C,M,app,Annahme A-04,als Spieler will ich ein Pack per Datei in der Web-UI importieren (Drag & Drop).,
+US-M5-01,M5,M,S,app,FR-003 (ADR-002/006),"als UI-Entwickler will ich den Svelte-5/Vite-Adapter, der nur readonly-Snapshots liest und Actions sendet, damit der Kern nicht mutiert wird.",
+US-M5-02,M5,M,M,app,FR-047,als Spieler will ich die Setup-Phase als UI (Regierungsform + Konstitution mit sichtbaren Effekten).,
+US-M5-03,M5,M,M,app,FR-042,"als Spieler will ich 7 Indikator-Gauges auf einem Bildschirm, damit der Zustand sofort erkennbar ist.",
+US-M5-04,M5,M,M,app,FR-042,als Spieler will ich eine Gruppen-Heatmap farbcodiert nach Zufriedenheit.,
+US-M5-05,M5,M,M,app,FR-012,als Spieler will ich Budget-Slider mit Einnahmen-/Defizit-Anzeige und Schuldenlimit-Warnung.,
+US-M5-06,M5,M,S,app,FR-011,"als Spieler will ich einen Politisches-Kapital-Balken, damit der Engpass sichtbar ist.",
+US-M5-07,M5,M,M,app,FR-028,als Spieler will ich Decision-Karten mit vollständiger Vorhersage (`+4 Bildung · +6 Jugend · −2 Unternehmen · 10 Budget · 2 PK`).,US-M3-02
+US-M5-08,M5,M,M,app + content,FR-041,"als Spieler will ich den News-Feed als Primärinterface, das Zahlen erzählt.",
+US-M5-09,M5,M,M,core + app,FR-043 (benötigt Entscheidung G1),als Spieler will ich auf jeder Gruppe den Tooltip „Wer ist sauer und warum?“ mit den 2 wichtigsten Gründen.,
+US-M5-10,M5,S,M,app,FR-019/020/021,"als Spieler will ich das Machtregister sehen (Legitimität, Opposition, Extremismus-Anteil, Schulden).",
+US-M5-11,M5,C,M,app,FR-044 (Konflikt G5),"als Spieler will ich Berater, deren Genauigkeit mit dem Forschungslevel steigt.",
+US-M5-12,M5,M,M,Test,"Gate M5, NFR-Usability",als Product Owner will ich einen Onboarding-Test mit 5 neuen Spielern ohne Tutorial (≥ 5 Turns erfolgreich).,
+US-M5-13,M5,C,S,app,Annahme A-05,als Spieler will ich das Dashboard auf Tablet nutzen (Layout ab 768 px).,
+US-M5-14,M5,S,M,app,NFR-Accessibility,als Spieler will ich Tastatur-Navigation und suffizienten Kontrast in der Heatmap.,
+US-M6-01,M6,M,M,core/save,FR-039 (ADR-005),als QA will ich das versionierte Save-Format: Schema-Version + Seed + Action-Log + letzter Snapshot + Backup-Slot.,
+US-M6-02,M6,M,M,core/save + app,FR-040,als Spieler will ich nach jedem Tick ein Autosave in localStorage und Wiederherstellung beim Reload.,
+US-M6-03,M6,M,M,core/save,FR-039,als QA will ich Migrationen und den Backup-Fallback bei korruptem/incompatiblem Save mit Warnung.,
+US-M6-04,M6,S,M,app,FR-039,als Spieler will ich Saves als JSON exportieren/importieren (localStorage-Quota-Fallback).,
+US-M6-05,M6,C,M,core/save + cli,FR-004,als QA will ich den Replay aus Seed + Action-Log (Rückspulen optional).,
+US-M6-06,M6,M,M,core/score,FR-024,als Spieler will ich den Score (Entwicklungsindex + Ø Zufriedenheit + Regime-Dauer) mit je Regierungsform eigener Gewichtung.,
+US-M6-07,M6,S,S,app,FR-046,"als Spieler will ich am Spielende Score, Ursache des Machtverlusts und den Seed sehen und neu starten.",
+US-M6-08,M6,M,M,content/packs,FR-045,als Spieler will ich drei Schwierigkeitsgrade als Parameter-Set ohne neue Mechanik.,
+US-M6-09,M6,C,M,app,Konzept §9 M6,"als Spieler will ich dezente Audio-Signale (Turn-Abschluss, Krisen-Alarm, Wahl).",
+US-M6-10,M6,C,M,core/tick,Konzept §8,als Spieler will ich eine endlose Sandbox ohne Spielende.,
+US-M6-11,M6,S,S,app,FR-004,"als Spieler will ich den Seed anzeigen, kopieren und weitergeben können.",
+US-M6-12,M6,M,S,Build,ADR-001,"als Maintainer will ich den Vite-Build statisch auf GitHub Pages/itch.io deployen, offline spielbar.",
+US-M6-13,M6,M,M,Test,alle NFR,"als QA will ich das Release-Gate: Golden-Hash, Score-Spread, Pack-Load-Test, Save-Migration-Test, Onboarding-Ergebnis.",
+US-M3-15,M3,M,S,core/tick,FR-029,"als Spieler will ich, dass erzwungene Agenda-Slots aus Krisen und Populismus vor dem Sampling besetzt werden und die Slot-Zahl je Jahr feststeht (3, 4 bei Legitimität ≥ 70, 2 bei politischem Kapital ≤ 2), damit Koalitionsdruck und PK-Engpass zusammenwirken.",

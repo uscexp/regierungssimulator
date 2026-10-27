@@ -1,0 +1,10 @@
+{
+  "name": "@staatslenker/loader",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "YAML-Pack-Loader: js-yaml + Zod, atomische Validierung (M4)",
+  "exports": {
+    ".": "./src/index.ts"
+  }
+}

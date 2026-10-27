@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  .wrap { display: flex; flex-direction: column; gap: 10px; padding: 6px; }
+  .caption { font-size: 13px; color: var(--muted-foreground); }
+  svg text { font-size: 12px; font-weight: 600; fill: var(--foreground); }
+  svg .lbl { font-size: 10px; font-weight: 400; fill: var(--muted-foreground); }
+  .box rect { fill: var(--card); stroke: var(--border); stroke-width: 1.5; }
+  .arrow { stroke: var(--muted-foreground); stroke-width: 1.5; fill: none; }
+  .chips { display: flex; gap: 8px; flex-wrap: wrap; }
+  .chip { border: 1px solid var(--border); border-radius: 8px; padding: 6px 12px;
+          font-size: 12px; color: var(--foreground); background: var(--card); cursor: pointer; }
+  .chip:hover { border-color: var(--accent); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="caption">Kern-Feedback-Schleife — nur drei Registerschichten, Verknüpfung statt Masse</div>
+  <svg viewBox="0 0 760 236" width="760" height="236" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+        <path d="M0,0 L10,5 L0,10 z" fill="var(--muted-foreground)"/>
+      </marker>
+    </defs>
+
+    <!-- Boxes -->
+    <g class="box"><rect x="8" y="16" width="150" height="44" rx="10"/><text x="83" y="43" text-anchor="middle">Konstitution</text></g>
+    <g class="box"><rect x="8" y="122" width="150" height="44" rx="10"/><text x="83" y="149" text-anchor="middle">Jahresbudget</text></g>
+    <g class="box"><rect x="218" y="68" width="160" height="44" rx="10"/><text x="298" y="95" text-anchor="middle">Staatsindikatoren</text></g>
+    <g class="box"><rect x="408" y="68" width="160" height="44" rx="10"/><text x="488" y="95" text-anchor="middle">Gruppen-Zufriedenheit</text></g>
+    <g class="box"><rect x="588" y="68" width="160" height="44" rx="10"/><text x="668" y="95" text-anchor="middle">Macht &amp; Legitimität</text></g>
+    <g class="box"><rect x="588" y="168" width="160" height="44" rx="10"/><text x="668" y="195" text-anchor="middle">Wahlen / Putsch</text></g>
+    <g class="box"><rect x="218" y="168" width="160" height="44" rx="10"/><text x="298" y="195" text-anchor="middle">Ereignisse &amp; Krisen</text></g>
+
+    <!-- Arrows -->
+    <path class="arrow" d="M158,38 C 190,42 200,66 216,88" marker-end="url(#ah)"/>
+    <text class="lbl" x="172" y="34">Baseline + Dauer-Modifikatoren</text>
+    <path class="arrow" d="M158,144 C 190,140 200,116 216,102" marker-end="url(#ah)"/>
+    <text class="lbl" x="176" y="160">Investition</text>
+    <path class="arrow" d="M378,90 L406,90" marker-end="url(#ah)"/>
+    <text class="lbl" x="382" y="82">Bedürfnisse</text>
+    <path class="arrow" d="M568,90 L586,90" marker-end="url(#ah)"/>
+    <text class="lbl" x="560" y="82">Legitimität / Opposition</text>
+    <path class="arrow" d="M668,112 L668,166" marker-end="url(#ah)"/>
+    <text class="lbl" x="676" y="142">Machtcheck</text>
+    <path class="arrow" d="M588,190 L380,190" marker-end="url(#ah)"/>
+    <text class="lbl" x="430" y="212">Instabilität / Radikalisierung</text>
+    <path class="arrow" d="M298,168 L298,114" marker-end="url(#ah)"/>
+    <text class="lbl" x="302" y="144">Delta</text>
+    <path class="arrow" d="M370,178 C 400,150 430,126 452,114" marker-end="url(#ah)"/>
+    <text class="lbl" x="396" y="136">Gruppen-Effekte</text>
+  </svg>
+  <div class="chips">
+    <div class="chip" data-hermes-send="Erkläre das Grundmodell (Indikatoren, Gruppen, Machtregister) ausführlicher">Grundmodell erklären</div>
+    <div class="chip" data-hermes-send="Entwirf Meilenstein M0 als konkrete Prototyp-Spezifikation">M0 als Prototyp-Spec entwerfen</div>
+    <div class="chip" data-hermes-send="Entwirf den Gesetze-Katalog für Meilenstein M3 mit 30 Decision-Cards">Gesetze-Katalog entwerfen</div>
+  </div>
+</div>
+</body>
+</html>

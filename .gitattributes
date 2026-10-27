@@ -1,0 +1,15 @@
+# Textdateien im Repo: LF im Index, LF im Working Copy (cross-platform, Prettier endOfLine=lf)
+* text=auto eol=lf
+
+*.csv text eol=lf
+*.html text eol=lf
+*.md text eol=lf
+*.json text eol=lf
+*.ts text eol=lf
+*.mjs text eol=lf
+*.yml text eol=lf
+
+# Binär/SVG-Assets unverändert
+*.png binary
+*.jpg binary
+*.woff2 binary

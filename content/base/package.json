@@ -1,0 +1,10 @@
+{
+  "name": "@staatslenker/content-base",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Basis-Regelsatz als TS-Objekte, validiert gegen dasselbe Zod-Schema wie YAML-Packs",
+  "exports": {
+    ".": "./src/index.ts"
+  }
+}
