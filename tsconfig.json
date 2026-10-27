@@ -3,11 +3,13 @@
   "compilerOptions": {
     "composite": false,
     "noEmit": true,
+    "allowImportingTsExtensions": true,
     "lib": ["ES2022", "DOM", "DOM.Iterable"],
     "types": ["node"]
   },
   "include": [
     "core/src/**/*.ts",
+    "core/fixtures/**/*.ts",
     "content/base/src/**/*.ts",
     "loader/src/**/*.ts",
     "cli/src/**/*.ts",
