@@ -7,7 +7,8 @@
   "exports": {
     ".": "./dist/index.js",
     "./state": "./dist/state.js",
-    "./rng": "./dist/rng.js"
+    "./rng": "./dist/rng.js",
+    "./invariant": "./dist/invariant.js"
   },
   "types": "./dist/index.d.ts",
   "scripts": {
