@@ -22,6 +22,19 @@ Ein replaybares, solo-playbares Strategiedspiel, in dem Regieren wirklich spielb
 
 Summe Must+Should: **377 Tage** (Must allein 332, Could 27, alle 404) — Größenordnung, kein Termin. Die ältere ~336-Zahl war ein Zählfehler; gültig ist 377. US-M0-01 ist teilweise gebaut (c77d497) und läuft als **in progress** weiter — die verbleibenden ≈ 61 Tage M0 enthalten die zwei fehlenden Script-Arbeiten dieser Story (build-Task pro Workspace, core-Isolation-Checker).
 
+## Build-Workflow (von Haui festgelegt, Build-Go 27. Okt)
+
+**Pipeline je Story:** Tyrdor (Game Developer) setzt die Story um → erstellt PR → Lens (Code Reviewer) reviewt → bei OK leitet Maya (QA) Test-Cases aus der Story ab (Akzeptanzkriterien in `docs/akzeptanzkriterien.md`) → testet → Fehler gehen zurück an Tyrdor. Der PO (@trix) führt den Story-Status; Meilenstein-Gate = Abnahme durch Reto gegen Spec/Kriterien.
+
+### Sprint-Status M0 / S0-A
+
+| Story | Status | PR | Review (Lens) | Test (Maya) |
+|---|---|---|---|---|
+| US-M0-01 (Scripts: build-Tasks + Isolation-Checker) | dispatched | — | — | — |
+| US-M0-02 (GameState unveränderlich) | queued | — | — | — |
+| US-M0-03 (seedbarer RNG im GameState) | queued | — | — | — |
+| US-M0-04 (Clamp 0–100 + Invariant-Check) | queued | — | — | — |
+
 ## M0-Sprint-Zerlegung (Build-Order architektur.md §7)
 
 | Sprint | Stories | Fokus | Exit-Kriterium |
@@ -50,6 +63,7 @@ Summe Must+Should: **377 Tage** (Must allein 332, Could 27, alle 404) — Größ
 | D6 | **Datenkorrekturen: PO + BA abgeschlossen** | Separator-Konvention: mehrwertige CSV-Zellen mit `;` (PO normalisierte US-M0-06/10/11; von Reto als Convention übernommen). Reto bereinigte **6** stale Gap-Annotationen (US-M1-07/G3, US-M2-11/G8, US-M2-12/G7, US-M3-02/G2, US-M5-09/G1, US-M5-11/G5) in beiden Quellen. `handoff-backlog.md`: „99 Stories“ → 100. Dependencies: **18 Stories → 21 Kanten** (die 3 mehrwertigen Zeilen zählen doppelt), zyklenfrei | nur 2 Annotationen angenommen | 100 ↔ 100 ↔ 100 nach Retos Clean; meine Zählung 18 Kanten war Separator-bedingt zu niedrig |
 | D7 | **Baseline-Commit `docs/` ausgeführt (ad0fb8e)** | Review-Artefacts + PO-Plan waren uncommitted; US-M0-01 ist bereits committet (c77d497) | Commit dem Build-Team überlassen | saubere Working-Tree-Baseline vor dem Build; Commit ist lokal und revertingbar |
 | D8 | **US-M0-01 auf „in progress“ zurückgestuft** (Retos AC-Audit, vom PO selbst bestätigt: root/core/cli package.json gelesen) | AC verlangt `npm run build` (kein build-Skript anywhere) und einen Isolation-Check mit Fehlschlag bei core→app/cli-Dependencies (Checker existiert nicht; Isolation real erfüllt) | als done führen, Checker ignorieren | Die M0-Gate-Baseline darf nicht auf einer Story stehen, die ihre eigene Akzeptanz nicht erfüllt; der Checker ist der NFR-004-Driftschutz. Beide Script-Arbeiten laufen in S0-A innerhalb des ~61-Tage-Budgets |
+| D9 | **Build-Go empfangen (Haui, 27. Okt) und S0-A dispatched** | Haui definiert die Team-Pipeline: Tyrdor (Game Developer) setzt Story um → PR → Lens (Code Reviewer) → bei OK Maya (QA) leitet Test-Cases aus der Story ab und testet → Fehler zurück an Tyrdor | PO baut selbst, Einzel-Agent ohne Review | Review + unabhängige QA vor Merge ist genau der Schutz, den die DoD (AC-Test, Golden-Test, Invariant) verlangt; PR-Branching erfordert Push der Docs-Baseline (ad0fb8e…f580c62) auf origin |
 
 ## Risiken (Pre-Mortem, Kurzform)
 1. **Balance nicht balancierbar** (Konzept §11): erst der Harness zeigt es → S0-D ist der Entscheidungs Punkt; wenn Naiv-Strategien zu früh verlieren, justiert Ralf Werte, nicht Mechanik.
