@@ -8,7 +8,8 @@
     ".": "./dist/index.js",
     "./state": "./dist/state.js",
     "./rng": "./dist/rng.js",
-    "./invariant": "./dist/invariant.js"
+    "./invariant": "./dist/invariant.js",
+    "./indikatoren": "./dist/indikatoren.js"
   },
   "types": "./dist/index.d.ts",
   "scripts": {
