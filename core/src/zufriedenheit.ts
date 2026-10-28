@@ -10,8 +10,8 @@
  * würde einen kaputen Pack verstecken. Tags, die im State nicht existieren, zählen als 0.
  * Steuerlast ist ein direkter Abzug, kein Multiplikator (balance-werte.md §3).
  */
-import { clampLevel } from './invariant.js';
-import type { GruppenSnapshot, GruppenTag, IndikatorTag } from './state.js';
+import { clampLevel, type Modus } from './invariant.js';
+import type { GruppenSnapshot, GruppenTag, IndikatorTag, Konstitution } from './state.js';
 
 /** Steuermodelle der Konstitution; die Last-Tabelle je Gruppe ist Content. */
 export type Steuermodell = 'niedrig' | 'flat' | 'progressiv' | 'hoch';
@@ -50,6 +50,34 @@ export function steuerlastFuer(
   tabelle: SteuerlastTabelle,
 ): number {
   return tabelle[gruppe]?.[modell] ?? 0;
+}
+
+/** Die vier Steuermodelle — Kern-Struktur; die Lasten je Gruppe sind Content. */
+const STEUERMODELLE: readonly Steuermodell[] = ['niedrig', 'flat', 'progressiv', 'hoch'];
+
+/**
+ * Steuermodell aus der Konstitution (Regel-Id `steuermodell`). Die Konstitution startet in M0 leer
+ * (US-M0-02), die Setup-Phase ist M1: im Dev-Modus wird `flat` verwendet (der CLI kann das im
+ * Lagebericht zeigen), in Produktion wirft es mit Regel-Id (FR-002 — ein Snapshot ohne
+ * Steuermodell ist ein kaputer Save, kein normaler Zustand). Ab M1 setzt die Setup-Phase die
+ * Regel immer, der Produktionszweig ist dann der normale Weg.
+ */
+export function steuermodellAusKonstitution(
+  konstitution: Konstitution,
+  modus: Modus = 'dev',
+): Steuermodell {
+  const wert = konstitution.steuermodell;
+  if (typeof wert === 'string' && (STEUERMODELLE as readonly string[]).includes(wert)) {
+    return wert as Steuermodell;
+  }
+
+  if (modus === 'produktion') {
+    throw new TypeError(
+      `Konstitution: Regel "steuermodell" fehlt oder ist ungültig (wert=${String(wert)})`,
+    );
+  }
+
+  return 'flat';
 }
 
 /** Rechnet alle Gruppen neu — der alte Snapshot wird nicht mutiert (ADR-002). */

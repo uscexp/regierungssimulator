@@ -5,6 +5,8 @@ import {
   gewichteteZufriedenheit,
   gruppenZufriedenheit,
   schwachsteZufriedenheit,
+  steuerlastFuer,
+  steuermodellAusKonstitution,
   zufriedenheitBerechnen,
   type SteuerlastTabelle,
 } from '@staatslenker/core/zufriedenheit';
@@ -13,8 +15,8 @@ import type { GruppenSnapshot } from '@staatslenker/core/state';
 /** Steuerlast aus balance-werte.md §3 — Content-Fixture, kein Kern-Wert. */
 const steuerlast: SteuerlastTabelle = {
   unternehmen: { niedrig: 0, flat: 4, progressiv: 8, hoch: 12 },
-  arbeitnehmer: { niedrig: 0, flat: 4, progressiv: 3, hoch: 8 },
-  bildung_jugend: { niedrig: 0, flat: 4, progressiv: 3, hoch: 8 },
+  arbeitnehmer: { niedrig: 2, flat: 4, progressiv: 3, hoch: 8 },
+  bildung_jugend: { niedrig: 2, flat: 4, progressiv: 3, hoch: 8 },
 };
 
 const gruppe = (
@@ -133,5 +135,65 @@ describe('Zufriedenheitsformel (FR-003, US-M0-06)', () => {
     expect(
       zufriedenheitBerechnen(gruppe('landwirte', { wirtschaft: 1 }, 8), { wirtschaft: 40 }, 0),
     ).toBe(50);
+  });
+});
+
+describe('Steuermodell aus der Konstitution (US-M0-07)', () => {
+  const indikatoren = { wirtschaft: 45, infrastruktur: 40, gesundheit: 40 };
+
+  it('bei "hoch" ist die Last von Unternehmen höher als die der Arbeitnehmer und die Zufriedenheit entsprechend niedriger (AC)', () => {
+    const gruppen = gruppenZufriedenheit(
+      [
+        gruppe('unternehmen', { wirtschaft: 0.55, infrastruktur: 0.45 }, 21.3),
+        gruppe('arbeitnehmer', { wirtschaft: 0.45, gesundheit: 0.55 }, 51.1),
+      ],
+      indikatoren,
+      'hoch',
+      steuerlast,
+    );
+
+    expect(steuerlast.unternehmen!.hoch).toBeGreaterThan(steuerlast.arbeitnehmer!.hoch);
+    expect(gruppen[0]!.zufriedenheit).toBeLessThan(gruppen[1]!.zufriedenheit);
+    expect(gruppen[0]!.zufriedenheit).toBe(10 + (0.55 * 45 + 0.45 * 40) - 12);
+    expect(gruppen[1]!.zufriedenheit).toBe(10 + (0.45 * 45 + 0.55 * 40) - 8);
+  });
+
+  it('die Steuerlast-Tabelle aus balance-werte.md §3 ist exakt die Werte-Quelle für alle vier Modelle', () => {
+    // progressiv ist für Arbeitnehmer *niedriger* als flat (3 vs 4) — das ist Absicht: die
+    // progressive Last trifft Unternehmen (8), nicht die Arbeitnehmer. Eine monotone Reihenfolge
+    // der Modelle ist deshalb keine Invariante; getestet werden die Tabellenwerte.
+    expect(steuerlast.unternehmen).toEqual({ niedrig: 0, flat: 4, progressiv: 8, hoch: 12 });
+    expect(steuerlast.arbeitnehmer).toEqual({ niedrig: 2, flat: 4, progressiv: 3, hoch: 8 });
+    expect(steuerlast.bildung_jugend).toEqual({ niedrig: 2, flat: 4, progressiv: 3, hoch: 8 });
+    // AC-Kern: bei progressiv und hoch zahlt Unternehmen mehr als Arbeitnehmer. Bei "niedrig"
+    // zahlt Unternehmen 0 und die Arbeitnehmer 2 — die Reihenfolge der Gruppen kehrt sich dort um.
+    for (const modell of ['progressiv', 'hoch'] as const) {
+      expect(steuerlastFuer('unternehmen', modell, steuerlast)).toBeGreaterThan(
+        steuerlastFuer('arbeitnehmer', modell, steuerlast),
+      );
+    }
+    expect(steuerlastFuer('unternehmen', 'niedrig', steuerlast)).toBeLessThan(
+      steuerlastFuer('arbeitnehmer', 'niedrig', steuerlast),
+    );
+  });
+
+  it('bei "niedrig" zahlt Unternehmen 0 — die Zufriedenheit ist dann nur baseline + gewichtete Level', () => {
+    const unternehmen = gruppe('unternehmen', { wirtschaft: 0.55, infrastruktur: 0.45 }, 21.3);
+    expect(zufriedenheitBerechnen(unternehmen, indikatoren, steuerlast.unternehmen!.niedrig)).toBe(
+      10 + 0.55 * 45 + 0.45 * 40,
+    );
+  });
+
+  it('das Steuermodell kommt aus der Konstitution; leer ist im Dev-Modus "flat", in Produktion ein Fehler mit Regel-Id', () => {
+    expect(steuermodellAusKonstitution({ steuermodell: 'hoch' })).toBe('hoch');
+    expect(steuermodellAusKonstitution({})).toBe('flat');
+    expect(steuermodellAusKonstitution({ steuermodell: 'progressiv' }, 'produktion')).toBe(
+      'progressiv',
+    );
+
+    expect(() => steuermodellAusKonstitution({}, 'produktion')).toThrow(/steuermodell/);
+    expect(() => steuermodellAusKonstitution({ steuermodell: 'vip' }, 'produktion')).toThrow(
+      /steuermodell/,
+    );
   });
 });
