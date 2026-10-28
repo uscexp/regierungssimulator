@@ -9,11 +9,15 @@
  * (Kosten > PK, Kosten außerhalb 1–3) wird mit Regel-Id abgewiesen — die UI/CLI prüft vorher mit
  * `karteWählbar`, der Kern ist die letzte Instanz.
  */
+import { PK_MAX } from './invariant.js';
 import type { SchwierigkeitsPack } from './indikatoren.js';
 import type { GameState } from './state.js';
 
-/** Obergrenze des Politischen Kapitals (Konzept §4, balance-werte.md §5). */
-export const PK_MAX = 12;
+/**
+ * Die Obergrenze des Politischen Kapitals liegt bei 12 und ist in `core/invariant` definiert —
+ * die einzige Instanz, damit der Clamp und die Regel-Id dieselbe Zahl lesen (Konzept §4,
+ * balance-werte.md §5). Dieses Modul exportiert sie nicht doppelt.
+ */
 
 /** Kartenkosten liegen im Content-Definitionsbereich 1–3 (balance-werte.md §5). */
 export const PK_KOSTEN_MIN = 1;

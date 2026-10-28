@@ -75,6 +75,12 @@ export interface Konstitution {
   readonly [regel_id: string]: string | boolean;
 }
 
+/** Das Entscheidungsgedächtnis ist Teil des Snapshots; ein verlorener Machtcheck wird ebenfalls gespeichert. */
+export interface WahlNiederlage {
+  readonly jahr: number;
+  readonly grund_id: string;
+}
+
 /** Der vollständige Spielzustand eines Jahres — klein (< ~12 KB, ADR-008) und vollständig serialisierbar. */
 export interface GameState {
   /** Schema-Version für Save-Migrationen (ADR-005). */
@@ -97,6 +103,8 @@ export interface GameState {
   readonly zufriedenheits_trace: Readonly<Record<GruppenTag, readonly DeltaGrund[]>>;
   /** Entscheidungsgedächtnis (FR-006, US-M0-08) — Beschlüsse, die noch wirken. */
   readonly beschlüsse: readonly AktiverBeschluss[];
+  /** Verlorener Machtcheck (US-M0-12) — gesetzt, wenn eine Wahl verloren wurde; der CLI zeigt das Spielende. */
+  readonly wahl_niederlage?: WahlNiederlage;
 }
 
 /** Aktuelle Schema-Version des Snapshots; Migrationen hängen daran (ADR-005, save.ts ab M6). */
