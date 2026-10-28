@@ -10,7 +10,8 @@
     "./rng": "./dist/rng.js",
     "./invariant": "./dist/invariant.js",
     "./indikatoren": "./dist/indikatoren.js",
-    "./zufriedenheit": "./dist/zufriedenheit.js"
+    "./zufriedenheit": "./dist/zufriedenheit.js",
+    "./beschlüsse": "./dist/beschlüsse.js"
   },
   "types": "./dist/index.d.ts",
   "scripts": {
