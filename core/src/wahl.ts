@@ -13,9 +13,9 @@ import type { GruppenSnapshot } from './state.js';
 
 /** Die Wahlregel eines Packs: Zyklus und beide Schwellen als Content-Werte. */
 export interface Wahlregel {
-  /** Intervall in Jahren — M0: alle 4 Jahre (AC US-M0-12). */
+  /** Intervall in Jahren — M0: alle 6 Jahre (PO-Ruling nach dem AutoSim-Befund, vorher 4). */
   readonly intervall_jahre: number;
-  /** Schwelle der gewichteten Ø-Zufriedenheit (D12: 50). */
+  /** Schwelle der gewichteten Ø-Zufriedenheit (M0: 47, D12 hatte 50). */
   readonly gewichtete_min: number;
   /** Schwelle der schwächsten Gruppe, der Unruhe-Gate (D12: 35). */
   readonly schwächste_min: number;
@@ -62,7 +62,9 @@ export function wahlPrüfen(gruppen: readonly GruppenSnapshot[], regel: Wahlrege
   if (gewichtete < regel.gewichtete_min) {
     return {
       gewonnen: false,
-      grund_id: 'wahl:gewichtete_unter_50',
+      // Die Ursache nennt die Schwelle der Regel, nicht eine feste Zahl — die Schwellen sind
+      // Content und können je Pack anders sein (PO-Ruling: M0 = 47).
+      grund_id: `wahl:gewichtete_unter_${regel.gewichtete_min}`,
       gewichtete_zufriedenheit: gewichtete,
       schwächste_gruppe: schwächste.tag,
     };
@@ -70,7 +72,7 @@ export function wahlPrüfen(gruppen: readonly GruppenSnapshot[], regel: Wahlrege
   if (schwächste.zufriedenheit < regel.schwächste_min) {
     return {
       gewonnen: false,
-      grund_id: 'wahl:schwächste_unter_35',
+      grund_id: `wahl:schwächste_unter_${regel.schwächste_min}`,
       gewichtete_zufriedenheit: gewichtete,
       schwächste_gruppe: schwächste.tag,
     };
@@ -97,9 +99,15 @@ export function wahlRegelAlsPrüfung(
   return (gruppen, jahr) => (wahlJahr(jahr, regel) ? wahlPrüfen(gruppen, regel) : undefined);
 }
 
-/** Die M0-Wahlregel aus D12 — Werte sind Content, hier als Referenz für Fixtures und den CLI. */
+/**
+ * Die M0-Wahlregel. Werte sind Content, hier als Referenz für Fixtures und den CLI.
+ * PO-Ruling (Trix, nach dem AutoSim-Befund): Schwelle **47** statt 50 und Zyklus **6 Jahre** statt 4.
+ * Bei 50/4 verliert jedes M0-Spiel die Wahl in Jahr 4 — der Start-Ø liegt unter der Schwelle und
+ * fällt weiter, weil die Einnahmen an der Zufriedenheit hängen. Bei 47/6 ist Jahr 6 der erste
+ * Machtcheck und die Budget-Kurve kann über Jahr 4 hinaus laufen.
+ */
 export const WAHLREGEL_M0: Wahlregel = Object.freeze({
-  intervall_jahre: 4,
-  gewichtete_min: 50,
+  intervall_jahre: 6,
+  gewichtete_min: 47,
   schwächste_min: 35,
 });

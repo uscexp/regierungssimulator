@@ -45,7 +45,9 @@ describe('core/wahl — der Machtcheck mit Unruhe-Gate (FR-013, US-M0-12, PO D12
   it('die fehlende Ø-Bedingung bekommt ihre eigene Ursache (Spielende-Text im CLI)', () => {
     const ergebnis = wahlPrüfen([gruppe('unternehmen', 45, 100)], WAHLREGEL_M0);
     expect(ergebnis.gewonnen).toBe(false);
-    expect(ergebnis.grund_id).toBe('wahl:gewichtete_unter_50');
+    // Die Ursache nennt die Schwelle der Regel — bei der M0-Regel (PO-Ruling: 47) ist das
+    // `wahl:gewichtete_unter_47`, nicht eine fest eingetextete Zahl.
+    expect(ergebnis.grund_id).toBe('wahl:gewichtete_unter_47');
   });
 
   it('die Schwellen sind inklusiv: genau 50 und genau 35 ist gewonnen', () => {
@@ -68,9 +70,11 @@ describe('core/wahl — der Machtcheck mit Unruhe-Gate (FR-013, US-M0-12, PO D12
     expect(wahlPrüfen(fixtureA, { ...WAHLREGEL_M0, schwächste_min: 45.1 }).gewonnen).toBe(false);
   });
 
-  it('der Wahlzyklus läuft alle 4 Jahre, Jahr 1 ist das Startjahr (AC)', () => {
-    expect(wahlJahr(4, WAHLREGEL_M0)).toBe(true);
-    expect(wahlJahr(8, WAHLREGEL_M0)).toBe(true);
+  it('der Wahlzyklus läuft alle 6 Jahre, Jahr 1 ist das Startjahr (PO-Ruling: Zyklus 6)', () => {
+    expect(wahlJahr(6, WAHLREGEL_M0)).toBe(true);
+    expect(wahlJahr(12, WAHLREGEL_M0)).toBe(true);
+    // Jahr 4 ist kein Wahljahr mehr — der AutoSim-Befund zeigte dort den guaranteed Verlust.
+    expect(wahlJahr(4, WAHLREGEL_M0)).toBe(false);
     expect(wahlJahr(3, WAHLREGEL_M0)).toBe(false);
     expect(wahlJahr(1, WAHLREGEL_M0)).toBe(false);
     expect(wahlJahr(5, { ...WAHLREGEL_M0, intervall_jahre: 0 })).toBe(false);

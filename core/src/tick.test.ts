@@ -213,22 +213,22 @@ describe('tick — ein Jahr Simulation (FR-001, US-M0-11)', () => {
     );
   });
 
-  it('der Machtcheck läuft alle vier Jahre und die Wahlregel kommt von außen (AC US-M0-12)', () => {
+  it('der Machtcheck läuft alle sechs Jahre und die Wahlregel kommt von außen (PO-Ruling: Zyklus 6)', () => {
     const verloren = (gruppen: readonly GruppenSnapshot[]) => ({
       gewonnen: false,
-      grund_id: 'wahl:zufriedenheit_unter_50',
+      grund_id: 'wahl:gewichtete_unter_47',
       gewichtete_zufriedenheit: 46,
       schwächste_gruppe: gruppen[0]!.tag,
     });
-    const vierte = tick(
-      stateMit({ jahr: 4 }),
+    const sechste = tick(
+      stateMit({ jahr: 6 }),
       { zuteilung: {} },
       regelnMit({ ereignis_regeln: [], wahlPruefen: verloren }),
     );
-    expect(vierte.wahl?.gewonnen).toBe(false);
-    expect(vierte.state.wahl_niederlage).toEqual({
-      jahr: 4,
-      grund_id: 'wahl:zufriedenheit_unter_50',
+    expect(sechste.wahl?.gewonnen).toBe(false);
+    expect(sechste.state.wahl_niederlage).toEqual({
+      jahr: 6,
+      grund_id: 'wahl:gewichtete_unter_47',
     });
 
     const dritte = tick(
@@ -241,7 +241,7 @@ describe('tick — ein Jahr Simulation (FR-001, US-M0-11)', () => {
   });
 
   it('ein Intervall-Konflikt protokolliert keinen Gewinn: der Adapter sagt „kein Wahljahr", der Tick sagt „Wahljahr" (Lens-Fund zu PR #12)', () => {
-    // Der Tick-Zyklus ist Content (`wahl_intervall`), der Adapter folgt der Wahlregel (Intervall 4).
+    // Der Tick-Zyklus ist Content (`wahl_intervall`), der Adapter folgt der Wahlregel (Intervall 6).
     // Bei Intervall 3 wäre Jahr 3 für den Tick ein Wahljahr — der Adapter prüft nicht, und es
     // darf kein stiller `gewonnen: true` im Ergebnis stehen.
     const konflikt = tick(
@@ -256,8 +256,9 @@ describe('tick — ein Jahr Simulation (FR-001, US-M0-11)', () => {
     expect(konflikt.wahl).toBeUndefined();
     expect(konflikt.state.wahl_niederlage).toBeUndefined();
 
-    // Jahr 12 ist durch beide Intervalle teilbar (3 und 4): hier prüfen beide, und der D12-Gate
-    // verliert mit dem Start-Content — das Ergebnis ist ein echter Machtcheck, kein Stumm-Gewinn.
+    // Jahr 12 ist durch beide Intervalle teilbar (3 und 6): hier prüfen beide, und das Ergebnis
+    // ist ein echter Machtcheck, kein Stumm-Gewinn. Mit dem Start-Content (Ø 48.33) ist er bei der
+    // M0-Schwelle 47 gewonnen; mit einem Snapshot unter der Schwelle verliert er end-to-end im Tick.
     const zwölfte = tick(
       stateMit({ jahr: 12 }),
       { zuteilung: {} },
@@ -267,25 +268,60 @@ describe('tick — ein Jahr Simulation (FR-001, US-M0-11)', () => {
         wahlPruefen: wahlRegelAlsPrüfung(WAHLREGEL_M0),
       }),
     );
-    expect(zwölfte.wahl?.gewonnen).toBe(false);
-    expect(zwölfte.state.wahl_niederlage?.grund_id).toBe('wahl:gewichtete_unter_50');
+    expect(zwölfte.wahl?.gewonnen).toBe(true);
+    expect(zwölfte.wahl?.grund_id).toBe('wahl:gewonnen');
+    expect(zwölfte.state.wahl_niederlage).toBeUndefined();
+
+    // Ein Snapshot unter der Schwelle verliert denselben Machtcheck — der Gate ist im Tick wirksam,
+    // nicht nur in core/wahl. Die Zufriedenheit wird am Jahrsanfang aus den Leveln gerechnet,
+    // deshalb senkt der Test die Leveln (nicht die Gruppenwerte des Snapshots).
+    const tief = stateMit({
+      jahr: 12,
+      indikatoren: {
+        infrastruktur: 30,
+        bildung: 30,
+        gesundheit: 30,
+        wirtschaft: 35,
+        forschung: 30,
+      },
+    });
+    const verloren = tick(
+      tief,
+      { zuteilung: {} },
+      regelnMit({
+        ereignis_regeln: [],
+        wahl_intervall: 3,
+        wahlPruefen: wahlRegelAlsPrüfung(WAHLREGEL_M0),
+      }),
+    );
+    expect(verloren.wahl?.gewonnen).toBe(false);
+    expect(verloren.wahl?.grund_id).toBe('wahl:gewichtete_unter_47');
+    expect(verloren.state.wahl_niederlage).toEqual({
+      jahr: 12,
+      grund_id: 'wahl:gewichtete_unter_47',
+    });
   });
 
-  it('die reale D12-Regel verliert Jahr 4 mit dem Start-Content (Ø 48.4 < 50) — der Gate ist end-to-end im Tick wirksam', () => {
+  it('die reale M0-Regel (Schwelle 47, Zyklus 6) gewinnt Jahr 6 mit dem Start-Content — Ø 48.33 ≥ 47', () => {
     const ergebnis = tick(
-      stateMit({ jahr: 4 }),
+      stateMit({ jahr: 6 }),
       { zuteilung: {} },
       regelnMit({ ereignis_regeln: [], wahlPruefen: wahlRegelAlsPrüfung(WAHLREGEL_M0) }),
     );
-    expect(ergebnis.wahl?.gewonnen).toBe(false);
-    expect(ergebnis.wahl?.grund_id).toBe('wahl:gewichtete_unter_50');
+    expect(ergebnis.wahl?.gewonnen).toBe(true);
+    expect(ergebnis.wahl?.grund_id).toBe('wahl:gewonnen');
     // Die M0-Anteile aus balance-werte.md summieren 100.1 (nicht 100) — die Formel normalisiert,
     // deshalb ist Ø 48.33 und nicht die Docs-Zahl 48.4. Die Anteile sind Content, der Kern nicht.
     expect(ergebnis.wahl?.gewichtete_zufriedenheit).toBeCloseTo(48.3296, 4);
-    expect(ergebnis.state.wahl_niederlage).toEqual({
-      jahr: 4,
-      grund_id: 'wahl:gewichtete_unter_50',
-    });
+    expect(ergebnis.state.wahl_niederlage).toBeUndefined();
+
+    // Jahr 5 ist kein Wahljahr (Zyklus 6): der Tick protokolliert nichts.
+    const fünfte = tick(
+      stateMit({ jahr: 5 }),
+      { zuteilung: {} },
+      regelnMit({ ereignis_regeln: [], wahlPruefen: wahlRegelAlsPrüfung(WAHLREGEL_M0) }),
+    );
+    expect(fünfte.wahl).toBeUndefined();
   });
 
   it('ein kaputer Regelsatz wirft im Dev-Modus mit Regel-Id, der Produktionsmodus läuft weiter (FR-002)', () => {
