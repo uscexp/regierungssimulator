@@ -42,7 +42,7 @@ Startwerte (Schwierigkeit *normal*): Wirtschaft 45, übrige Indikatoren 40.
 | normal | 1.0 | 17.19 BE | 21.19 BE | 27.19 BE | 36 BE | 14.81 BE | 8.81 BE |
 | schwer | 1.3 | 22.35 BE | 27.55 BE | 35.35 BE | 26 BE | -1.55 BE | -9.35 BE |
 
-Bei *leicht* bleibt der Spielraum auch bei Forschung > 85 komfortabel (26.97 BE); *normal* hat bei Forschung ≤ 85 14.81 BE Spielraum und bei > 85 noch 8.81 BE (24 %); *schwer* ist bei Forschung ≤ 85 bereits negativ (−1.55 BE) und bei Forschung > 85 (0.20/BE) deutlich negativ (−9.35 BE) — die von Ralf erwartete Deficit-Spirale ab Jahr ~10–12 ist damit rechnerisch plausibel; Forschung über 85 verschärft sie spürbar. Bei interim 0.15 wäre Spielraum >85 nur −9.68 BE (schwer).
+Bei *leicht* bleibt der Spielraum auch bei Forschung > 85 komfortabel (26.97 BE); *normal* hat bei Forschung ≤ 85 14.81 BE Spielraum und bei > 85 noch 8.81 BE (24 %); *schwer* ist bei Forschung ≤ 85 bereits negativ (−1.55 BE) und bei Forschung > 85 (0.20/BE) deutlich negativ (−9.35 BE) — die von Ralf erwartete Deficit-Spirale ab Jahr ~10–12 ist damit rechnerisch plausibel; Forschung über 85 verschärft sie spürbar.
 
 ## 3. Gruppen: Anteile, Gewichte, Steuerlast
 
