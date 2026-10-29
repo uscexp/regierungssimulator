@@ -116,10 +116,13 @@ export function erzeugeGameState(konfiguration: Startkonfiguration): GameState {
   }
 
   // Das Budget ist ein Zahlen-Record wie die Indikatoren: ein NaN-Budget würde sonst einen
-  // NaN-State erzeugen, den erst der Invariant-Check nach dem ersten Tick sähe (FR-002).
+  // NaN-State erzeugen, den erst der Invariant-Check nach dem ersten Tick sähe (FR-002). Die
+  // Untergrenze gehört auch zum Start: eine negative Allokation ist kein Spielzustand, sondern
+  // kaputte Eingabe — der Tick-Invariant prüft dieselbe Regel, darf sie aber nicht als Erste sehen.
   for (const [tag, wert] of Object.entries(konfiguration.budget)) {
     if (!Number.isFinite(wert))
       throw new TypeError(`Start-State: Budget "${tag}" ist nicht endlich`);
+    if (wert < 0) throw new TypeError(`Start-State: Budget "${tag}" ist negativ (wert=${wert})`);
   }
 
   for (const gruppe of konfiguration.gruppen) {

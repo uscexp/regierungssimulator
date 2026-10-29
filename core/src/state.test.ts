@@ -126,5 +126,13 @@ describe('GameState (FR-001, US-M0-02)', () => {
     expect(() => erzeugeGameState({ ...start, budget: { wirtschaft: Infinity } })).toThrow(
       TypeError,
     );
+    expect(() => erzeugeGameState({ ...start, budget: { forschung: -Infinity } })).toThrow(
+      TypeError,
+    );
+    // Maya-F-02 Regression: eine negative Allokation ist kaputte Eingabe, kein Spielzustand.
+    expect(() => erzeugeGameState({ ...start, budget: { bildung: -1 } })).toThrow(/ negativ/);
+    expect(() => erzeugeGameState({ ...start, budget: { wirtschaft: -0.5 } })).toThrow(/ negativ/);
+    // 0 BE ist erlaubt (Forschung startet unallokiert).
+    expect(erzeugeGameState({ ...start, budget: { forschung: 0 } }).budget.forschung).toBe(0);
   });
 });
