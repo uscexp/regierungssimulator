@@ -61,6 +61,12 @@ export interface TickAction {
   readonly zuteilung: Readonly<Record<IndikatorTag, number>>;
   readonly karten?: readonly TickKarte[];
   readonly schulden_aufnahme?: number;
+  /**
+   * Die Basis-Entscheidung dieses Jahres als Beschluss ohne Karte (PO-Ruling zu US-M0-14): keine
+   * PK-Kosten, keine Wirkungseinträge — ihre Wirkung läuft über die `budget_wirkung` im
+   * Bewegungsschritt. Das Gedächtnis macht die Allokation für Spieler, Debugging und Replay sichtbar.
+   */
+  readonly budget_allokation?: { readonly regel_id: string; readonly wirkdauer_jahre?: number };
 }
 
 /** Der Regelsatz eines Packs als Daten — alles, was der Tick braucht, ohne Code-Zweige. */
@@ -95,6 +101,8 @@ export interface TickErgebnis {
   readonly news: readonly NewsEintrag[];
   readonly wahl?: WahlErgebnis;
   readonly unterhalt_be: number;
+  /** BE, die im Budget-Schritt nicht ausgegeben werden konnten (§1/§6) — der Lagebericht narrativiert sie (FR-041). */
+  readonly gekuerzte_be: number;
 }
 
 /** Standard-Wahlzyklus (PO-Ruling nach dem AutoSim-Befund: 6 Jahre statt 4). Ein Pack deklariert
@@ -155,6 +163,17 @@ export function tick(
     });
   }
   aktuell = mitKarten;
+
+  // 3b) Basis-Entscheidung ohne Karte (PO-Ruling zu US-M0-14): ein Beschluss mit leerer Wirkung —
+  //     er kostet kein PK und verändert keine Zahl, er macht nur die Allokation sichtbar. Die
+  //     Bewegung macht die `budget_wirkung` des Indikators im Schritt 6.
+  if (action.budget_allokation !== undefined) {
+    aktuell = beschlussEintragen(aktuell, {
+      regel_id: action.budget_allokation.regel_id,
+      wirkung: [],
+      wirkdauer_jahre: action.budget_allokation.wirkdauer_jahre ?? BESCHLUSS_WIRKDAUER,
+    });
+  }
 
   // Beschlüsse des Gedächtnisses (inklusive der gerade gespielten Karten) wirken in diesem Jahr.
   const beschlussEffekte = effekteAusBeschlüsse(aktuell);
@@ -223,6 +242,7 @@ export function tick(
       (tag) => indikatoren[tag] ?? 0,
       schwierigkeit,
     ),
+    gekuerzte_be: budget.gekuerzte_be,
   };
 }
 

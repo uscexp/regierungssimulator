@@ -124,16 +124,22 @@ export function turn(
   const entscheidung = entscheidungAusId(eingabe.entscheidung_id)!;
   const lagebericht_vorher = lagebericht(state, regeln);
 
-  // Die Basis-Entscheidung ist in M0 eine Budget-Allokation (PO D10), keine Karte: Karten kosten
-  // 1–3 PK (balance §5, FR-011) und sind M3-Content. Eine Allokations-Entscheidung hat keine
-  // Nachwirkung und schreibt deshalb keinen Beschluss ins Gedächtnis — die Wirkung läuft über die
-  // `budget_wirkung` des Indikators im Bewegungsschritt des Ticks.
-  const ergebnis = tick(state, { zuteilung: eingabe.zuteilung }, regeln, modus);
+  // Die Basis-Entscheidung ist eine Budget-Allokation ohne Karte (PO D10, PO-Ruling zu US-M0-14):
+  // keine PK-Kosten, keine Wirkungseinträge. Der Tick schreibt sie als Beschluss ins Gedächtnis —
+  // sichtbar für Spieler, Debugging und Replay — die Bewegung macht die `budget_wirkung` des
+  // Indikators im Bewegungsschritt.
+  const ergebnis = tick(
+    state,
+    { zuteilung: eingabe.zuteilung, budget_allokation: { regel_id: entscheidung.regel_id } },
+    regeln,
+    modus,
+  );
 
   const lagebericht_nach = lagebericht(ergebnis.state, regeln, {
     vorher: state,
     ergebnis,
     wahl_jahr: state.jahr,
+    gekuerzte_be: ergebnis.gekuerzte_be,
   });
 
   return Object.freeze({

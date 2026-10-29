@@ -17,15 +17,17 @@ const regeln = tickRegelnFür('normal');
 const gleichmaessig = { infrastruktur: 2, bildung: 2, gesundheit: 2, wirtschaft: 2, forschung: 2 };
 
 describe('Ein Turn führt den Kern-Loop', () => {
-  it('rückt das Jahr vor und schreibt in M0 keinen Beschluss (Karten sind M3, FR-011)', () => {
+  it('rückt das Jahr vor und schreibt die Basis-Entscheidung ins Gedächtnis (PO-Ruling zu US-M0-14)', () => {
     const state = startState(1234);
     const ergebnis = turn(state, regeln, {
       zuteilung: gleichmaessig,
       entscheidung_id: 'entscheidung:bildung',
     });
     expect(ergebnis.ergebnis.state.jahr).toBe(2);
-    // PO D10: die Basis-Entscheidung ist eine Allokation, keine Karte — kein Beschluss, kein PK-Verbrauch.
-    expect(ergebnis.ergebnis.state.beschlüsse).toHaveLength(0);
+    // PO D10 + Ruling: die Allokation ist ein Beschluss ohne Karte — kein PK, keine Wirkungseinträge.
+    expect(ergebnis.ergebnis.state.beschlüsse).toHaveLength(1);
+    expect(ergebnis.ergebnis.state.beschlüsse[0]!.regel_id).toBe('entscheidung:bildung');
+    expect(ergebnis.ergebnis.state.beschlüsse[0]!.wirkung).toHaveLength(0);
     expect(ergebnis.entscheidung.indikator).toBe('bildung');
     expect(ergebnis.spielende).toBe(false);
   });

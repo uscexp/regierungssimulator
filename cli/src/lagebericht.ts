@@ -82,7 +82,14 @@ export function lagebericht(
       ([tag, gründe]) =>
         `${tag} (${gründe.map((g) => `${g.grund_id} ${fmt(g.delta)}`).join(', ')})`,
     );
-  if (sauer.length > 0) zeilen.push(`Gründe: ${sauer.join('; ')}.`);
+  if (sauer.length > 0) {
+    zeilen.push(`Gründe: ${sauer.join('; ')}.`);
+  } else {
+    // PO-Ruling zu diesem Fund: der Kern rechnet die Spuren am Jahrsanfang aus den alten Leveln,
+    // die Bewegung läuft danach — alle Delta-Spuren sind 0. In M0 ist das eine bekannte Limitation
+    // (M1-Ticket: Spuren nach der Bewegung), der Bericht sagt es dem Spieler statt nichts zu zeigen.
+    zeilen.push('Spuren: aktuell nicht verfügbar (M0-Limitation nach ADR-008, M1-Ticket).');
+  }
 
   // Finanzlage in BE: Einnahmen, Unterhalt, Spielraum, Schulden — dieselben core-Funktionen wie der Tick.
   const einnahmen = einnahmenBe(
@@ -98,8 +105,9 @@ export function lagebericht(
       `Spielraum ${fmt(spielraum)} BE, Schulden ${fmt(state.schulden)} BE (Limit ${fmtInt(schwierigkeit.schuldenlimit)}).`,
   );
   if ((optionen.gekuerzte_be ?? 0) > 0) {
+    // PO-Ruling zu US-M0-15: die Kürzung ist für den Spieler sichtbar, nicht still (FR-041).
     zeilen.push(
-      `${fmt(optionen.gekuerzte_be!)} BE konnten wegen des Schuldenlimits nicht ausgegeben werden (§6).`,
+      `Budget-Allokation auf den verfügbaren Spielraum gekürzt: ${fmt(optionen.gekuerzte_be!)} BE nicht ausgegeben (§1/§6).`,
     );
   }
 
@@ -108,11 +116,19 @@ export function lagebericht(
       `Radikalisierung ${fmtInt(state.radikalisierung)}.`,
   );
 
-  // Das Entscheidungsgedächtnis (FR-006/FR-009) — die Beschlüsse, die noch wirken.
+  // Das Entscheidungsgedächtnis (FR-006/FR-009) — die Beschlüsse, die noch wirken. Eine
+  // Budget-Allokation ohne Karte (PO-Ruling zu US-M0-14) hat keine Wirkungseinträge: sie wird als
+  // Entscheidung des Jahres gerendert, nicht als Wirkung, die bis einem Jahr läuft.
   const aktive = state.beschlüsse.filter((b) => b.wirkt_bis_jahr >= state.jahr);
   if (aktive.length > 0) {
     zeilen.push(
-      `Beschlüsse (${aktive.length}): ${aktive.map((b) => `${b.regel_id} bis Jahr ${b.wirkt_bis_jahr}`).join(', ')}.`,
+      `Beschlüsse (${aktive.length}): ${aktive
+        .map((b) =>
+          b.wirkung.length === 0
+            ? `${b.regel_id} (Beschluss Jahr ${b.wirkt_bis_jahr - b.wirkdauer_jahre + 1}, ohne Nachwirkung)`
+            : `${b.regel_id} bis Jahr ${b.wirkt_bis_jahr}`,
+        )
+        .join(', ')}.`,
     );
   }
 

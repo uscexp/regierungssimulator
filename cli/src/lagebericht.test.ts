@@ -8,8 +8,10 @@ import { startState, tickRegelnFür } from '@staatslenker/cli/content-pack';
 import { lagebericht } from '@staatslenker/cli/lagebericht';
 import { turn } from '@staatslenker/cli/turn';
 import { beschlussEintragen } from '@staatslenker/core/beschlüsse';
+import { tick } from '@staatslenker/core/tick';
 
 const regeln = tickRegelnFür('normal');
+const gleichmaessig = { infrastruktur: 2, bildung: 2, gesundheit: 2, wirtschaft: 2, forschung: 2 };
 
 describe('Lagebericht erzählt die Lage', () => {
   it('nennt Jahr, Indikator-Set, Gruppen und den nächsten Machtcheck', () => {
@@ -74,6 +76,35 @@ describe('Lagebericht erzählt die Lage', () => {
     });
     const text = lagebericht(state, regeln);
     expect(text).toContain('karte:infra_ausbau bis Jahr 3');
+  });
+
+  it('nennt eine Budget-Allokation im Gedächtnis als Entscheidung ohne Nachwirkung (PO-Ruling zu US-M0-14)', () => {
+    const ergebnis = turn(startState(1234), regeln, {
+      zuteilung: gleichmaessig,
+      entscheidung_id: 'entscheidung:bildung',
+    });
+    expect(ergebnis.lagebericht_nach).toContain(
+      'entscheidung:bildung (Beschluss Jahr 1, ohne Nachwirkung)',
+    );
+  });
+
+  it('sagt dem Spieler, wenn eine Allokation auf den Spielraum gekürzt wurde (FR-041, PO-Ruling)', () => {
+    const state = Object.freeze({ ...startState(1234), schulden: 100 });
+    const ergebnis = tick(state, { zuteilung: { bildung: 50 } }, regeln, 'dev');
+    const text = lagebericht(ergebnis.state, regeln, {
+      vorher: state,
+      ergebnis,
+      gekuerzte_be: ergebnis.gekuerzte_be,
+    });
+    expect(text).toContain('Budget-Allokation auf den verfügbaren Spielraum gekürzt');
+    expect(text).toContain('BE nicht ausgegeben');
+  });
+
+  it('meldet die M0-Limitation der Zufriedenheitsspuren, statt nichts zu zeigen (ADR-008, PO-Ruling)', () => {
+    const text = lagebericht(startState(1234), regeln);
+    expect(text).toContain(
+      'Spuren: aktuell nicht verfügbar (M0-Limitation nach ADR-008, M1-Ticket)',
+    );
   });
 
   it('rendert die Gründe, warum eine Gruppe sauer ist (ADR-008)', () => {

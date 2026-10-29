@@ -192,6 +192,32 @@ describe('tick — ein Jahr Simulation (FR-001, US-M0-11)', () => {
     expect(deepcopy(state)).toEqual(vorher);
   });
 
+  it('eine Budget-Allokation ohne Karte kommt ins Gedächtnis — ohne PK und ohne Wirkungseintrag (PO-Ruling zu US-M0-14)', () => {
+    const state = stateMit({ politisches_kapital: 5 });
+    const ergebnis = tick(
+      state,
+      { zuteilung: { bildung: 12 }, budget_allokation: { regel_id: 'entscheidung:bildung' } },
+      regelnMit({ ereignis_regeln: [] }),
+    );
+
+    expect(ergebnis.state.beschlüsse).toHaveLength(1);
+    expect(ergebnis.state.beschlüsse[0]!.regel_id).toBe('entscheidung:bildung');
+    expect(ergebnis.state.beschlüsse[0]!.wirkung).toHaveLength(0);
+    // Kein PK-Verbrauch: nur die Regeneration am Jahresende (Legitimität 50 / 10 = 5).
+    expect(ergebnis.state.politisches_kapital).toBe(5 + 5);
+    // Die Bewegung macht die budget_wirkung des Indikators, nicht der Beschluss.
+    expect(ergebnis.state.indikatoren.bildung).toBe(40 + 0.6 * 12 - 2);
+  });
+
+  it('der Tick meldet die gekürzten BE des Budget-Schritts im Ergebnis (FR-041, §1/§6)', () => {
+    const ergebnis = tick(
+      stateMit({ schulden: 100 }),
+      { zuteilung: { bildung: 50 } },
+      regelnMit({ ereignis_regeln: [] }),
+    );
+    expect(ergebnis.gekuerzte_be).toBeGreaterThan(0);
+  });
+
   it('das Spar-Event trifft alle Gruppen und erscheint in Events und News (§6)', () => {
     const ergebnis = tick(
       stateMit({ schulden: 100 }),
