@@ -1,14 +1,14 @@
 /**
- * @staatslenker/cli — Adapter für M0: Text-UI und AutoSim-Balance-Harness.
+ * @staatslenker/cli — der Einstieg für M0: Terminal-Loop (US-M0-14/15) und AutoSim-Harness (US-M0-17).
  *
- * Der CLI importiert den Kern und sendet Actions; er berechnet keine eigene Simulation.
- * Noch kein Turn-Runner: M0-Story US-M0-12 (Spiel im Terminal durchspielbar) und
- * US-M0-13 (AutoSim: 3 Naiv-Strategien × 20 Seeds × 30 Jahre) bauen hier.
+ * Dieses Modul ist nur der Einstieg: Flag-Parsing, Boot-Report und der Loop liegen in
+ * `cli-options.ts`, damit der Einstieg beim Import keinen Seiteneffekt hat und das Parsing testbar
+ * ist. Der CLI importiert den Kern und sendet Actions; er berechnet keine eigene Simulation (ADR-002).
+ * Mit TTY spielt er den Loop interaktiv; ohne TTY (CI-Boot) führt er eine kurze, deterministische
+ * Demonstration aus — das Quality-Gate "ein Build bootet und ist spielbar" ist damit ein echter
+ * Turn, nicht nur ein Import-Check.
  */
-import { tick } from '@staatslenker/core/tick';
+import { main } from '@staatslenker/cli/cli-options';
 
-export function boot(): string {
-  return `Staatslenker CLI — Kern geladen: ${typeof tick === 'function' ? 'ja' : 'nein'} — noch kein Turn-Runner (M0).`;
-}
-
-console.log(boot());
+// Der Exit-Code kommt von `main`: ungültige Flags enden mit 1, ein gespielter Loop mit 0.
+process.exitCode = await main(process.argv.slice(2));

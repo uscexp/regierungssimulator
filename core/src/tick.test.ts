@@ -192,6 +192,36 @@ describe('tick — ein Jahr Simulation (FR-001, US-M0-11)', () => {
     expect(deepcopy(state)).toEqual(vorher);
   });
 
+  it('eine Budget-Allokation-Action schreibt kein Gedächtnis-Entry und verändert keine Zahl (Pädu-Ruling zu PR #20)', () => {
+    const state = stateMit({ politisches_kapital: 5 });
+    const mitAktion = tick(
+      state,
+      { zuteilung: { bildung: 12 }, budget_allokation: { regel_id: 'entscheidung:bildung' } },
+      regelnMit({ ereignis_regeln: [] }),
+    );
+    const ohneAktion = tick(
+      state,
+      { zuteilung: { bildung: 12 } },
+      regelnMit({ ereignis_regeln: [] }),
+    );
+
+    // Das Gedächtnis ist ein Gameplay-Objekt: ein wirkungsloser Eintrag wäre Rauschen zwischen
+    // echten Gesetzen und würde den Active-Bestand des Golden-Replays verändern.
+    expect(mitAktion.state.beschlüsse).toHaveLength(0);
+    expect(mitAktion.state.politisches_kapital).toBe(ohneAktion.state.politisches_kapital);
+    expect(mitAktion.state.indikatoren).toEqual(ohneAktion.state.indikatoren);
+    expect(mitAktion.state.jahr).toBe(ohneAktion.state.jahr);
+  });
+
+  it('der Tick meldet die gekürzten BE des Budget-Schritts im Ergebnis (FR-041, §1/§6)', () => {
+    const ergebnis = tick(
+      stateMit({ schulden: 100 }),
+      { zuteilung: { bildung: 50 } },
+      regelnMit({ ereignis_regeln: [] }),
+    );
+    expect(ergebnis.gekuerzte_be).toBeGreaterThan(0);
+  });
+
   it('das Spar-Event trifft alle Gruppen und erscheint in Events und News (§6)', () => {
     const ergebnis = tick(
       stateMit({ schulden: 100 }),

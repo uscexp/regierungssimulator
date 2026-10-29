@@ -61,6 +61,15 @@ export interface TickAction {
   readonly zuteilung: Readonly<Record<IndikatorTag, number>>;
   readonly karten?: readonly TickKarte[];
   readonly schulden_aufnahme?: number;
+  /**
+   * Die Basis-Entscheidung dieses Jahres (Pädu-Ruling zu PR #20, architektur.md §3a): eine reine
+   * Daten-Action mit `regel_id` und Dauer — sie schreibt **kein** Entry ins Entscheidungsgedächtnis,
+   * weil das Gedächtnis ein Gameplay-Objekt ist (Golden-Replay prüft den exakten Active-Bestand,
+   * künftige Regeln zählen oder mustern Beschlüsse). Die Wirkung läuft über die `budget_wirkung` im
+   * Bewegungsschritt, die Kürzung über `TickErgebnis.gekuerzte_be`; die Transparenz für den Spieler
+   * ist Aufgabe des Adapters (Lagebericht, Adapter-Store), nicht des States.
+   */
+  readonly budget_allokation?: { readonly regel_id: string; readonly wirkdauer_jahre?: number };
 }
 
 /** Der Regelsatz eines Packs als Daten — alles, was der Tick braucht, ohne Code-Zweige. */
@@ -95,6 +104,8 @@ export interface TickErgebnis {
   readonly news: readonly NewsEintrag[];
   readonly wahl?: WahlErgebnis;
   readonly unterhalt_be: number;
+  /** BE, die im Budget-Schritt nicht ausgegeben werden konnten (§1/§6) — der Lagebericht narrativiert sie (FR-041). */
+  readonly gekuerzte_be: number;
 }
 
 /** Standard-Wahlzyklus (PO-Ruling nach dem AutoSim-Befund: 6 Jahre statt 4). Ein Pack deklariert
@@ -223,6 +234,7 @@ export function tick(
       (tag) => indikatoren[tag] ?? 0,
       schwierigkeit,
     ),
+    gekuerzte_be: budget.gekuerzte_be,
   };
 }
 

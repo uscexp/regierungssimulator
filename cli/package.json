@@ -7,7 +7,11 @@
   "exports": {
     ".": "./dist/index.js",
     "./content-pack": "./dist/content-pack.js",
-    "./autosim": "./dist/autosim.js"
+    "./autosim": "./dist/autosim.js",
+    "./lagebericht": "./dist/lagebericht.js",
+    "./turn": "./dist/turn.js",
+    "./repl": "./dist/repl.js",
+    "./cli-options": "./dist/cli-options.js"
   },
   "types": "./dist/index.d.ts",
   "scripts": {
