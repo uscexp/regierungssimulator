@@ -5,7 +5,9 @@
   "type": "module",
   "description": "Text-UI für M0 + AutoSim-Balance-Harness",
   "exports": {
-    ".": "./dist/index.js"
+    ".": "./dist/index.js",
+    "./content-pack": "./dist/content-pack.js",
+    "./autosim": "./dist/autosim.js"
   },
   "types": "./dist/index.d.ts",
   "scripts": {
