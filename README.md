@@ -23,11 +23,11 @@ Referendum mit hohem Risiko änderbar.
 
 ## Drei Registerschichten
 
-| Schicht | Inhalt |
-|---|---|
-| Staatsindikatoren | 7 Level 0–100 (Infrastruktur, Bildung, Gesundheit, Wirtschaft, Forschung, Recht & Freiheit, Sicherheit), bewegt durch `budget_wirkung + ereignis_delta − verschleiss` |
-| Bevölkerungsgruppen | 8 Gruppen mit Zufriedenheit 0–100 und Gewicht = Bevölkerungsanteil, bedingt über Gewicht-Matrizen auf Indikatoren |
-| Machtregister | Legitimität, Opposition, Extremismus-Anteil (Radikalisierungskurve), Wahl/Putsch |
+| Schicht             | Inhalt                                                                                                                                                                |
+| ------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Staatsindikatoren   | 7 Level 0–100 (Infrastruktur, Bildung, Gesundheit, Wirtschaft, Forschung, Recht & Freiheit, Sicherheit), bewegt durch `budget_wirkung + ereignis_delta − verschleiss` |
+| Bevölkerungsgruppen | 8 Gruppen mit Zufriedenheit 0–100 und Gewicht = Bevölkerungsanteil, bedingt über Gewicht-Matrizen auf Indikatoren                                                     |
+| Machtregister       | Legitimität, Opposition, Extremismus-Anteil (Radikalisierungskurve), Wahl/Putsch                                                                                      |
 
 Komplexität entsteht durch Verknüpfung, nicht durch Masse.
 
@@ -46,6 +46,7 @@ docs/          Spielkonzept, Spezifikation, Architektur (ADR-001…010), Akzepta
 ```
 
 **Ansetzpunkte:**
+
 - `docs/spielkonzept.md` — Vision, Kernloop, Meilensteine M0–M6
 - `docs/spezifikation.md` — Requirements FR/NFR, User Stories
 - `docs/architektur.md` — Schichten, Tech-Stack, Failure-Modes, 10 ADRs
@@ -59,24 +60,27 @@ TypeScript strict, eine Sprache für alles. npm workspaces, vitest, Zod als Sche
 Vite für den Build, localStorage für Saves. Kein Server, keine Datenbank.
 
 ```bash
-npm install     # einmalig
-npm run typecheck
-npm test        # vitest
-npm run lint
-npm run dev     # CLI-Runner (Text-UI, M0)
+npm install                # einmalig
+npm run build              # tsc -b → dist/ je Workspace (core, content/base, loader, cli)
+npm run typecheck          # tsc -p tsconfig.json, strict — braucht den Build (Typen aus dist/)
+npm test                   # baut zuerst, dann vitest
+npm run lint               # eslint
+npm run format:check       # prettier
+npm run check:core-isolation  # Kern-Isolation gegen app/cli (NFR-004)
+npm run dev                # CLI-Runner (Text-UI, M0)
 ```
 
 ## Meilensteine
 
-| Meilenstein | Ziel | Akzeptanz |
-|---|---|---|
-| M0 | Core-Loop im Terminal | Spiel durchspielbar, Zufriedenheitsformel im Log sichtbar |
-| M1 | Regierungsform + Konstitution | Konstitution ändert Wahlmechanik und Event-Wahrscheinlichkeiten |
-| M2 | Krisen & Extremismus | Pandemie (3 Stufen), Finanzkrise, Radikalisierungskurve |
-| M3 | Gesetze-Katalog | ~30 Karten mit Vorhersage, Cooldowns, PK-Kosten; keine dominante Strategie |
-| M4 | Regelsatz-Engine + Mod-Format | neues Group+Decision-Pack ohne Code-Änderung ladbar |
-| M5 | UI-Polish | Dashboard, Heatmap, News-Feed; neue Spieler verstehen ≥5 Turns ohne Tutorial |
-| M6 | Score, Schwierigkeit, Sound | replaybar mit seedbarer RNG |
+| Meilenstein | Ziel                          | Akzeptanz                                                                    |
+| ----------- | ----------------------------- | ---------------------------------------------------------------------------- |
+| M0          | Core-Loop im Terminal         | Spiel durchspielbar, Zufriedenheitsformel im Log sichtbar                    |
+| M1          | Regierungsform + Konstitution | Konstitution ändert Wahlmechanik und Event-Wahrscheinlichkeiten              |
+| M2          | Krisen & Extremismus          | Pandemie (3 Stufen), Finanzkrise, Radikalisierungskurve                      |
+| M3          | Gesetze-Katalog               | ~30 Karten mit Vorhersage, Cooldowns, PK-Kosten; keine dominante Strategie   |
+| M4          | Regelsatz-Engine + Mod-Format | neues Group+Decision-Pack ohne Code-Änderung ladbar                          |
+| M5          | UI-Polish                     | Dashboard, Heatmap, News-Feed; neue Spieler verstehen ≥5 Turns ohne Tutorial |
+| M6          | Score, Schwierigkeit, Sound   | replaybar mit seedbarer RNG                                                  |
 
 Reihenfolge: Kern + Balance-Harness zuerst, UI zuletzt. Der Balance-Harness ist das schnellste Lernen —
 die Zufriedenheitsformel ist das Risiko des Konzepts.

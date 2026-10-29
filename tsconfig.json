@@ -1,19 +1,17 @@
 {
+  "extends": "./tsconfig.base.json",
   "compilerOptions": {
-    "target": "ES2022",
-    "lib": ["ES2022", "DOM", "DOM.Iterable"],
-    "module": "ESNext",
-    "moduleResolution": "Bundler",
-    "strict": true,
-    "noUncheckedIndexedAccess": true,
-    "noImplicitOverride": true,
-    "noFallthroughCasesInSwitch": true,
-    "isolatedModules": true,
-    "verbatimModuleSyntax": true,
-    "skipLibCheck": true,
+    "composite": false,
     "noEmit": true,
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
     "types": ["node"]
   },
-  "include": ["core/**/*.ts", "content/**/*.ts", "loader/**/*.ts", "cli/**/*.ts", "eslint.config.mjs", "vitest.config.ts"],
-  "exclude": ["node_modules", "dist", "app"]
+  "include": [
+    "core/src/**/*.ts",
+    "content/base/src/**/*.ts",
+    "loader/src/**/*.ts",
+    "cli/src/**/*.ts",
+    "vitest.config.ts"
+  ],
+  "exclude": ["node_modules", "**/dist", "app"]
 }

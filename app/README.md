@@ -13,4 +13,5 @@ Sichtbare Flächen (docs/spielkonzept.md §7):
 - News-Feed als Primärinterface
 - Tooltip „Wer ist sauer und warum?“ aus `zufriedenheits_trace` (ADR-008)
 
-Der Ordner ist aus dem Root-`tsconfig.json` ausgeschlossen, bis Svelte/Vite gesetzt wird.
+Der Ordner ist aus dem Root-`tsconfig.json` ausgeschlossen und bis M5 kein npm-workspace, damit
+`npm run build` nur headless baubare Pakete enthält (US-M0-01: beide Kern-Pakete bauen headless).

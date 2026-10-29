@@ -8,12 +8,13 @@
     "core",
     "content/base",
     "loader",
-    "cli",
-    "app"
+    "cli"
   ],
   "scripts": {
+    "build": "tsc -b tsconfig.build.json",
     "typecheck": "tsc -p tsconfig.json",
-    "test": "vitest run",
+    "check:core-isolation": "node scripts/check-core-isolation.mjs",
+    "test": "npm run build && vitest run",
     "test:watch": "vitest",
     "lint": "eslint .",
     "format": "prettier --write .",

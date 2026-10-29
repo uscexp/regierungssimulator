@@ -1,0 +1,9 @@
+{
+  "files": [],
+  "references": [
+    { "path": "core" },
+    { "path": "content/base" },
+    { "path": "loader" },
+    { "path": "cli" }
+  ]
+}
