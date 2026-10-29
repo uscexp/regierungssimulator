@@ -88,6 +88,15 @@ describe('Lagebericht erzählt die Lage', () => {
     );
   });
 
+  it('nennt die Allokationen des Turns als Beschlüsse dieses Jahres (PO-Ruling zu US-M0-14)', () => {
+    const ergebnis = turn(startState(1234), regeln, {
+      zuteilung: gleichmaessig,
+      entscheidung_id: 'entscheidung:bildung',
+    });
+    expect(ergebnis.lagebericht_nach).toContain('Beschlüsse dieses Jahres: infrastruktur +2 BE');
+    expect(ergebnis.lagebericht_nach).toContain('forschung +2 BE');
+  });
+
   it('sagt dem Spieler, wenn eine Allokation auf den Spielraum gekürzt wurde (FR-041, PO-Ruling)', () => {
     const state = Object.freeze({ ...startState(1234), schulden: 100 });
     const ergebnis = tick(state, { zuteilung: { bildung: 50 } }, regeln, 'dev');
@@ -96,14 +105,14 @@ describe('Lagebericht erzählt die Lage', () => {
       ergebnis,
       gekuerzte_be: ergebnis.gekuerzte_be,
     });
-    expect(text).toContain('Budget-Allokation auf den verfügbaren Spielraum gekürzt');
-    expect(text).toContain('BE nicht ausgegeben');
+    expect(text).toContain('Budget-Allokation auf verfügbaren Spielraum gekürzt');
+    expect(text).toContain('BE gekürzt');
   });
 
   it('meldet die M0-Limitation der Zufriedenheitsspuren, statt nichts zu zeigen (ADR-008, PO-Ruling)', () => {
     const text = lagebericht(startState(1234), regeln);
     expect(text).toContain(
-      'Spuren: aktuell nicht verfügbar (M0-Limitation nach ADR-008, M1-Ticket)',
+      'Zufriedenheits-Gründe: aktuell nicht verfügbar (M0-Limitation, M1-Ticket nach ADR-008)',
     );
   });
 

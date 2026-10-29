@@ -43,6 +43,8 @@ export interface LageberichtOptionen {
   readonly wahl_jahr?: number;
   /** BE, die wegen des Schuldenlimits nicht ausgegeben werden konnten (§6) — der Tick meldet das im Budget-Schritt. */
   readonly gekuerzte_be?: number;
+  /** Die Allokationen des Turns in BE — der Bericht nennt sie, weil die Basis-Entscheidung eine Allokation ist (PO-Ruling zu US-M0-14). */
+  readonly allokation?: Readonly<Record<string, number>>;
 }
 
 export function lagebericht(
@@ -88,7 +90,9 @@ export function lagebericht(
     // PO-Ruling zu diesem Fund: der Kern rechnet die Spuren am Jahrsanfang aus den alten Leveln,
     // die Bewegung läuft danach — alle Delta-Spuren sind 0. In M0 ist das eine bekannte Limitation
     // (M1-Ticket: Spuren nach der Bewegung), der Bericht sagt es dem Spieler statt nichts zu zeigen.
-    zeilen.push('Spuren: aktuell nicht verfügbar (M0-Limitation nach ADR-008, M1-Ticket).');
+    zeilen.push(
+      'Zufriedenheits-Gründe: aktuell nicht verfügbar (M0-Limitation, M1-Ticket nach ADR-008).',
+    );
   }
 
   // Finanzlage in BE: Einnahmen, Unterhalt, Spielraum, Schulden — dieselben core-Funktionen wie der Tick.
@@ -107,7 +111,7 @@ export function lagebericht(
   if ((optionen.gekuerzte_be ?? 0) > 0) {
     // PO-Ruling zu US-M0-15: die Kürzung ist für den Spieler sichtbar, nicht still (FR-041).
     zeilen.push(
-      `Budget-Allokation auf den verfügbaren Spielraum gekürzt: ${fmt(optionen.gekuerzte_be!)} BE nicht ausgegeben (§1/§6).`,
+      `Budget-Allokation auf verfügbaren Spielraum gekürzt: ${fmt(optionen.gekuerzte_be!)} BE gekürzt (§1/§6).`,
     );
   }
 
@@ -129,6 +133,19 @@ export function lagebericht(
             : `${b.regel_id} bis Jahr ${b.wirkt_bis_jahr}`,
         )
         .join(', ')}.`,
+    );
+  }
+
+  // Die Allokationen des Turns (PO-Ruling zu US-M0-14): die Basis-Entscheidung ist eine
+  // Budget-Allokation, ihre BE sind die Entscheidung — der Bericht nennt sie pro Turn.
+  if (optionen.allokation !== undefined) {
+    const teile = Object.entries(optionen.allokation)
+      .filter(([, be]) => be > 0)
+      .map(([tag, be]) => `${tag} +${Number.isInteger(be) ? String(be) : fmt(be)} BE`);
+    zeilen.push(
+      teile.length > 0
+        ? `Beschlüsse dieses Jahres: ${teile.join(', ')}.`
+        : 'Beschlüsse dieses Jahres: kein Budget verteilt.',
     );
   }
 

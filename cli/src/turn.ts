@@ -140,6 +140,7 @@ export function turn(
     ergebnis,
     wahl_jahr: state.jahr,
     gekuerzte_be: ergebnis.gekuerzte_be,
+    allokation: eingabe.zuteilung,
   });
 
   return Object.freeze({
