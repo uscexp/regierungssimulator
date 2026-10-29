@@ -72,8 +72,11 @@ export interface TickRegeln {
   readonly ereignis_regeln?: readonly EreignisRegel[];
   /** Wahlzyklus in Jahren (M0: alle 4 Jahre, AC US-M0-12). */
   readonly wahl_intervall?: number;
-  /** Die Wahlregel wird von außen gereicht (US-M0-12), damit der Tick sie nicht erfindet. */
-  readonly wahlPruefen?: (gruppen: readonly GruppenSnapshot[], jahr: number) => WahlErgebnis;
+  /** Die Wahlregel wird von außen gereicht (US-M0-12), damit der Tick sie nicht erfindet. `undefined` vom Adapter heißt: in diesem Jahr wird nicht geprüft. */
+  readonly wahlPruefen?: (
+    gruppen: readonly GruppenSnapshot[],
+    jahr: number,
+  ) => WahlErgebnis | undefined;
   /** News-Vorlagen je Event-Id; Templates sind Pack-Content (G11), ohne Template fällt der Text auf die Id zurück. */
   readonly news_vorlagen?: Readonly<Record<string, string>>;
 }
@@ -159,12 +162,15 @@ export function tick(
   let wahl: WahlErgebnis | undefined;
   const intervall = regeln.wahl_intervall ?? WAHL_INTERVALL;
   if (regeln.wahlPruefen !== undefined && state.jahr % intervall === 0) {
-    wahl = regeln.wahlPruefen(aktuell.gruppen, state.jahr);
-    if (!wahl.gewonnen) {
-      aktuell = Object.freeze({
-        ...aktuell,
-        wahl_niederlage: Object.freeze({ jahr: state.jahr, grund_id: wahl.grund_id }),
-      }) as GameState;
+    const ergebnis = regeln.wahlPruefen(aktuell.gruppen, state.jahr);
+    if (ergebnis !== undefined) {
+      wahl = ergebnis;
+      if (!ergebnis.gewonnen) {
+        aktuell = Object.freeze({
+          ...aktuell,
+          wahl_niederlage: Object.freeze({ jahr: state.jahr, grund_id: ergebnis.grund_id }),
+        }) as GameState;
+      }
     }
   }
 

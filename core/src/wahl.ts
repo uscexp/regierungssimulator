@@ -84,19 +84,17 @@ export function wahlPrüfen(gruppen: readonly GruppenSnapshot[], regel: Wahlrege
   };
 }
 
-/** Adapter für den Tick: die Regel wird als Callback gereicht, damit der Tick keinen Content liest. */
+/**
+ * Adapter für den Tick: die Regel wird als Callback gereicht, damit der Tick keinen Content liest.
+ * In einem Nicht-Wahljahr liefert der Adapter `undefined`, kein Ergebnis. Ein `gewonnen: true`
+ * mit `grund_id: 'wahl:kein_wahljahr'` wäre ein Machtcheck, der nie stattgefunden hat — der Tick
+ * würde ihn als Ereignis protokollieren (Lens-Fund zu PR #12). Der Wahlzyklus selbst ist Content
+ * (`wahl_intervall` im Tick), der Adapter entscheidet nur, ob in diesem Jahr geprüft wird.
+ */
 export function wahlRegelAlsPrüfung(
   regel: Wahlregel,
-): (gruppen: readonly GruppenSnapshot[], jahr: number) => Wahlprüfung {
-  return (gruppen, jahr) =>
-    wahlJahr(jahr, regel)
-      ? wahlPrüfen(gruppen, regel)
-      : {
-          gewonnen: true,
-          grund_id: 'wahl:kein_wahljahr',
-          gewichtete_zufriedenheit: gewichteteZufriedenheit(gruppen),
-          schwächste_gruppe: schwächsteGruppe(gruppen)?.tag ?? '',
-        };
+): (gruppen: readonly GruppenSnapshot[], jahr: number) => Wahlprüfung | undefined {
+  return (gruppen, jahr) => (wahlJahr(jahr, regel) ? wahlPrüfen(gruppen, regel) : undefined);
 }
 
 /** Die M0-Wahlregel aus D12 — Werte sind Content, hier als Referenz für Fixtures und den CLI. */

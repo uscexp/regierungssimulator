@@ -240,6 +240,37 @@ describe('tick — ein Jahr Simulation (FR-001, US-M0-11)', () => {
     expect(dritte.state.wahl_niederlage).toBeUndefined();
   });
 
+  it('ein Intervall-Konflikt protokolliert keinen Gewinn: der Adapter sagt „kein Wahljahr", der Tick sagt „Wahljahr" (Lens-Fund zu PR #12)', () => {
+    // Der Tick-Zyklus ist Content (`wahl_intervall`), der Adapter folgt der Wahlregel (Intervall 4).
+    // Bei Intervall 3 wäre Jahr 3 für den Tick ein Wahljahr — der Adapter prüft nicht, und es
+    // darf kein stiller `gewonnen: true` im Ergebnis stehen.
+    const konflikt = tick(
+      stateMit({ jahr: 3 }),
+      { zuteilung: {} },
+      regelnMit({
+        ereignis_regeln: [],
+        wahl_intervall: 3,
+        wahlPruefen: wahlRegelAlsPrüfung(WAHLREGEL_M0),
+      }),
+    );
+    expect(konflikt.wahl).toBeUndefined();
+    expect(konflikt.state.wahl_niederlage).toBeUndefined();
+
+    // Jahr 12 ist durch beide Intervalle teilbar (3 und 4): hier prüfen beide, und der D12-Gate
+    // verliert mit dem Start-Content — das Ergebnis ist ein echter Machtcheck, kein Stumm-Gewinn.
+    const zwölfte = tick(
+      stateMit({ jahr: 12 }),
+      { zuteilung: {} },
+      regelnMit({
+        ereignis_regeln: [],
+        wahl_intervall: 3,
+        wahlPruefen: wahlRegelAlsPrüfung(WAHLREGEL_M0),
+      }),
+    );
+    expect(zwölfte.wahl?.gewonnen).toBe(false);
+    expect(zwölfte.state.wahl_niederlage?.grund_id).toBe('wahl:gewichtete_unter_50');
+  });
+
   it('die reale D12-Regel verliert Jahr 4 mit dem Start-Content (Ø 48.4 < 50) — der Gate ist end-to-end im Tick wirksam', () => {
     const ergebnis = tick(
       stateMit({ jahr: 4 }),

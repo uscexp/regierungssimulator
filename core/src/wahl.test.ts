@@ -76,14 +76,12 @@ describe('core/wahl — der Machtcheck mit Unruhe-Gate (FR-013, US-M0-12, PO D12
     expect(wahlJahr(5, { ...WAHLREGEL_M0, intervall_jahre: 0 })).toBe(false);
   });
 
-  it('ein Nicht-Wahljahr gewinnt ohne Ursache, damit der Tick kein wahl_niederlage setzt', () => {
+  it('ein Nicht-Wahljahr liefert kein Ergebnis, damit der Tick keinen Machtcheck protokolliert (Lens-Fund)', () => {
     const prüfung = wahlRegelAlsPrüfung(WAHLREGEL_M0);
-    expect(prüfung(fixtureB, 3)).toEqual({
-      gewonnen: true,
-      grund_id: 'wahl:kein_wahljahr',
-      gewichtete_zufriedenheit: expect.any(Number),
-      schwächste_gruppe: 'bildung_jugend',
-    });
+    expect(prüfung(fixtureB, 3)).toBeUndefined();
+    expect(prüfung(fixtureB, 1)).toBeUndefined();
+    // Ein Snapshot ohne Gruppen ist trotzdem kein Ergebnis: der Check findet nicht statt.
+    expect(prüfung([], 3)).toBeUndefined();
   });
 
   it('ein Snapshot ohne Gruppen ist ein Definitionfehler mit eigener Regel-Id (FR-002)', () => {
