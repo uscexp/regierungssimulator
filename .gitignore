@@ -12,3 +12,5 @@ Thumbs.db
 .vscode/
 .idea/
 scratch/
+# Agent-Skills im Repo sind Hermes-Wissen, kein Spiel-Code und nicht Teil der Build.
+skills/
