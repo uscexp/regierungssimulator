@@ -26,6 +26,31 @@ export interface DeltaGrund {
   readonly delta: number;
 }
 
+/** Ein Beschluss-Delta auf einen Snapshot-Zielbereich. Die Werte kommen aus Content-Karten (M3). */
+export interface Effekt {
+  readonly ziel:
+    | 'indikatoren'
+    | 'gruppen'
+    | 'legitimitaet'
+    | 'radikalisierung'
+    | 'politisches_kapital'
+    | 'budget';
+  readonly tag?: IndikatorTag | GruppenTag;
+  readonly delta: number;
+}
+
+/**
+ * Ein aktiver Beschluss im Entscheidungsgedächtnis (FR-006, US-M0-08). `wirkt_bis_jahr` ist
+ * inklusive — ein Beschluss in Jahr 1 mit Dauer 3 wirkt bis Jahr 3 und fällt am Jahresende von
+ * Jahr 3 aus dem Snapshot. Der Bestand ist Teil des Golden-Replay-Hashes (US-M0-16).
+ */
+export interface AktiverBeschluss {
+  readonly regel_id: string;
+  readonly wirkung: readonly Effekt[];
+  readonly wirkdauer_jahre: number;
+  readonly wirkt_bis_jahr: number;
+}
+
 /** Eine Bevölkerungsgruppe. `gewichte` ist die Indikator-Gewicht-Matrix der Gruppe (Σ = 1). */
 export interface GruppenSnapshot {
   readonly tag: GruppenTag;
@@ -70,13 +95,21 @@ export interface GameState {
   readonly rng: RngState;
   readonly konstitution: Konstitution;
   readonly zufriedenheits_trace: Readonly<Record<GruppenTag, readonly DeltaGrund[]>>;
+  /** Entscheidungsgedächtnis (FR-006, US-M0-08) — Beschlüsse, die noch wirken. */
+  readonly beschlüsse: readonly AktiverBeschluss[];
 }
 
 /** Aktuelle Schema-Version des Snapshots; Migrationen hängen daran (ADR-005, save.ts ab M6). */
 export const SCHEMA_VERSION = 1;
 
-/** Alles, was ein Start-State braucht — die Felder eines GameState ohne Schema-Version. */
-export type Startkonfiguration = Omit<GameState, 'schema_version'>;
+/**
+ * Alles, was ein Start-State braucht. Das Entscheidungsgedächtnis ist optional — ein Start ist
+ * immer leer, und `erzeugeGameState` schreibt das leere Array, damit der Snapshot überall
+ * denselben Shape hat (Save-Roundtrip, ADR-005).
+ */
+export type Startkonfiguration = Omit<GameState, 'schema_version' | 'beschlüsse'> & {
+  readonly beschlüsse?: readonly AktiverBeschluss[];
+};
 
 /** Tiefes Einfrieren eines Snapshot-Werts. Der Kern erzeugt keine mutierbaren Objekte. */
 export function freezeSnapshot<T>(wert: T): T {
@@ -143,5 +176,19 @@ export function erzeugeGameState(konfiguration: Startkonfiguration): GameState {
     );
   }
 
-  return freezeSnapshot({ ...konfiguration, schema_version: SCHEMA_VERSION }) as GameState;
+  for (const beschluss of konfiguration.beschlüsse ?? []) {
+    for (const effekt of beschluss.wirkung) {
+      if (!Number.isFinite(effekt.delta) || !Number.isFinite(beschluss.wirkt_bis_jahr)) {
+        throw new TypeError(
+          `Start-State: Beschluss "${beschluss.regel_id}" hat nicht-endliche Werte`,
+        );
+      }
+    }
+  }
+
+  return freezeSnapshot({
+    ...konfiguration,
+    beschlüsse: konfiguration.beschlüsse ?? [],
+    schema_version: SCHEMA_VERSION,
+  }) as GameState;
 }
