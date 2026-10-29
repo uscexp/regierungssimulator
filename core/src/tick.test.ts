@@ -6,11 +6,13 @@ import type { SteuerfaktorTabelle } from '@staatslenker/core/budget';
 import {
   erzeugeGameState,
   type Effekt,
+  type GruppenSnapshot,
   type GameState,
   type Startkonfiguration,
 } from '@staatslenker/core/state';
 import type { SteuerlastTabelle } from '@staatslenker/core/zufriedenheit';
 import type { EreignisRegel } from '@staatslenker/core/ereignisse';
+import { WAHLREGEL_M0, wahlRegelAlsPrüfung } from '@staatslenker/core/wahl';
 
 const indikator_regeln: readonly IndikatorRegel[] = [
   {
@@ -212,7 +214,12 @@ describe('tick — ein Jahr Simulation (FR-001, US-M0-11)', () => {
   });
 
   it('der Machtcheck läuft alle vier Jahre und die Wahlregel kommt von außen (AC US-M0-12)', () => {
-    const verloren = () => ({ gewonnen: false, grund_id: 'wahl:zufriedenheit_unter_50' });
+    const verloren = (gruppen: readonly GruppenSnapshot[]) => ({
+      gewonnen: false,
+      grund_id: 'wahl:zufriedenheit_unter_50',
+      gewichtete_zufriedenheit: 46,
+      schwächste_gruppe: gruppen[0]!.tag,
+    });
     const vierte = tick(
       stateMit({ jahr: 4 }),
       { zuteilung: {} },
@@ -231,6 +238,23 @@ describe('tick — ein Jahr Simulation (FR-001, US-M0-11)', () => {
     );
     expect(dritte.wahl).toBeUndefined();
     expect(dritte.state.wahl_niederlage).toBeUndefined();
+  });
+
+  it('die reale D12-Regel verliert Jahr 4 mit dem Start-Content (Ø 48.4 < 50) — der Gate ist end-to-end im Tick wirksam', () => {
+    const ergebnis = tick(
+      stateMit({ jahr: 4 }),
+      { zuteilung: {} },
+      regelnMit({ ereignis_regeln: [], wahlPruefen: wahlRegelAlsPrüfung(WAHLREGEL_M0) }),
+    );
+    expect(ergebnis.wahl?.gewonnen).toBe(false);
+    expect(ergebnis.wahl?.grund_id).toBe('wahl:gewichtete_unter_50');
+    // Die M0-Anteile aus balance-werte.md summieren 100.1 (nicht 100) — die Formel normalisiert,
+    // deshalb ist Ø 48.33 und nicht die Docs-Zahl 48.4. Die Anteile sind Content, der Kern nicht.
+    expect(ergebnis.wahl?.gewichtete_zufriedenheit).toBeCloseTo(48.3296, 4);
+    expect(ergebnis.state.wahl_niederlage).toEqual({
+      jahr: 4,
+      grund_id: 'wahl:gewichtete_unter_50',
+    });
   });
 
   it('ein kaputer Regelsatz wirft im Dev-Modus mit Regel-Id, der Produktionsmodus läuft weiter (FR-002)', () => {

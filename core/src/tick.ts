@@ -46,6 +46,7 @@ import {
   type SteuerlastTabelle,
 } from './zufriedenheit.js';
 import type { DeltaGrund, Effekt, GruppenSnapshot, GameState, IndikatorTag } from './state.js';
+import type { Wahlprüfung } from './wahl.js';
 
 /** Eine Karte aus dem Content-Katalog (M3) — Kosten und Wirkung sind Daten, keine Kern-Konstanten. */
 export interface TickKarte {
@@ -77,10 +78,7 @@ export interface TickRegeln {
   readonly news_vorlagen?: Readonly<Record<string, string>>;
 }
 
-export interface WahlErgebnis {
-  readonly gewonnen: boolean;
-  readonly grund_id: string;
-}
+export type WahlErgebnis = Wahlprüfung;
 
 export interface NewsEintrag {
   readonly id: string;
