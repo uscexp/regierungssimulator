@@ -3,12 +3,12 @@ import { describe, expect, it } from 'vitest';
 import {
   PK_KOSTEN_MAX,
   PK_KOSTEN_MIN,
-  PK_MAX,
   karteWählbar,
   pkAusgeben,
   pkRegeneration,
   pkRegenerieren,
 } from '@staatslenker/core/kapital';
+import { PK_MAX } from '@staatslenker/core/invariant';
 import { SCHWIERIGKEIT_NORMAL } from '@staatslenker/core/indikatoren';
 import {
   erzeugeGameState,

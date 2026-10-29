@@ -13,7 +13,9 @@
     "./zufriedenheit": "./dist/zufriedenheit.js",
     "./beschlüsse": "./dist/beschlüsse.js",
     "./kapital": "./dist/kapital.js",
-    "./budget": "./dist/budget.js"
+    "./budget": "./dist/budget.js",
+    "./ereignisse": "./dist/ereignisse.js",
+    "./tick": "./dist/tick.js"
   },
   "types": "./dist/index.d.ts",
   "scripts": {
