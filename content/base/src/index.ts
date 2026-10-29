@@ -1,9 +1,11 @@
 /**
- * @staatslenker/content-base — Basis-Regelsatz.
+ * @staatslenker/content-base — Basis-Regelsatz als TS-Objekte, validiert gegen dasselbe Zod-Schema
+ * wie YAML-Mod-Packs (ADR-003, US-M0-13).
  *
- * Inhalt wird gegen dasselbe Zod-Schema validiert wie YAML-Mod-Packs (ADR-003), damit
- * TS-Content und Modder dieselbe Wahrheit haben. Welches Indikator-Set und welche Gruppen
- * in M0 starten, ist eine Design-Entscheidung (docs/spielkonzept.md §9) — hier steht
- * bewusst noch kein Content.
+ * Dieses Modul liefert Daten und Schema, keine Mechanik: der Kern rechnet (core/tick), der Adapter
+ * (cli) baut aus diesem Pack den Regelsatz für den Tick. Die Zahlen stammen ausschließlich aus
+ * docs/balance-werte.md — siehe basis-pack.ts für die Quellen je Wert. Das Indikator-Set und die
+ * Gruppen sind seit PO D10 und dem Ruling zu §3 entschieden (8 Gruppen, §1-Startbild).
  */
-export const CONTENT_BASE_PLACEHOLDER = true;
+export * from './schema.js';
+export * from './basis-pack.js';
