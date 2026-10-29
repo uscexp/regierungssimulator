@@ -200,6 +200,27 @@ describe('Indikatorbewegung pro Jahr (FR-005/FR-006, US-M0-05)', () => {
     expect(unterhaltOhneEvents(kaputt, () => 70, SCHWIERIGKEIT_NORMAL, 'produktion')).toBe(0);
   });
 
+  it('meldet im Fehlerfall die Regel-Id des Content-Packs, nicht nur den Tag (FR-006)', () => {
+    const mitId = {
+      regel_id: 'regel:bildung_m0',
+      tag: 'bildung',
+      verschleiß: 2,
+      budget_wirkung: 0.6,
+      diminishing_at: 65,
+    } as unknown as IndikatorRegel;
+    expect(() => unterhaltOhneEvents([mitId], () => 70, SCHWIERIGKEIT_NORMAL)).toThrow(
+      /regel:bildung_m0/,
+    );
+    // Ohne Id (Kern-Fixture ohne Content-Schema) bleibt der Tag die Kennung.
+    const ohneId = {
+      tag: 'bildung',
+      verschleiß: 2,
+      budget_wirkung: 0.6,
+      diminishing_at: 65,
+    } as unknown as IndikatorRegel;
+    expect(() => unterhaltOhneEvents([ohneId], () => 70, SCHWIERIGKEIT_NORMAL)).toThrow(/bildung/);
+  });
+
   it('ein diminishing_at ohne diminishing_wirkung ist ein Content-Fehler: Dev wirft, Produktion wirkt 0 (FR-002, Lens-Finding zu PR #5)', () => {
     // `diminishing_wirkung` ist Pflichtfeld; der Cast modelliert kaputten geladenen Content.
     const kaputt = {

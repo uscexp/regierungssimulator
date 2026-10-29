@@ -33,6 +33,12 @@ export const SCHWIERIGKEIT_NORMAL: SchwierigkeitsPack = Object.freeze({
 /** Felder, die jede Indikator-Regel hat. */
 interface IndikatorRegelBasis {
   readonly tag: string;
+  /**
+   * Regel-Id aus dem Content-Pack (FR-006, PO-Plan D12: bis US-M0-13 war sie vertagt). Sie ist
+   * optional, damit Kern-Fixtures ohne Content-Schema weiterlaufen; mit ihr meldet der Dev-Wurf die
+   * echte Id statt nur `regel.tag`.
+   */
+  readonly regel_id?: string;
   /** sinkt pro Jahr ohne Budget */
   readonly verschleiß: number;
   /** Zuwachs pro BE Budget in diesem Indikator */
@@ -72,11 +78,12 @@ export function indikatorSchritt(
   levelVon: (tag: string) => number,
   modus: Modus = 'dev',
 ): number {
+  const kennung = regel.regel_id ?? regel.tag;
   if (regel.gate !== undefined) {
     const gateLevel = levelVon(regel.gate.indikator);
     if (!(Number.isFinite(gateLevel) && gateLevel >= regel.gate.min)) {
       // Stagnation: kein Wachstum, kein Verschleiß — der Level bleibt, Events wirken trotzdem.
-      return effektAnwenden(level, ereignis_delta, `gate:${regel.tag}`, modus);
+      return effektAnwenden(level, ereignis_delta, `gate:${kennung}`, modus);
     }
   }
 
@@ -91,7 +98,7 @@ export function indikatorSchritt(
   return effektAnwenden(
     level,
     budgetEffekt + ereignis_delta - verschleiß,
-    `indikator:${regel.tag}`,
+    `indikator:${kennung}`,
     modus,
   );
 }
@@ -106,7 +113,7 @@ function diminishingWirkung(regel: IndikatorRegel, modus: Modus): number {
   if (wirkung === undefined || !Number.isFinite(wirkung)) {
     if (modus === 'dev') {
       throw new TypeError(
-        `Indikator "${regel.tag}" hat diminishing_at ${regel.diminishing_at} ohne diminishing_wirkung`,
+        `Indikator "${regel.regel_id ?? regel.tag}" hat diminishing_at ${regel.diminishing_at} ohne diminishing_wirkung`,
       );
     }
     return 0;
