@@ -275,6 +275,9 @@ E ≥ 40 UND ≥ 2 Jahre vor einer Wahl → **Populismus-Fenster**: pro Jahr mus
 ### Kartenauswahl je Jahr (G12/G13) — entschieden via ADR-010 amendiert (Pädu, architektur.md)
 Autorität ist ADR-010 in der amendierten Fassung; Konzept und ADR haben dieselbe Regel: Slots pro Jahr = **Band 2–5** (Standard 3, 4 bei Legitimität ≥ 70, 2 bei politischem Kapital ≤ 2). Erzwungene Agenda-Slots aus G8/G10 werden **vor** dem Sampling besetzt und zählen in die Slot-Zahl. **Capped Coverage-Boden:** Der alte volle Coverage-Boden („eine Karte je unzufriedene Gruppe“) gilt nicht mehr — bei weniger Slots als unzufriedenen Gruppen werden die höchst-gewichteten Karten priorisiert; Agenda-Slots gelten als Coverage für die Gruppen, die sie adressieren. Ein 2-Slot-Jahr wird im News-Feed als „die Regierung ist schwach“ narriert; der Tick darf kein unplaybares Jahr erzeugen.
 
+### Wahlregel D12 (Gate — identischer Text in Spec, AC und balance-werte.md)
+Wahl gewonnen nur bei gewichteter Ø-Zufriedenheit ≥ 50 UND Zufriedenheit der schwächsten Gruppe ≥ 35; sonst Niederlage mit Ursache „Wahl verloren“. Ab M1/M3 gilt das §12-Originalmodell mit 8 Gruppen, der Gate bleibt derselbe. Zwei Konsequenzen: (1) bei M0-Start 48.33 (3 renormierte Gruppen) verliert der Spieler die Wahl in Jahr 4 ohne Wachstums-Investitionen — bewusste Druckwirkung, nicht ein Bug; (2) der Gate wird durch die schwächste Gruppe entschieden, nicht durch die Ø: bei „nur Wirtschaft\" bleibt die Ø hoch (~62–70), Bildung & Jugend fällt unter 35 → Verlust um Jahr 8 (bj ≈ 34.7), Anker „Verlust ≤ Jahr 12\" hält.
+
 ### G6 — Schwierigkeit = Parameter-Pack (bestätigt, keine neue Mechanik)
 Verschleiß-Multiplikator 0.7 / 1.0 / 1.3 · PK-Regeneration-Faktor 1.2 / 1.0 / 0.8 · Event-Wahrscheinlichkeits-Multiplikator 0.6 / 1.0 / 1.4 · Schuldenlimit 120 / 100 / 80 BE · Zinsfaktor 0.05 / 0.08 / 0.12 · Startbudget-Zuschuss/Jahr +10 / 0 / −10 BE.
 

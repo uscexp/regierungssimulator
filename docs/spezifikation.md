@@ -66,7 +66,7 @@ Jede Story ist genau einer Schicht aus `architektur.md §3` zugeordnet — der K
 |---|---|---|---|
 | FR-001 | `GameState` enthält: `indikatoren: Record<tag, number>`, Gruppen (Zufriedenheit + Gewicht), Budget, politisches Kapital, Legitimität, Schulden, Radikalisierung, Jahr, RNG-State, Konstitution und `zufriedenheits_trace` (Top-2 Delta-Gründe je Gruppe) | Architektur §3 + §3a, ADR-008 | core/state |
 | FR-002 | Nach jedem Tick gilt: alle Werte 0–100, kein NaN; Verstoß bricht im dev-Modus mit Regel-ID im Log | Architektur §5 | core/invariant |
-| FR-003 | `tick(state, action, rules, rng)` ist eine pure Funktion; der alte State wird nicht mutiert | ADR-002 | core/tick |
+| FR-003 | `tick(state, action, regeln, modus?)` ist eine pure Funktion; der alte State wird nicht mutiert; RNG liegt im GameState (ADR-006) | ADR-002 | core/tick |
 | FR-004 | Gleicher Seed + gleiche Action-Folge ⇒ identischer State (replaybar) | Konzept §5, Architektur §2 | core/RNG |
 | FR-005 | Indikatorbewegung pro Jahr exakt: `level += budget_wirkung + ereignis_delta − verschleiss` | Konzept §2A | core/tick |
 | FR-006 | Je Indikator sind Verschleiß (1–3/Jahr), budget_wirkung pro BE und `diminishing_at` definiert — Werte in `balance-werte.md` §2; Forschung stagniert bei Bildung < 50 (weder Wachstum noch Verschleiß), ab Bildung ≥ 50 +0.5/BE und −2/Jahr | Konzept §2A + §12 | content/base |
@@ -76,7 +76,7 @@ Jede Story ist genau einer Schicht aus `architektur.md §3` zugeordnet — der K
 | FR-010 | Steuerlast je Gruppe folgt aus dem Steuermodell der Konstitution (flat/progressiv/hoch/niedrig) | Konzept §3 | core/tick |
 | FR-011 | Karten kosten 1–3 politisches Kapital, Maximum 12; Regeneration/Jahr = Legitimität/10 × Schwierigkeitsfaktor (1.2/1.0/0.8), Minimum 1; ohne Kapital keine Karte | Konzept §4 + §12 | core/tick |
 | FR-012 | Einnahmen = Steuermodell × Wirtschaft; Zinsen werden zuerst vom Budget abgezogen; Defizit bis Schuldenlimit; darüber → Spar-Event und Finanzkrise-Trigger. Startkonfiguration *normal* = Steuermodell flat → 36 BE (M0-Balance-Anker) | Konzept §4.2 + §12 | core/tick |
-| FR-013 | In Demokratie findet alle N Jahre eine Wahl statt; verlorene Wahl ⇒ Niederlage | Konzept §4.5, §8 | core/events/wahl |
+| FR-013 | In Demokratie findet alle N Jahre eine Wahl statt; gewonnen nur bei gewichteter Ø-Zufriedenheit ≥ 50 UND Zufriedenheit der schwächsten Gruppe ≥ 35 (Unruhe-Gate, PO D12); verlorene Wahl ⇒ Niederlage | Konzept §4.5, §8, §12 | core/events/wahl |
 | FR-014 | Misstrauen (parlamentarisch) und Putsch-Roll (Diktatur) als Machtverlust-Rolls | Konzept §3 | core/tick |
 | FR-015 | Drei Regierungsformen mit Amtsmodus, Machtverlust und Sondermechanik | Konzept §3 | rules/regierung |
 | FR-016 | In parlamentarischer Form braucht ein Gesetz eine Mehrheit im Parlament; Fraktionen sind eine abgeleitete View (pure Funktion aus Gruppenzufriedenheit + Konstitution), zur Mehrheitprüfung im `tick` berechnet und nicht im State gespeichert | Konzept §3, §3a | core/tick |
@@ -180,7 +180,7 @@ Legende: **MoSCoW** (M=Must, S=Should, C=Could, W=Won't), **Größe** S = ≤ 2 
 | US-M0-08 | Als Spieler will ich, dass die letzten 3 Beschlüsse nachwirken, damit kurzfristige Konsequenzen sichtbar sind und „Optimal-Pflanzen“ verhindert wird. | core/state | M | M | FR-009 |
 | US-M0-09 | Als Spieler will ich, dass jede Entscheidung politisches Kapital kostet und sich nach Legitimität regeneriert, damit Machterhalt das Spielziel ist. | core/tick | M | S | FR-011 |
 | US-M0-10 | Als Spieler will ich Budget verteilen mit Einnahmen = Steuermodell × Wirtschaft und einem Schuldenlimit, damit Deficit eine Grenze hat. | core/tick | M | M | FR-012 |
-| US-M0-11 | Als Kern-Entwickler will ich `tick(state, action, rules, rng) → Snapshot` als pure Funktion mit Action-API als einziger Schreibstraße. | core/tick | M | M | FR-003 |
+| US-M0-11 | Als Kern-Entwickler will ich `tick(state, action, regeln, modus?) → Snapshot` als pure Funktion mit Action-API als einziger Schreibstraße. | core/tick | M | M | FR-003 |
 | US-M0-12 | Als Spieler will ich alle 4 Jahre eine Wahl, deren Verlust das Spiel beendet, damit der Kern-Loop ein Ende hat. | core/tick | M | M | FR-013 |
 | US-M0-13 | Als Content-Autor will ich den M0-Basis-Content (5 Indikatoren, 3 Gruppen, 5 Basis-Entscheidungen) als TS-Objekte gegen das Zod-Schema, damit der Loop spielbaren Content hat. | content/base | M | S | FR-034 |
 | US-M0-14 | Als Spieler will ich das Spiel komplett im Terminal spielen (Lagebericht → Budget → Karten → Auflösung → Machtcheck), damit M0 ohne UI abgenommen werden kann. | cli | M | M | FR-048 |
