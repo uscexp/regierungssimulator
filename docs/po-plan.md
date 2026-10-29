@@ -30,23 +30,10 @@ Summe Must+Should: **377 Tage** (Must allein 332, Could 27, alle 404) — Größ
 
 | Story | Status | PR | Review (Lens) | Test (Maya) |
 |---|---|---|---|---|
-| US-M0-01 (Scripts) | review OK, QA PASS | #1 | OK | FINAL PASS 6/6 — Maya bestätigt Own-Run (Basis Exit 0; 3 Drift-Varianten Exit 1 mit präziser Verletzungsliste; Kontrolle nach Rückbau Exit 0; Haupt-Clone nie mutiert) |
-| US-M0-02 (GameState) | review OK, QA bedingt | #2 | OK | BEDINGT PASS — F-02 offen, Tyrdor-Fix (budget-Finitheit) noch nicht gepushed; Merge erst nach Mayas Regression-PASS (NaN/Infinity/negatives budget + volle Suite) |
-| US-M0-03 (RNG) | review OK, QA PASS | #3 | OK | FINAL PASS 8/8 |
-| US-M0-04 (Clamp/Invariant) | review OK, QA PASS | #4 | OK | FINAL PASS 7/7 |
-| US-M0-05 (Indikatorbewegung) | blocked (Lens), Fix auf Stack-Tip | #5 | blocked — diminishing_wirkung fehlt im Fixture, Kern fiel auf ?? 0 (still 0 über 85) | Maya wartet Lens-OK; der Pflichtfeld-Fix ist 1653e7a auf feat/m0-11-tick und kommt in Merge-Reihenfolge über #11 |
-| US-M0-06 (Zufriedenheitsformel) | gebaut, wartet Review | #6 | — | — |
-| US-M0-07 (Steuermodell aus Konstitution) | gebaut, wartet Review | #7 | — | — |
-| US-M0-08 (Entscheidungsgedächtnis) | gebaut, wartet Review | #8 | — | — |
-| US-M0-09 (Politisches Kapital) | gebaut, wartet Review | #9 | — | — |
-| US-M0-10 (Budget, Zinsen, Spar-Event) | gebaut, wartet Review | #10 | — | — |
-| US-M0-11 (tick — Kern-Loop) | gebaut, wartet Review | #11 | — | — |
-
-S0-B gebaut von Tyrdor (PRs #6–#11, gestapelt): 88 Tests / 12 Files, typecheck/eslint/prettier/build/core-isolation grün. Zwei PO-Punkte offen, an Trix gemeldet: (a) Zufriedenheit am Jahrsanfang — Wahl prüft nach Events, vor Budget/Bewegung (§7-Lesart oder End-of-Year?), (b) Wahlregel als extern gereichte Callback vs. Regel-Id (Core-Kentbarkeit von Content).
-
-Lens-Gate = sein DM-Verdikt (GitHub-Account ist PR-Eigentümer, formale Approvals dort nicht möglich; Reviews als PR-Kommentare gepostet). Merge-Reihenfolge #1→#2→#3→#4 nach je Maya-Pass. Nicht-blockierende Follow-ups: #1 Isolation-Check rekursiv vor erstem Unterordner; #2 Start-Factory validiert budget-Finitheit (NaN-Budget passiert den Start). NFR-004 von Lens live belegt (Driftprobe → Exit 1 + Verletzungsliste). Mayas Cases für #5 müssen dokumentieren: Schwellenwert inklusiv, Gate liest jahresaktuell aktualisierte Level, regelreihenfolge-abhängig. Ralfs §12-Korrektur (95e2f51, nur im geteilten Checkout — GitHub-PR-Head 0e51024 enthält sie nicht) wird PO-seitig aus dem PR-Scope rausgehalten: PRs bleiben core/ + package.json, die §12-Zeilen erreichen main über Retos Docs-Worktree-Flow. Test-Zahlen aufgelöst (Mayas O-2): Stack-Tip #1–#4 = 27 Tests, Tyrdors 36 inkl. PR-#5-Branch. O-1 (AC sagen literal „tick"): Mayas Äquivalent-Primitives sind als interim ok, die AC-End-to-End-Prüfung greift ab US-M0-05/# end-to-end — kein Finding. QA-Harness persistiert in C:/Users/muell/qa-berichte/ (nicht im Repo; der Repo-AutoSim-Harness kommt mit US-M0-17).
-
-S0-A gesamt gebaut von Tyrdor: 27 Tests, typecheck/eslint/prettier grün, `npm run build` je Workspace, CLI bootet headless; PRs gestapelt (Basis = vorheriger Branch). Dokumentierte Abweichungen: AC-Kerne von US-M0-03/04 direkt gegen RNG bzw. Clamp/Invariant getestet (Tick ist S0-B); `npm test` baut vorher (Exports auf dist/); `app/` bis M5 kein Workspace.
+| US-M0-01 (Scripts: build-Tasks + Isolation-Checker) | dispatched | — | — | — |
+| US-M0-02 (GameState unveränderlich) | queued | — | — | — |
+| US-M0-03 (seedbarer RNG im GameState) | queued | — | — | — |
+| US-M0-04 (Clamp 0–100 + Invariant-Check) | queued | — | — | — |
 
 ## M0-Sprint-Zerlegung (Build-Order architektur.md §7)
 
@@ -77,13 +64,6 @@ S0-A gesamt gebaut von Tyrdor: 27 Tests, typecheck/eslint/prettier grün, `npm r
 | D7 | **Baseline-Commit `docs/` ausgeführt (ad0fb8e)** | Review-Artefacts + PO-Plan waren uncommitted; US-M0-01 ist bereits committet (c77d497) | Commit dem Build-Team überlassen | saubere Working-Tree-Baseline vor dem Build; Commit ist lokal und revertingbar |
 | D8 | **US-M0-01 auf „in progress“ zurückgestuft** (Retos AC-Audit, vom PO selbst bestätigt: root/core/cli package.json gelesen) | AC verlangt `npm run build` (kein build-Skript anywhere) und einen Isolation-Check mit Fehlschlag bei core→app/cli-Dependencies (Checker existiert nicht; Isolation real erfüllt) | als done führen, Checker ignorieren | Die M0-Gate-Baseline darf nicht auf einer Story stehen, die ihre eigene Akzeptanz nicht erfüllt; der Checker ist der NFR-004-Driftschutz. Beide Script-Arbeiten laufen in S0-A innerhalb des ~61-Tage-Budgets |
 | D9 | **Build-Go empfangen (Haui, 27. Okt) und S0-A dispatched** | Haui definiert die Team-Pipeline: Tyrdor (Game Developer) setzt Story um → PR → Lens (Code Reviewer) → bei OK Maya (QA) leitet Test-Cases aus der Story ab und testet → Fehler zurück an Tyrdor | PO baut selbst, Einzel-Agent ohne Review | Review + unabhängige QA vor Merge ist genau der Schutz, den die DoD (AC-Test, Golden-Test, Invariant) verlangt; PR-Branching erfordert Push der Docs-Baseline (ad0fb8e…f580c62) auf origin |
-| D10 | **M0-Basis-Content entschieden (US-M0-13)** | Spec sagt „5 Indikatoren, 3 Gruppen" ohne Namensliste; balance-werte.md §2/§3 liefert die Werte. **5 Indikatoren:** Infrastruktur, Bildung, Gesundheit, Wirtschaft, Forschung (Verschleiß 3/2/2/2/2, budget_wirkung 0.5/0.6/0.7/0.4/0.5, diminishing_at 70/65/75/80/85, Forschung-Gate Bildung ≥ 50, Start Wirtschaft 45 / übrige 40). Recht & Freiheit + Sicherheit sind nicht-per-Budget und bleiben M1/M3. **3 Gruppen:** Unternehmen, Arbeitnehmer, Bildung & Jugend — Anteile renormalisiert auf Σ=100 % (21.3/51.1/27.6 %), Indikatorgewichte renormalisiert auf die in M0 vorhandenen Tags (fehlende Tags entfallen), Steuerlast flat = 4. **5 Basis-Entscheidungen:** je eine Budget-Allokation pro Indikator. **Implizite Dependency dokumentiert:** US-M0-13 validiert „gegen das Zod-Schema", die Schema-Story ist US-M4-02 → minimaler Zod-Schema für Basis-Typen wird in M0 eingeführt, M4 erweitert ihn zum Pack-Format. @ralf validiert renormierte Start-Ø und die Naiv-Anker („nur Wirtschaft" verliert Wahl ≤ Jahr 12 bleibt mit Infrastruktur-Gewicht 0.30 auf Unternehmen erfüllt) | 3 andere Gruppen oder 5 volle Gruppen ohne Renormierung | Unternehmen muss drin sein (der Naiv-Anker hängt an dessen Infrastruktur-Gewicht); Gesundheitswesen/Landwirte wären Tag-subsets ohne Wirtschaft-Bildung-Spannung; Renormierung folgt der Loader-Normalisierung (K4 Safety-net) |
-| D11 | **Tyrdor beginnt S0-B sofort, ohne auf Reviews zu warten** | S0-A ist komplett gebaut, CI grün, GameState friert ein (PR #2); Tick + Zufriedenheitsformel sind reine Funktionen auf diesem State | wartend stehen bleiben | Serialisierung wartet auf Menschen, nicht auf Code; Merge-Disziplin bleibt Gate: kein S0-B-Merge auf main, bevor die zugehörigen S0-A-PRs Lens+Maya passiert haben; gestapelte Branches behalten die Build-Konsistenz |
-| D12 | **Unruhe-Gate in der M0-Wahlregel (US-M0-12) akzeptiert** (Ralfs Validierung von D10, von Hand nachgerechnet) | Mit den renormierten 3 Gruppen verliert „nur Wirtschaft" bei der einfachen Regel „gewichtete Ø ≥ 50" nie eine Wahl (Ø bleibt ~62–70; nur bildung_jugend fällt) → dominante Strategie offen. Ralfs Gate: **Wahl-Gewinn erfordert gewichtete Ø ≥ 50 UND schwächste Gruppe ≥ 35.** Nachgerechnet: Jahr 4 Gewinn (bj 40.4), Jahr 8 verloren (bj 34.7) → Anker „Verlust ≤ Jahr 12" hält. Start-Ø-M0-Anker = **48.33** (nicht 46 — 46 war das 8-Gruppen-Modell; 48.4 nutzte Summe 100.1, Tyrdors Fixtures rechnen mit 48.33). Keine Wert-Änderung nötig; **korrigierter** M0-Unterhalt: 17.19 BE/Jahr ohne aktives Forschung (wirtschaft 5.0 + infrastruktur 6.0 + bildung 3.33 + gesundheit 2.86 — Forschung gate-closed kostet keinen Unterhalt), 21.19 BE mit offenem Gate, Spielraum 18.81 BE. Ralfs (c)-Zahl „12.19" war eine Rechnung ohne wirtschaft; Tyrdors Formel-Test bestätigt 17.19 (balance §1 ist stale, Reto korrigiert). Ralf hat den Fehler bestätigt und D12 autorisiert — §12 auf exakt 17.19/21.19 gezogen (Commit 95e2f51), Anker „gleichmäßig investieren" hält bei 17.19 BE gegen 36 BE (Spielraum 18.81, ~14.8 wenn Forschung aktiv wird). Ab M1/M3: auf die §12-Originalgewichte zurückgehen, renormierte nur für M0 | Werte re-ankern auf Jahr 20; Gate erst in M2 | Der Gate ist evidenzbasiert (Ralfs Rechnung), schließt die dominante Strategie vor M2 und ist durch die Oppositions-Mechanik in M2 ohnehin implizit vorhanden |
-| D13 | **Forschung diminishing_wirkung über 85: final 0.20 (Ralfs Autorisierung, 40-%-Muster der §2-Tabelle)** | §12 hatte keinen abgesenkten Wert über diminishing_at 85. Ralf autorisiert **0.20** (40 % von 0.5 Grundwirkung — Muster: infra 0.5→0.2, bildung 0.6→0.25, wirtschaft 0.4→0.15). Trix interim 0.15 (Analog Wirtschaft) war dispatched, Tyrdor hat 0.15 gebaut, Ralfs finale Autorisierung vor S0-D-Freeze überschreibt auf 0.20. Balance-Update: Forschung-Zeile über 85 = 10.0 BE (2/0.20), Gesamtunterhalt mit aktivem Gate >85 = 27.19 BE gegen 36 BE Einnahmen (Spielraum 8.81 BE = 24 %). balance-werte.md §2 und K1-Tabelle auf final 0.20 gezogen. | 0.15 (Trix interim, Tyrdor baut) | 0.20 (Ralfs 40%-Muster, final) | Ralf ist Balance-Autorität; final vor S0-D-Freeze |
-| D14 | **Tick-Reihenfolge & Wahl-Zeitpunkt bestätigt wie gebaut (Zufriedenheit am Jahresanfang)** | §7/Spec-Story US-M0-07 dokumentiert „Zufriedenheit → Events → Wahl → Budget → Jahr + PK-Regeneration"; Wahl prüft damit den Zufriedenheitsstand nach den Events, vor Budget/Indikatorbewegung. Ralfs Gate-Anker (Jahr 4 Gewinn, Jahr 8 Verlust bei „nur Wirtschaft") ist auf genau diese Lesart gerechnet. Semantik: Der Machtcheck spiegelt die Stimmung am Wahltag — Investitionen des laufenden Jahres wirken erst aufs Folgejahr, das ist gewollte Feedback-Verzögerung und verhindert „investieren und sofort gewinnen“ | End-of-Year-Zufriedenheit für den Machtcheck | Re-Ankerung aller von Ralf gerechneten Werte nötig; die dokumentierte §7-Order ist autoritativ |
-| D15 | **WahlregelDelivery interim als injizierte Funktion (wahlPruefen), Architektur-Ruling durch @padu vor M1** | Kern bleibt content-agnostisch (ADR-002); Tyrdor reicht die Wahlprüfung als extern gereichte Funktion statt Regel-Id. Für M0 ok und gut testbar (Fixture A/B via CLI-Machtcheck, US-M0-12). M1-Gate verlangt „zwei Konstitutionen → nachweislich verschiedene Wahlmechanik" — damit muss die Delivery langfristig konstitutions-getrieben sein; injizierte Funktion erfüllt das, wenn der Adapter die Konstitutions-Regel auf die Funktion mappt. @padu entscheidet final (Funktion vs. Regel-Id im Regel-Register) | core liest Content-Regeln per Regel-Id | verletzte ADR-002 (Kern kennt Content); ohne Pädu-Ruling vor M1 würde die M1-Story auf eine nicht autorisierte Struktur gebaut |
-| D16 | **Tick-Signatur-Absweichung akzeptiert: rng im State, kein rng-Parameter** | Tyrdor baut tick(state, action, regeln, modus?) ohne rng-Parameter (ADR-006: RNG liegt im GameState); die Spec-Story-Linie nennt „tick(state, action, rules, rng)". Die State-owned RNG ist purer (Snapshot-Funktion ohne externen Input), AC-Kern „rein + seedbar" bleibt erfüllt. Reto korrigiert die Spec-/AC-Zeile zu tick(state, action, regeln) mit rng im State | rng-Parameter beibehalten | dokumentierte Architektur (ADR-006) schlägt die ältere Story-Formulierung; Spec-Konsistenz ist Retos BA-Auftrag |
 
 ## Risiken (Pre-Mortem, Kurzform)
 1. **Balance nicht balancierbar** (Konzept §11): erst der Harness zeigt es → S0-D ist der Entscheidungs Punkt; wenn Naiv-Strategien zu früh verlieren, justiert Ralf Werte, nicht Mechanik.
@@ -97,12 +77,9 @@ S0-A gesamt gebaut von Tyrdor: 27 Tests, typecheck/eslint/prettier grün, `npm r
 - ≥ 1 Krise ab M2 in ≥ 80 % der Runs (M2-Gate)
 - Session-Rahmen: 12–25 Jahre-Ziele, Hard-Cap 50
 
-
-| D17 | **ADR-011: Wahlregel als Content-Datum im Register (Rulung Pädu, Option 2)** | `wahlregel` wird Content-Datum im Regel-Register, der Kern interpretiert ein geschlossenes Variant-Set (praesidentialwahl: fixed Term + Schwelle; parlamentmehrheit: aus Fraktionen ab G3; putsch-roll: Elite/Militär-Zufriedenheit + Legitimität). Neue Mechanik = neuer typisierter Variant in Kern + Zod-Schema. ADR-011 im architektur.md register eingefügt. Tyrdors Interim (1) als Platzhalter bis M0, aber der Refactor muss vor M1-Content landen, sonst wandert der Golden-Hash an die injizierte Implementierung und bei jeder Adapter-Änderung. M2 ist davon nicht betroffen — Events laufen schon als gereichte Regeln durch die rules-Schiene, wahlregel nutzt dieselbe Delivery. | Option 1 (Funktion statt Regel-Id) | Pädu ist die Architektur-Autorität; D17 im Plan eintragen |
-
 ## S0-C Budget-Konflikt (§7 09–11)
 
-**Pipeline:** Tyrdor (Game Developer) → PR → Lens (Code Reviewer) → bei OK Maya (QA) leitet Test-Cases aus der Story ab und testet → Fehler zurück an Tyrdor. Merge nur nach Lens-OK + Maya-Pass. PR-Branching erfordert Push der Docs-Baseline.
+**Pipeline:** Tyrdor (Game Developer) → PR → Lens (Code Reviewer) → bei OK Maya (QA) leitet Test-Cases aus der Story ab und testet → Fehler zurück an Tyrdor. Merge nur nach Lens-OK + Maya-Pass. PR-Branching erfordert Push der Docs-Baseline (ad0fb8e…f580c62) auf origin.
 
 ### Sprint-Status S0-C
 
@@ -136,7 +113,7 @@ S0-A gesamt gebaut von Tyrdor: 27 Tests, typecheck/eslint/prettier grün, `npm r
 - Game-Over-Bedingungen (Bankrott, Verlust bei konstanter Fahrlässigkeit)
 
 ### Merge-Reihenfolge
-#6 → #7 → #8 → #9 → #10 → #11 → #12
+`#6 → #7 → #8 → #9 → #10 → #11 → #12`
 Je PR: Lens OK + Maya PASS.
 
 ### QA über S0-C
@@ -147,53 +124,4 @@ Maya läuft nach Lens-OK. Test-Cases aus den Stories + AC (docs/akzeptanzkriteri
 2. Optional: Checkout-Fix für geteiltes Repository (sieht Retos Worktree-Kanal als erledigt an).
 
 ---
-**Status:** S0-C ist aktiv gestartet. Die Stories #9–#11 beginnen nach #8. Checkout-Fix wurde durchgeführt und Main ist aufgeräumt.
-EOT
-## S0-C Budget-Konflikt (§7 09–11)
-
-**Pipeline:** Tyrdor (Game Developer) → PR → Lens (Code Reviewer) → bei OK Maya (QA) leitet Test-Cases aus der Story ab und testet → Fehler zurück an Tyrdor. Merge nur nach Lens-OK + Maya-Pass. PR-Branching erfordert Push der Docs-Baseline.
-
-### Sprint-Status S0-C
-
-| Story | Status | PR | Review (Lens) | Test (Maya) |
-|---|---|---|---|---|
-| US-M0-06 (Zufriedenheitsformel) | implemented | #6 | — | — |
-| US-M0-07 (Steuermodell) | implemented | #7 | — | — |
-| US-M0-08 (Entscheidungsgedächtnis) | implemented | #8 | — | — |
-| US-M0-09 (Politisches Kapital) | pending | #9 | — | — |
-| US-M0-10 (Budget/Zinsen/Spar-Event) | pending | #10 | — | — |
-| US-M0-11 (tick) | implemented | #11 | — | — |
-| US-M0-12 (Wahl mit Unruhe-Gate) | pending | #12 | — | — |
-
-### S0-C Inhalt (§7-Reihenfolge 09–11)
-
-**09 Politisches Kapital (PK)**
-- Machbarkeit von PK-Gewinn durch Appeasement vs. Opposition
-- PK als Währung für Entscheidungen und Agenda-Slots
-- Ereignis-Karten: PK-Gewinn/Verlust, Koalitionsdruck
-- PK-Entzug bei Nicht-Erfüllung von Agenda-Slots
-
-**10 Budget-Konflikt**
-- Priorisierung von Budget-Allokationen bei knapper Ressource
-- Konflikt zwischen "gleichmäßig investieren" und "fokussiertes Wachstum"
-- Ereignis: Finanzkrise bei Budget-Überschreitung
-- Entscheidungs-Mechanik: Sparen vs. Investieren
-
-**11 Fail-Fast**
-- Frühe Warning-Mechanik bei systemischem Versagen
-- Automatische Ereignisse bei langfristigem Verfall
-- Game-Over-Bedingungen (Bankrott, Verlust bei konstanter Fahrlässigkeit)
-
-### Merge-Reihenfolge
-#6 → #7 → #8 → #9 → #10 → #11 → #12
-Je PR: Lens OK + Maya PASS.
-
-### QA über S0-C
-Maya läuft nach Lens-OK. Test-Cases aus den Stories + AC (docs/akzeptanzkriterien.md). Failure Cases für Budget-Konflikt und Fail-Fast-Mechanik dokumentieren. Harness: C:/Users/muell/qa-berichte/ (persistiert nach jedem Merge).
-
-### Offene Fragen für Haui
-1. S0-C Scope: Sollen #9–#11 sofort nach #8 gestartet werden, oder gibt es Abhängigkeiten zu beachten?
-2. Optional: Checkout-Fix für geteiltes Repository (sieht Retos Worktree-Kanal als erledigt an).
-
----
-**Status:** S0-C ist aktiv gestartet. Die Stories #9–#11 beginnen nach #8. Checkout-Fix wurde durchgeführt und Main ist aufgeräumt.
+**Status:** S0-C steht als Entwurf im po-plan.md. Nach deiner Freigabe werden die PRs erstellt und der Merge-Prozess beginnt.
