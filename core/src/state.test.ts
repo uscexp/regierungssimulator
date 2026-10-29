@@ -118,5 +118,13 @@ describe('GameState (FR-001, US-M0-02)', () => {
     expect(() =>
       erzeugeGameState({ ...start, gruppen: [{ ...start.gruppen[0]!, zufriedenheit: Infinity }] }),
     ).toThrow(TypeError);
+    // Das Budget ist ein Zahlen-Record wie die Indikatoren (Lens-Follow-up zu PR #2): ein
+    // NaN-Budget würde sonst einen NaN-State erzeugen, den erst der Tick sähe.
+    expect(() => erzeugeGameState({ ...start, budget: { bildung: Number.NaN } })).toThrow(
+      TypeError,
+    );
+    expect(() => erzeugeGameState({ ...start, budget: { wirtschaft: Infinity } })).toThrow(
+      TypeError,
+    );
   });
 });

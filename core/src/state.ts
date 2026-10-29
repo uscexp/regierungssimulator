@@ -115,6 +115,13 @@ export function erzeugeGameState(konfiguration: Startkonfiguration): GameState {
       throw new TypeError(`Start-State: Indikator "${tag}" ist nicht endlich`);
   }
 
+  // Das Budget ist ein Zahlen-Record wie die Indikatoren: ein NaN-Budget würde sonst einen
+  // NaN-State erzeugen, den erst der Invariant-Check nach dem ersten Tick sähe (FR-002).
+  for (const [tag, wert] of Object.entries(konfiguration.budget)) {
+    if (!Number.isFinite(wert))
+      throw new TypeError(`Start-State: Budget "${tag}" ist nicht endlich`);
+  }
+
   for (const gruppe of konfiguration.gruppen) {
     if (!Number.isFinite(gruppe.zufriedenheit) || !Number.isFinite(gruppe.bevölkerungsanteil)) {
       throw new TypeError(`Start-State: Gruppe "${gruppe.tag}" hat nicht-endliche Werte`);
