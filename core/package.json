@@ -11,7 +11,8 @@
     "./invariant": "./dist/invariant.js",
     "./indikatoren": "./dist/indikatoren.js",
     "./zufriedenheit": "./dist/zufriedenheit.js",
-    "./beschlüsse": "./dist/beschlüsse.js"
+    "./beschlüsse": "./dist/beschlüsse.js",
+    "./kapital": "./dist/kapital.js"
   },
   "types": "./dist/index.d.ts",
   "scripts": {
