@@ -76,7 +76,7 @@ Jede Story ist genau einer Schicht aus `architektur.md §3` zugeordnet — der K
 | FR-010 | Steuerlast je Gruppe folgt aus dem Steuermodell der Konstitution (flat/progressiv/hoch/niedrig) | Konzept §3 | core/tick |
 | FR-011 | Karten kosten 1–3 politisches Kapital, Maximum 12; Regeneration/Jahr = Legitimität/10 × Schwierigkeitsfaktor (1.2/1.0/0.8), Minimum 1; ohne Kapital keine Karte | Konzept §4 + §12 | core/tick |
 | FR-012 | Einnahmen = Steuermodell × Wirtschaft; Zinsen werden zuerst vom Budget abgezogen; Defizit bis Schuldenlimit; darüber → Spar-Event und Finanzkrise-Trigger. Startkonfiguration *normal* = Steuermodell flat → 36 BE (M0-Balance-Anker) | Konzept §4.2 + §12 | core/tick |
-| FR-013 | In Demokratie findet alle N Jahre eine Wahl statt; gewonnen nur bei gewichteter Ø-Zufriedenheit ≥ 50 UND Zufriedenheit der schwächsten Gruppe ≥ 35 (Unruhe-Gate, PO D12); verlorene Wahl ⇒ Niederlage | Konzept §4.5, §8, §12 | core/events/wahl |
+| FR-013 | In Demokratie findet alle N Jahre eine Wahl statt; gewonnen nur bei gewichteter Ø-Zufriedenheit ≥ 47 UND Zufriedenheit der schwächsten Gruppe ≥ 35 (Unruhe-Gate, PO D12; Schwelle und Zyklus nach dem S0-D-Harness-Befund auf 47 bzw. N = 6 gezogen, PO D18); verlorene Wahl ⇒ Niederlage | Konzept §4.5, §8, §12 | core/events/wahl |
 | FR-014 | Misstrauen (parlamentarisch) und Putsch-Roll (Diktatur) als Machtverlust-Rolls | Konzept §3 | core/tick |
 | FR-015 | Drei Regierungsformen mit Amtsmodus, Machtverlust und Sondermechanik | Konzept §3 | rules/regierung |
 | FR-016 | In parlamentarischer Form braucht ein Gesetz eine Mehrheit im Parlament; Fraktionen sind eine abgeleitete View (pure Funktion aus Gruppenzufriedenheit + Konstitution), zur Mehrheitprüfung im `tick` berechnet und nicht im State gespeichert | Konzept §3, §3a | core/tick |
@@ -181,12 +181,12 @@ Legende: **MoSCoW** (M=Must, S=Should, C=Could, W=Won't), **Größe** S = ≤ 2 
 | US-M0-09 | Als Spieler will ich, dass jede Entscheidung politisches Kapital kostet und sich nach Legitimität regeneriert, damit Machterhalt das Spielziel ist. | core/tick | M | S | FR-011 |
 | US-M0-10 | Als Spieler will ich Budget verteilen mit Einnahmen = Steuermodell × Wirtschaft und einem Schuldenlimit, damit Deficit eine Grenze hat. | core/tick | M | M | FR-012 |
 | US-M0-11 | Als Kern-Entwickler will ich `tick(state, action, regeln, modus?) → Snapshot` als pure Funktion mit Action-API als einziger Schreibstraße. | core/tick | M | M | FR-003 |
-| US-M0-12 | Als Spieler will ich alle 4 Jahre eine Wahl, deren Verlust das Spiel beendet, damit der Kern-Loop ein Ende hat. | core/tick | M | M | FR-013 |
+| US-M0-12 | Als Spieler will ich alle 6 Jahre eine Wahl, deren Verlust das Spiel beendet, damit der Kern-Loop ein Ende hat. | core/tick | M | M | FR-013 |
 | US-M0-13 | Als Content-Autor will ich den M0-Basis-Content (5 Indikatoren, 3 Gruppen, 5 Basis-Entscheidungen) als TS-Objekte gegen das Zod-Schema, damit der Loop spielbaren Content hat. | content/base | M | S | FR-034 |
 | US-M0-14 | Als Spieler will ich das Spiel komplett im Terminal spielen (Lagebericht → Budget → Karten → Auflösung → Machtcheck), damit M0 ohne UI abgenommen werden kann. | cli | M | M | FR-048 |
 | US-M0-15 | Als Spieler will ich im CLI einen textuellen Lagebericht pro Turn, damit die Zahlen erzählt statt getabellt werden. | cli | S | S | FR-041 |
 | US-M0-16 | Als QA will ich einen Golden-Replay-Test (fester Seed → 100 Jahre → State-Hash) im CI, damit Determinismus-Regressionen sofort auffallen. | cli/test | M | M | FR-004, NFR-001 |
-| US-M0-17 | als Balance-Analyst will ich den AutoSim-Harness (3 Naiv-Strategien × 20 Seeds × 30 Jahre), damit die Formel vor dem Content balanciert wird. | cli | M | M | FR-049 |
+| US-M0-17 | als Balance-Analyst will ich den AutoSim-Harness (4 Naiv-Strategien × 20 Seeds × 30 Jahre), damit die Formel vor dem Content balanciert wird. | cli | M | M | FR-049 |
 | US-M0-18 | als Balance-Analyst will ich den Score-Spread als Fixture im Repo, damit jede spätere Regel gegen eine Baseline geprüft wird. | cli/test | S | S | FR-049 |
 
 **Abhängigkeiten M0:** US-M0-02 → US-M0-11 → US-M0-14; US-M0-06 hängt an US-M0-05 und US-M0-07. Gate-Storys: US-M0-14, US-M0-16, US-M0-17.
@@ -339,7 +339,7 @@ Legende: **MoSCoW** (M=Must, S=Should, C=Could, W=Won't), **Größe** S = ≤ 2 
 | A-04 | Mod-Packs werden als Datei distribuiert (Import), kein Online-Pack-Repo | Annahme | UI-Import-Flow nötig (US-M4-11) |
 | A-05 | Zielgeräte: Desktop-Browser + Tablet; Chrome/Firefox/Safari aktueller Stand | Annahme (BA) | Layout-Arbeit in M5-13 |
 | A-06 | Barrierefreiheit: WCAG AA für das Dashboard | Annahme (BA) | zusätzlich S, M5-14 |
-| A-07 | Ziel-Session 12–25 Jahre-Schritte, Hard-Cap 50 Jahre, danach Score-Ende (von Ralf korrigiert) | real (Konzept §12) | Score- und Schulden-Kurve ist im 50-Jahre-Rahmen balanciert (Spar-Zone ab ~Jahr 15 bei normal) |
+| A-07 | Ziel-Session 12–25 Jahre-Schritte, Hard-Cap 50 Jahre, danach Score-Ende (von Ralf korrigiert) | real (Konzept §12) | Score- und Schulden-Kurve ist im 50-Jahre-Rahmen balanciert (Spar-Zone ab ~Jahr 15 bei normal); der M0-Core-Loop endet gemessen Jahr 6 — das Ziel gilt ab M1/M2 (D18) |
 | A-08 | Turn-Ausführung ist synchron (kein Async-Work im Tick) | Annahme | Determinismus-Garantie bleibt |
 | C-01 | Einzelspieler, diskreter Jahres-Turn, kein Echtzeit | real (Konzept §10) | kein Streaming/Echtzeit im Kern |
 | C-02 | Seedbarer Zufall/Replaybarkeit | real (Konzept §5/§9) | RNG im State, kein crypto.random für Gameplay |

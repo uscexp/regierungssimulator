@@ -192,7 +192,7 @@ Der Grundsatz: **im GameState steht nur persistent Kern-Zustand; alles Ableitbar
 ## 7. Build-Order (was zuerst gebaut wird, um am schnellsten zu lernen)
 
 1. **core: state + tick + rng + invariant.ts** + vitest-Golden-Test (Seed → Hash). *Lernt: ist die Zufriedenheitsformel balancierbar?*
-2. **cli-Runner (M0-Akzeptanz):** ganzes Spiel im Terminal durchspielbar + AutoSim-Harness (3 Naiv-Strategien × 20 Seeds × 30 Jahre). *Balance-Fundament vor Content — wie im Konzept priorisiert.*
+2. **cli-Runner (M0-Akzeptanz):** ganzes Spiel im Terminal durchspielbar + AutoSim-Harness (4 Naiv-Strategien × 20 Seeds × 30 Jahre, seit D18 inkl. overspend). *Balance-Fundament vor Content — wie im Konzept priorisiert.*
 3. **Zod-Regel-Schema + TS-Content:** Konstitutionen (M1), Event-Ketten Pandemie/Finanzkrise/Radikalisierung (M2), Katalog ~30 Karten (M3).
 4. **YAML-Loader + Beispiel-Pack (M4):** neuer Pack mit Gruppe+Decision ohne Code-Änderung, atomische Validierung.
 5. **Svelte-Dashboard (M5):** Snapshots konsumieren, Vorhersage per Dry-Run-Tick, News-Feed, Heatmap, Tooltips.
