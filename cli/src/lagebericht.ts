@@ -120,19 +120,13 @@ export function lagebericht(
       `Radikalisierung ${fmtInt(state.radikalisierung)}.`,
   );
 
-  // Das Entscheidungsgedächtnis (FR-006/FR-009) — die Beschlüsse, die noch wirken. Eine
-  // Budget-Allokation ohne Karte (PO-Ruling zu US-M0-14) hat keine Wirkungseinträge: sie wird als
-  // Entscheidung des Jahres gerendert, nicht als Wirkung, die bis einem Jahr läuft.
+  // Das Entscheidungsgedächtnis (FR-006/FR-009) — die Beschlüsse, die noch wirken. Nur Beschlüsse
+  // mit Wirkung kommen hierher; eine Budget-Allokation ist kein Gedächtnis-Entry (Pädu-Ruling zu
+  // PR #20) und wird unten als Allokation des Turns gerendert.
   const aktive = state.beschlüsse.filter((b) => b.wirkt_bis_jahr >= state.jahr);
   if (aktive.length > 0) {
     zeilen.push(
-      `Beschlüsse (${aktive.length}): ${aktive
-        .map((b) =>
-          b.wirkung.length === 0
-            ? `${b.regel_id} (Beschluss Jahr ${b.wirkt_bis_jahr - b.wirkdauer_jahre + 1}, ohne Nachwirkung)`
-            : `${b.regel_id} bis Jahr ${b.wirkt_bis_jahr}`,
-        )
-        .join(', ')}.`,
+      `Beschlüsse (${aktive.length}): ${aktive.map((b) => `${b.regel_id} bis Jahr ${b.wirkt_bis_jahr}`).join(', ')}.`,
     );
   }
 

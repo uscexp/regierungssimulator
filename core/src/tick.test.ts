@@ -192,21 +192,25 @@ describe('tick — ein Jahr Simulation (FR-001, US-M0-11)', () => {
     expect(deepcopy(state)).toEqual(vorher);
   });
 
-  it('eine Budget-Allokation ohne Karte kommt ins Gedächtnis — ohne PK und ohne Wirkungseintrag (PO-Ruling zu US-M0-14)', () => {
+  it('eine Budget-Allokation-Action schreibt kein Gedächtnis-Entry und verändert keine Zahl (Pädu-Ruling zu PR #20)', () => {
     const state = stateMit({ politisches_kapital: 5 });
-    const ergebnis = tick(
+    const mitAktion = tick(
       state,
       { zuteilung: { bildung: 12 }, budget_allokation: { regel_id: 'entscheidung:bildung' } },
       regelnMit({ ereignis_regeln: [] }),
     );
+    const ohneAktion = tick(
+      state,
+      { zuteilung: { bildung: 12 } },
+      regelnMit({ ereignis_regeln: [] }),
+    );
 
-    expect(ergebnis.state.beschlüsse).toHaveLength(1);
-    expect(ergebnis.state.beschlüsse[0]!.regel_id).toBe('entscheidung:bildung');
-    expect(ergebnis.state.beschlüsse[0]!.wirkung).toHaveLength(0);
-    // Kein PK-Verbrauch: nur die Regeneration am Jahresende (Legitimität 50 / 10 = 5).
-    expect(ergebnis.state.politisches_kapital).toBe(5 + 5);
-    // Die Bewegung macht die budget_wirkung des Indikators, nicht der Beschluss.
-    expect(ergebnis.state.indikatoren.bildung).toBe(40 + 0.6 * 12 - 2);
+    // Das Gedächtnis ist ein Gameplay-Objekt: ein wirkungsloser Eintrag wäre Rauschen zwischen
+    // echten Gesetzen und würde den Active-Bestand des Golden-Replays verändern.
+    expect(mitAktion.state.beschlüsse).toHaveLength(0);
+    expect(mitAktion.state.politisches_kapital).toBe(ohneAktion.state.politisches_kapital);
+    expect(mitAktion.state.indikatoren).toEqual(ohneAktion.state.indikatoren);
+    expect(mitAktion.state.jahr).toBe(ohneAktion.state.jahr);
   });
 
   it('der Tick meldet die gekürzten BE des Budget-Schritts im Ergebnis (FR-041, §1/§6)', () => {

@@ -78,14 +78,13 @@ describe('Lagebericht erzählt die Lage', () => {
     expect(text).toContain('karte:infra_ausbau bis Jahr 3');
   });
 
-  it('nennt eine Budget-Allokation im Gedächtnis als Entscheidung ohne Nachwirkung (PO-Ruling zu US-M0-14)', () => {
+  it('zeigt im Bericht nur Beschlüsse mit Wirkung — eine Allokation erscheint nicht im Gedächtnis (Pädu-Ruling zu PR #20)', () => {
     const ergebnis = turn(startState(1234), regeln, {
       zuteilung: gleichmaessig,
       entscheidung_id: 'entscheidung:bildung',
     });
-    expect(ergebnis.lagebericht_nach).toContain(
-      'entscheidung:bildung (Beschluss Jahr 1, ohne Nachwirkung)',
-    );
+    expect(ergebnis.lagebericht_nach).not.toContain('Beschlüsse (');
+    expect(ergebnis.lagebericht_nach).toContain('Beschlüsse dieses Jahres:');
   });
 
   it('nennt die Allokationen des Turns als Beschlüsse dieses Jahres (PO-Ruling zu US-M0-14)', () => {

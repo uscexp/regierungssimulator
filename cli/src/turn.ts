@@ -124,10 +124,9 @@ export function turn(
   const entscheidung = entscheidungAusId(eingabe.entscheidung_id)!;
   const lagebericht_vorher = lagebericht(state, regeln);
 
-  // Die Basis-Entscheidung ist eine Budget-Allokation ohne Karte (PO D10, PO-Ruling zu US-M0-14):
-  // keine PK-Kosten, keine Wirkungseinträge. Der Tick schreibt sie als Beschluss ins Gedächtnis —
-  // sichtbar für Spieler, Debugging und Replay — die Bewegung macht die `budget_wirkung` des
-  // Indikators im Bewegungsschritt.
+  // Die Basis-Entscheidung ist eine Budget-Allokation ohne Karte (PO D10, Pädu-Ruling zu PR #20):
+  // keine PK-Kosten, kein Gedächtnis-Entry. Die Bewegung macht die `budget_wirkung` des Indikators,
+  // die Kürzung meldet `gekuerzte_be`, und die Transparenz für den Spieler macht der Lagebericht.
   const ergebnis = tick(
     state,
     { zuteilung: eingabe.zuteilung, budget_allokation: { regel_id: entscheidung.regel_id } },

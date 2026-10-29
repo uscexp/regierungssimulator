@@ -17,18 +17,18 @@ const regeln = tickRegelnFür('normal');
 const gleichmaessig = { infrastruktur: 2, bildung: 2, gesundheit: 2, wirtschaft: 2, forschung: 2 };
 
 describe('Ein Turn führt den Kern-Loop', () => {
-  it('rückt das Jahr vor und schreibt die Basis-Entscheidung ins Gedächtnis (PO-Ruling zu US-M0-14)', () => {
+  it('rückt das Jahr vor, ohne die Allokation ins Gedächtnis zu schreiben (Pädu-Ruling zu PR #20)', () => {
     const state = startState(1234);
     const ergebnis = turn(state, regeln, {
       zuteilung: gleichmaessig,
       entscheidung_id: 'entscheidung:bildung',
     });
     expect(ergebnis.ergebnis.state.jahr).toBe(2);
-    // PO D10 + Ruling: die Allokation ist ein Beschluss ohne Karte — kein PK, keine Wirkungseinträge.
-    expect(ergebnis.ergebnis.state.beschlüsse).toHaveLength(1);
-    expect(ergebnis.ergebnis.state.beschlüsse[0]!.regel_id).toBe('entscheidung:bildung');
-    expect(ergebnis.ergebnis.state.beschlüsse[0]!.wirkung).toHaveLength(0);
+    // Das Gedächtnis bleibt leer: eine Allokation ist keine Karte und kein wirkungsloser Beschluss —
+    // die Transparenz macht der Lagebericht ("Beschlüsse dieses Jahres: …"), nicht der State.
+    expect(ergebnis.ergebnis.state.beschlüsse).toHaveLength(0);
     expect(ergebnis.entscheidung.indikator).toBe('bildung');
+    expect(ergebnis.lagebericht_nach).toContain('Beschlüsse dieses Jahres:');
     expect(ergebnis.spielende).toBe(false);
   });
 
