@@ -10,9 +10,10 @@ import {
 
 /**
  * M0-Content-Werte aus docs/balance-werte.md §2 (autoritativ, PO D10). Der Kern kennt nur die
- * Struktur — diese Regeln sind Fixture, nicht Kern-Konstanten.
- * Forschung: diminishing_at 85 ist dokumentiert, der abgesenkte Wert darüber nicht — deshalb
- * testet dieser Fall nur Level unter 85 (Ambiguität an Trix/Pädu gemeldet).
+ * Struktur — diese Regeln sind Fixture, nicht Kern-Konstanten. Forschung über 85 wirkt 0.20/BE —
+ * der von Ralf autorisierte finale Wert aus PO D13 (40 % der Grundwirkung, das Diminishing-Muster
+ * der §2-Tabelle: infra 0.5→0.2, bildung 0.6→0.25, wirtschaft 0.4→0.15). Der interim 0.15 ist
+ * damit obsolet.
  */
 const regeln: readonly IndikatorRegel[] = Object.freeze([
   {
@@ -48,6 +49,7 @@ const regeln: readonly IndikatorRegel[] = Object.freeze([
     verschleiß: 2,
     budget_wirkung: 0.5,
     diminishing_at: 85,
+    diminishing_wirkung: 0.2,
     gate: { indikator: 'bildung', min: 50 },
   },
 ]);
@@ -169,5 +171,57 @@ describe('Indikatorbewegung pro Jahr (FR-005/FR-006, US-M0-05)', () => {
     expect(
       unterhaltOhneEvents(regeln, (tag) => (tag === 'bildung' ? 55 : 0), SCHWIERIGKEIT_NORMAL),
     ).toBeCloseTo(21.19, 2);
+  });
+
+  it('Forschung über 85 wirkt mit dem von Ralf autorisierten finalen Wert 0.20/BE (PO D13)', () => {
+    const offen = (tag: string) => (tag === 'bildung' ? 55 : 88);
+    const neu = indikatorSchritt(regeln[4]!, 88, 10, 0, SCHWIERIGKEIT_NORMAL, offen);
+    expect(neu).toBe(88 + 0.2 * 10 - 2);
+  });
+
+  it('Unterhalt über diminishing_at nutzt die abgesenkte Wirkung: Forschung über 85 = 10 BE, gesamt 27.19 BE (0.20)', () => {
+    const über85 = (tag: string) => (tag === 'bildung' ? 55 : tag === 'forschung' ? 88 : 40);
+    // Ralfs autorisierte Anker: 17.19 BE ohne Forschung, 21.19 mit offenem Gate ≤ 85, 27.19 über 85.
+    expect(unterhaltOhneEvents(regeln, über85, SCHWIERIGKEIT_NORMAL)).toBeCloseTo(
+      17.19 + 2 / 0.2,
+      2,
+    );
+    // Ein Level über der Schwelle ohne abgesenkten Wert ist ein Content-Fehler (FR-002). Im
+    // Fixture ist das ein Typfehler — der Cast modelliert kaputten geladenen Content (YAML).
+    const kaputt: readonly IndikatorRegel[] = [
+      {
+        tag: 'bildung',
+        verschleiß: 2,
+        budget_wirkung: 0.6,
+        diminishing_at: 65,
+      } as unknown as IndikatorRegel,
+    ];
+    expect(() => unterhaltOhneEvents(kaputt, () => 70, SCHWIERIGKEIT_NORMAL)).toThrow(/bildung/);
+    expect(unterhaltOhneEvents(kaputt, () => 70, SCHWIERIGKEIT_NORMAL, 'produktion')).toBe(0);
+  });
+
+  it('ein diminishing_at ohne diminishing_wirkung ist ein Content-Fehler: Dev wirft, Produktion wirkt 0 (FR-002, Lens-Finding zu PR #5)', () => {
+    // `diminishing_wirkung` ist Pflichtfeld; der Cast modelliert kaputten geladenen Content.
+    const kaputt = {
+      tag: 'bildung',
+      verschleiß: 2,
+      budget_wirkung: 0.6,
+      diminishing_at: 65,
+    } as unknown as IndikatorRegel;
+    expect(() =>
+      indikatorSchritt(kaputt, 70, 10, 0, SCHWIERIGKEIT_NORMAL, () => 40, 'dev'),
+    ).toThrow(/indikator:bildung|bildung/);
+
+    const produktion = indikatorSchritt(
+      kaputt,
+      70,
+      10,
+      0,
+      SCHWIERIGKEIT_NORMAL,
+      () => 40,
+      'produktion',
+    );
+    // Über der Schwelle wirkt nichts statt der Grundwirkung — das Level sinkt nur um den Verschleiß.
+    expect(produktion).toBe(70 - 2);
   });
 });
