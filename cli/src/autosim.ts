@@ -1,7 +1,7 @@
 /**
  * @staatslenker/cli autosim — der Balance-Harness (US-M0-13, FR-011).
  *
- * Runnt den Kern-Loop `tick(state, action, regeln, 'dev')` für 3 Naiv-Strategien × 20 Seeds ×
+ * Runnt den Kern-Loop `tick(state, action, regeln, 'dev')` für 4 Naiv-Strategien × 20 Seeds ×
  * 30 Jahre × 3 Schwierigkeits-Packs und druckt Jahreskurven plus Summary. Der Harness rechnet
  * keine eigene Simulation — alle Zahlen kommen aus `tick` bzw. den core-Funktionen
  * (`einnahmenBe`, `zinsenBe`, `gewichteteZufriedenheit`, `unterhaltOhneEvents`); das Pack ist
@@ -41,7 +41,7 @@ export const SCHWIERIGKEITEN: readonly SchwierigkeitId[] = ['leicht', 'normal', 
  */
 export const STRATEGIEN: Readonly<
   Record<
-    'gleichmaessig' | 'infrastruktur_zuerst' | 'bildung_zuerst',
+    'gleichmaessig' | 'infrastruktur_zuerst' | 'bildung_zuerst' | 'overspend',
     Readonly<Record<IndikatorTag, number>>
   >
 > = Object.freeze({
@@ -57,6 +57,16 @@ export const STRATEGIEN: Readonly<
   infrastruktur_zuerst: Object.freeze({ infrastruktur: 4, wirtschaft: 2 }),
   /** 4 BE Bildung + 2 BE Infrastruktur. */
   bildung_zuerst: Object.freeze({ bildung: 4, infrastruktur: 2 }),
+  /** Ralfs Probe für die Deficit-Spirale (§6): 14 BE über dem Einnahmen-Satz — bei „schwer“
+   * bleibt nach Unterhalt 22.35 BE nur 26 − 22.35 = 3.65 BE Spielraum, also ein Defizit von
+   * 10.35 BE/Jahr. Damit wird das Spar-Event (Schulden ≥ Limit 80) in einem Naiv-Lauf erreichbar. */
+  overspend: Object.freeze({
+    infrastruktur: 3,
+    bildung: 3,
+    gesundheit: 3,
+    wirtschaft: 3,
+    forschung: 2,
+  }),
 });
 export const STRATEGIE_IDS: readonly string[] = Object.keys(STRATEGIEN);
 
@@ -257,7 +267,7 @@ export function alleLäufe(jahre: number = MAX_JAHRE): SimErgebnis[] {
 
 function main(): void {
   console.log(
-    'AutoSim US-M0-13 — 3 Naiv-Strategien × 20 Seeds × 30 Jahre × 3 Schwierigkeits-Packs',
+    'AutoSim US-M0-13 — 4 Naiv-Strategien × 20 Seeds × 30 Jahre × 3 Schwierigkeits-Packs',
   );
   console.log(...ankerZeilen());
   for (const schwierigkeit of SCHWIERIGKEITEN) {

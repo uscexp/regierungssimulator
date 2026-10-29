@@ -169,28 +169,28 @@ describe('Naiv-Kurve durch den echten Tick (dev-Modus, Invarianten ohne Wurf)', 
     expect(jahr1.pk).toBe(10);
   });
 
-  it('Jahr-4-Wahl = verloren mit grund_id "wahl:gewichtete_unter_50" (US-M0-12 Anker)', () => {
-    const lauf = runSim('gleichmaessig', 1, 'normal', 4);
+  it('Jahr-6-Wahl = verloren mit grund_id "wahl:gewichtete_unter_47" (PO-Ruling: Schwelle 47, Zyklus 6)', () => {
+    const lauf = runSim('gleichmaessig', 1, 'normal', 8);
     const wahl = lauf.wahlen[0]!;
-    expect(wahl.jahr).toBe(4);
+    expect(wahl.jahr).toBe(6);
     expect(wahl.gewonnen).toBe(false);
-    expect(wahl.grund_id).toBe('wahl:gewichtete_unter_50');
-    expect(lauf.jahre_survived).toBe(4);
+    expect(wahl.grund_id).toBe('wahl:gewichtete_unter_47');
+    expect(lauf.jahre_survived).toBe(6);
     expect(lauf.final_state.wahl_niederlage).toEqual({
-      jahr: 4,
-      grund_id: 'wahl:gewichtete_unter_50',
+      jahr: 6,
+      grund_id: 'wahl:gewichtete_unter_47',
     });
   });
 
-  it('alle Naiv-Kombinationen verlieren die Jahr-4-Wahl und überleben genau 4 Jahre', () => {
+  it('alle Naiv-Kombinationen verlieren die Jahr-6-Wahl und überleben genau 6 Jahre', () => {
     for (const lauf of alleLäufe(30)) {
-      expect(lauf.jahre_survived).toBe(4);
+      expect(lauf.jahre_survived).toBe(6);
       expect(lauf.wahlen.length).toBe(1);
       expect(lauf.wahlen[0]!.gewonnen).toBe(false);
-      expect(lauf.first_deficit_year).toBeNull(); // Zuteilung ≤ 10 BE gegen Einnahmen 26–46 BE
+      expect(lauf.first_deficit_year).toBeNull(); // Deficit = Ausgaben − (Einnahmen − Zinsen); Unterhalt ist keine Budget-Ausgabe (§2/AC US-M0-10)
       expect(lauf.first_spar_year).toBeNull(); // Schulden bleiben 0 → kein Spar-Event (§6)
     }
-    expect(STRATEGIE_IDS.length).toBe(3);
+    expect(STRATEGIE_IDS.length).toBe(4);
   });
 });
 

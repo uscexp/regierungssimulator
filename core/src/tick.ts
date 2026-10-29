@@ -97,8 +97,10 @@ export interface TickErgebnis {
   readonly unterhalt_be: number;
 }
 
-/** Standard-Wahlzyklus aus AC US-M0-12 (Machtcheck alle 4 Jahre). */
-export const WAHL_INTERVALL = 4;
+/** Standard-Wahlzyklus (PO-Ruling nach dem AutoSim-Befund: 6 Jahre statt 4). Ein Pack deklariert
+ * seinen eigenen Zyklus über `regeln.wahl_intervall`; dieser Wert ist nur der Default, damit ein
+ * Pack nicht zwei Zahlen für denselben Zyklus schreibt (cli/content-pack importiert ihn). */
+export const WAHL_INTERVALL = 6;
 
 /**
  * Ein Jahr Simulation. Wirft bei einem illegalen Action (Karte ohne genug PK, negative Allokation)

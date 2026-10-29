@@ -182,8 +182,10 @@ export const SCHWIERIGKEIT_PACKS: Readonly<
 /** Das "normal"-Pack des Kern-Fixtures ist identisch mit §9 — eine Instanz der Zahlen. */
 export const SCHWIERIGKEIT_NORMAL: SchwierigkeitsPack = SCHWIERIGKEIT_PACKS.normal;
 
-/** US-M0-12: Machtcheck alle 4 Jahre — der Zyklus ist Content (`wahl_intervall` im Tick). */
-export const WAHL_INTERVALL = 4;
+/** US-M0-12: Der Machtcheck-Zyklus ist Content (`wahl_intervall` im Tick) und wird aus der Wahlregel
+ * des Packs abgeleitet — Zyklus und Regel können nicht auseinanderfallen (Tick und Adapter prüfen
+ * denselben Wert; ein Auseinanderfallen wäre der Lens-Fund zu PR #12). */
+export const WAHL_INTERVALL = WAHLREGEL_M0.intervall_jahre;
 
 /** G11: News-Vorlagen sind Pack-Content. Das Spar-Event (Id `sparen`, §6) ist der einzige Event,
  * den der Tick ohne M2-Event-Regeln selbst erzeugt. */
