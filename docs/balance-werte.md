@@ -28,21 +28,21 @@ Startwerte (Schwierigkeit *normal*): Wirtschaft 45, übrige Indikatoren 40.
 | Bildung | 2 | +0.6 | 65 (darüber +0.25) | 3.33 BE |
 | Gesundheit | 2 (korrigiert, war 3) | +0.7 | 75 (darüber +0.2) | 2.86 BE |
 | Wirtschaft | 2 | +0.4 | 80 (darüber +0.15) | 5.00 BE |
-| Forschung | 2 (korrigiert, war 3) | +0.5 | 85 | 4.00 BE — nur aktiv bei Bildung ≥ 50, siehe Gate unten |
+| Forschung | 2 (korrigiert, war 3) | +0.5 | 85 (darüber +0.20, D13 final autorisiert von Ralf — 0.10 verworfen) | 4.00 BE — nur aktiv bei Bildung ≥ 50, siehe Gate unten |
 
 **K3 korrigiert durch Ralf (neue Gate-Regel):** bei Bildung < 50 *stagniert* Forschung — weder Wachstum noch Verschleiß, sie bleibt auf ihrem Level (Start 40). Bei Bildung ≥ 50 wirkt +0.5/BE und −2/Jahr. Damit ist Bildung → Forschung eine echte Freischalt-Abhängigkeit: Bildung braucht +10 Level = 16.67 BE Budget, bevor Forschung überhaupt beweglich wird.
 | Recht & Freiheit | 1 | nur Gesetze | — | nicht per Budget |
 | Sicherheit | 2 | nur Gesetze | — | nicht per Budget |
 
-**K1 korrigiert durch Ralf — die Rechnung ist jetzt konsistent:** Unterhalt ohne Forschung = 6.0 + 3.33 + 2.86 + 5.0 = **17.19 BE/Jahr** (Ralf: 17.2). Mit aktivem Forschung = **21.19 BE/Jahr** (Ralf: 21.2).
+**K1 korrigiert durch Ralf — die Rechnung ist jetzt konsistent:** Unterhalt ohne Forschung = 6.0 + 3.33 + 2.86 + 5.0 = **17.19 BE/Jahr** (Ralf: 17.2). Mit aktivem Forschung ≤ 85 = **21.19 BE/Jahr** (Ralf: 21.2). Mit aktivem Forschung > 85 (diminishing 0.20/BE, D13 final) = **27.19 BE/Jahr** (Forschung-Zeile 10.0 BE + Basis 17.19 BE). Einnahmen flat 36 BE → Spielraum 8.81 BE (über 85) bzw. 14.81 BE (≤ 85).
 
-| Schwierigkeit | Verschleiß× | Unterhalt ohne Forschung | Unterhalt mit Forschung | Einnahmen (flat, inkl. Zuschuss) | Spielraum |
-|---|---|---|---|---|---|
-| leicht | 0.7 | 12.03 BE | 14.83 BE | 46 BE | 33.97 BE |
-| normal | 1.0 | 17.19 BE | 21.19 BE | 36 BE | 18.81 BE |
-| schwer | 1.3 | 22.35 BE | 27.55 BE | 26 BE | 3.65 BE |
+| Schwierigkeit | Verschleiß× | Unterhalt ohne Forschung | Unterhalt mit Forschung (≤85) | Unterhalt mit Forschung (>85) | Einnahmen (flat, inkl. Zuschuss) | Spielraum (≤85) | Spielraum (>85) |
+|---|---|---|---|---|---|---|---|
+| leicht | 0.7 | 12.03 BE | 14.83 BE | 19.03 BE | 46 BE | 31.17 BE | 26.97 BE |
+| normal | 1.0 | 17.19 BE | 21.19 BE | 27.19 BE | 36 BE | 14.81 BE | 8.81 BE |
+| schwer | 1.3 | 22.35 BE | 27.55 BE | 35.35 BE | 26 BE | -1.55 BE | -9.35 BE |
 
-Bei *schwer* bleibt nur 3.65 BE Spielraum für Wachstum und Krisen — die von Ralf erwartete Deficit-Spirale ab Jahr ~10–12 ist damit rechnerisch plausibel.
+Bei *leicht* bleibt der Spielraum auch bei Forschung > 85 komfortabel (26.97 BE); *normal* hat bei Forschung ≤ 85 14.81 BE Spielraum und bei > 85 noch 8.81 BE (24 %); *schwer* ist bei Forschung ≤ 85 bereits negativ (−1.55 BE) und bei Forschung > 85 (0.20/BE) deutlich negativ (−9.35 BE) — die von Ralf erwartete Deficit-Spirale ab Jahr ~10–12 ist damit rechnerisch plausibel; Forschung über 85 verschärft sie spürbar.
 
 ## 3. Gruppen: Anteile, Gewichte, Steuerlast
 
@@ -65,6 +65,8 @@ Gewichte je Gruppe Σ = 1 (nachgerechnet ✓). Steuerlast als direkter Abzug auf
 
 Baseline ohne Konstitutions-Modifikatoren = 10; Konstitution moduliert ±8.
 Bei Startlevel 40 und Gewicht Σ=1: Grundzufriedenheit = 10 + 40 = **50**. Mit Steuerlast flat (Abzug 4, Unternehmen 4): **46** je Gruppe. Gewichtete Ø-Zufriedenheit der Bevölkerung bei flat: **46.0** (der früher berechnete Wert 50.6 kam von den fehlerhaften 110 % Anteile).
+
+**M0-Anker (3 Gruppen, D10/D12):** M0-Basis-Content nutzt Unternehmen · Arbeitnehmer · Bildung & Jugend mit renormierten Anteilen 21.3 / 51.1 / 27.6 % (Σ = 100 %) und renormierten Gewichten auf die in M0 vorhandenen Tags; Start Wirtschaft 45, übrige 40, Steuerlast flat 4 → Unternehmen 49.24 · Arbeitnehmer 49.21 · Bildung & Jugend 46.0, gewichtete Ø = **48.33** (nicht 48.4 — 48.4 nutzte Summe 100.1). Die Formel normalisiert über die echte Summe; Tyrdors Fixtures rechnen mit den normierten Anteilen. Schwächste Gruppe 46.0. Der Unruhe-Gate für Wahlen ist identisch in Spec/AC/Konzept: Wahl gewonnen nur bei gewichteter Ø-Zufriedenheit ≥ 50 UND Zufriedenheit der schwächsten Gruppe ≥ 35. Bei 48.33 Start verliert der Spieler die Wahl in Jahr 4 ohne Investitionen — bewusste Druckwirkung. Ab M1/M3 gilt das §12-Originalmodell mit 8 Gruppen, der Gate bleibt derselbe.
 
 ## 5. Politisches Kapital
 

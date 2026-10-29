@@ -51,8 +51,8 @@ core/          Deterministische Simulations-Engine — reines TypeScript, kein D
   state.ts     GameState: Indikatoren, Gruppen, Budget, PK, Legitimität,
                Schulden, Radikalisierung, Jahr, RNG-State, Konstitution,
                zufriedenheits_trace (Top-2 Delta-Gründe je Gruppe, ADR-008)
-  tick.ts      tick(state, action, rules, rng) → neuer State + Events + News-Einträge
-               — PURE Funktion; State wird nicht mutiert, sondern als Snapshot erzeugt
+  tick.ts      tick(state, action, regeln, modus?) → neuer State + Events + News-Einträge
+               — PURE Funktion; State wird nicht mutiert, sondern als Snapshot erzeugt; RNG liegt im GameState (ADR-006)
   rules.ts     Regel-Typen + ZOD-Schema (decision/event/constitution/gruppe/wahlregel)
   eval.ts      Bedingungs-Auswertung: typisierte Prädikate ({ wirtschaft: "<40" }),
                KEINE generische Expression-Interpreter-Schicht
@@ -69,7 +69,7 @@ app/           Svelte-UI — Adapter, sieht nur Snapshots und sendet Actions
 **Die zentrale Kante:** UI und CLI sind *Adapter* auf denselben Kern. Der Kern kennt kein DOM, keine UI, kein localStorage. M0 (Text-UI) und M5 (Dashboard) sind zwei Adapter auf derselben Engine — der Kern wird nie ein zweites Mal geschrieben.
 
 **Datenfluss eines Turns:**
-1. UI sendet Action (Budget-Verteilung, Kartenwahl) → `tick(state, action, rules)`
+1. UI sendet Action (Budget-Verteilung, Kartenwahl) → `tick(state, action, regeln, modus?)`
 2. Tick wendet Konstitution-Modifikatoren, Budget-Wirkung, Verschleiß an → Indikatoren
 3. Zufriedenheitsformel aus Konzept §2B wird als eine reine Funktion implementiert (Gewicht-Matrix + additive Modifier — exakt wie im Konzept, keine Extras)
 4. Event-Registry prüft Bedingungen, würfelt mit seedbarem RNG, öffnet Ketten/Options
