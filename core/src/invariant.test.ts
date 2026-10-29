@@ -103,7 +103,9 @@ describe('Clamp + Invariant-Check (FR-002, US-M0-04)', () => {
       stateMit({ wirtschaft: 45 }, { politisches_kapital: PK_MAX + 1 }),
       stateMit({ wirtschaft: 45 }, { schulden: -5 }),
       stateMit({ wirtschaft: 45 }, { jahr: 0 }),
-      stateMit({ wirtschaft: 45 }, { budget: { infrastruktur: -1 } }),
+      // Budget ≥ 0 prüft schon die Start-Factory (Maya F-02) — der Invariant-Probe braucht darum
+      // einen Snapshot ohne Factory: der Check muss die Verletzung auch nach dem Tick finden.
+      korruptSnapshot({ budget: { infrastruktur: -1 } }),
       stateMit({ wirtschaft: 45 }, { legitimitaet: 101 }),
     ];
 
