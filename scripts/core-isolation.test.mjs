@@ -1,3 +1,6 @@
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
 import {
@@ -48,5 +51,24 @@ describe('core-Isolation (NFR-004, ADR-002)', () => {
 
   it('das reale Repo ist aktuell isoliert', () => {
     expect(pruefeRepoIsolation(process.cwd())).toEqual([]);
+  });
+
+  it('ein Unterordner in core/src wird rekursiv gescannt (Lens-Follow-up zu PR #1)', () => {
+    const wurzel = mkdtempSync(join(process.env.TMPDIR ?? tmpdir(), 'iso-drift-'));
+    mkdirSync(join(wurzel, 'core', 'src', 'content'), { recursive: true });
+    writeFileSync(join(wurzel, 'core', 'package.json'), JSON.stringify({ dependencies: {} }));
+    writeFileSync(
+      join(wurzel, 'core', 'src', 'content', 'deep.ts'),
+      "import { render } from '../../../cli/src/render.ts';\nexport const x = render;",
+    );
+    writeFileSync(
+      join(wurzel, 'core', 'src', 'sauber.ts'),
+      "import './state.js';\nexport const y = 1;",
+    );
+
+    const verletzungen = pruefeRepoIsolation(wurzel);
+    expect(verletzungen).toHaveLength(1);
+    expect(verletzungen[0]).toContain('src/content/deep.ts');
+    rmSync(wurzel, { recursive: true, force: true });
   });
 });

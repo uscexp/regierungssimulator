@@ -76,7 +76,19 @@ export function importsAusQuelle(quelle) {
   return found.filter(Boolean);
 }
 
-/** Prüft das echte Repo: core/package.json + alle core/src/*.ts Dateien. */
+/** Alle .ts-Dateien unter einem Verzeichnis, rekursiv, ohne node_modules/dist. */
+function dateienUnter(verzeichnis) {
+  const fund = [];
+  for (const eintrag of readdirSync(verzeichnis, { withFileTypes: true })) {
+    if (eintrag.name === 'node_modules' || eintrag.name === 'dist') continue;
+    const pfad = join(verzeichnis, eintrag.name);
+    if (eintrag.isDirectory()) fund.push(...dateienUnter(pfad));
+    else if (eintrag.name.endsWith('.ts')) fund.push(pfad);
+  }
+  return fund;
+}
+
+/** Prüft das echte Repo: core/package.json + alle .ts-Dateien unter core/src (rekursiv). */
 export function pruefeRepoIsolation(repoWurzel) {
   const coreWurzel = join(repoWurzel, 'core');
   const packageJsonPf = join(coreWurzel, 'package.json');
@@ -88,11 +100,13 @@ export function pruefeRepoIsolation(repoWurzel) {
   const srcDir = join(coreWurzel, 'src');
   const imports = [];
   if (existsSync(srcDir)) {
-    for (const datei of readdirSync(srcDir)) {
-      if (!datei.endsWith('.ts')) continue;
-      const quelle = `src/${datei}`;
-      for (const pfad of importsAusQuelle(readFileSync(join(srcDir, datei), 'utf8'))) {
-        imports.push({ pfad, quelle });
+    // Rekursiv: sobald core/ Unterordner hat (z. B. src/content/, src/save/), darf ein Import
+    // aus einem Unterordner nicht ungeprüft bleiben — ein flacher readdirSync wäre eine still
+    // übersehene Drift (Lens-Follow-up zu PR #1).
+    for (const datei of dateienUnter(srcDir)) {
+      const quelle = relative(srcDir, datei).replaceAll('\\', '/');
+      for (const pfad of importsAusQuelle(readFileSync(datei, 'utf8'))) {
+        imports.push({ pfad, quelle: `src/${quelle}` });
       }
     }
   }
