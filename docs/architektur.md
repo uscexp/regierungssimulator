@@ -105,6 +105,14 @@ Das Regel-Register ist ein Modul **im Kern** (`core/rules.ts`): Regel-Typen + Zo
 
 **Scope US-M1-01:** ja, das Register-Modul (`core/rules.ts`) ist Teil von US-M1-01 (Layer laut Spec: core/rules) — Typen + Schema + refine + Lookup. Der Loader bleibt M4 und validiert Packs gegen dieses Schema.
 
+**Verdikt D21 (Pädu, constitution-Shape zu Tyrdors Follow-up `feat/m1-01-vokabular`):**
+- `sofort_effekte` als `Record<gruppe_tag, delta>`: angenommen — der Record ist per Schlüssel eindeutig, die Array-Eindeutigkeits-Refine ist überflüssig; delta-Grenze −100…100 bleibt (Invariant-Stil).
+- `steuermodell` ∈ flat/progressiv/hoch/niedrig: angenommen — exakt Konzept §3.
+- Refine „mindestens eine Änderung" im `regelsatz_modifikator`: angenommen — leerer Modifikator ist Rauschen.
+- `regelsatz_modifikator` ist **Pflichtfeld**, nicht optional — Konzept §3 verspricht „jede Entscheidung mit dauerhaftem Regelsatz-Modifikator", und dieses Versprechen ist der Balance-Guard, der das Setup relevant macht (M1-Gate: zwei Konstitutionen ändern Mechanik). Symbolische Nur-Baseline-Entscheidungen sind erst gültig, wenn Ralf §3/§12 revidiert.
+- Entscheidungs-Ids: Pattern-Feld `^[a-z][a-z0-9_]*$` (snake_case wie die Kern-Tags), kein enum — konsistent mit D20/M4; „Grundrechte" (Großbuchstabe) wird korrekt abgelehnt.
+- `beschreibung` Pflichtfeld: architektonisch begünstigt — M5-Karten und News-Templates (G11) referenzieren Entscheidungstext; ohne Pflichtfeld fehlen Karten Titel. Retos Wortlaut bleibt Requirements-Autorität, aber ein Fall zu „optional" braucht dann einen M5-Text-Ersatz.
+
 ---
 
 ## 4. Tech-Stack
