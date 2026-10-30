@@ -15,6 +15,7 @@
     "typecheck": "tsc -p tsconfig.json",
     "check:core-isolation": "node scripts/check-core-isolation.mjs",
     "golden:replay": "npm run build && node scripts/generate-replay-golden.mjs && npx prettier --write cli/fixtures/replay.golden.ts",
+    "golden:spread": "npm run build && node scripts/generate-score-spread.mjs && npx prettier --write cli/fixtures/score-spread.golden.ts",
     "test": "npm run build && vitest run",
     "test:watch": "vitest",
     "lint": "eslint .",
