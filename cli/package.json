@@ -13,6 +13,7 @@
     "./repl": "./dist/repl.js",
     "./cli-options": "./dist/cli-options.js",
     "./replay": "./dist/replay.js",
+    "./naiv-kurven": "./dist/naiv-kurven.js",
     "./score-spread": "./dist/score-spread.js",
     "./vorhersage": "./dist/vorhersage.js"
   },
