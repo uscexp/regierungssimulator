@@ -11,7 +11,8 @@
     "./lagebericht": "./dist/lagebericht.js",
     "./turn": "./dist/turn.js",
     "./repl": "./dist/repl.js",
-    "./cli-options": "./dist/cli-options.js"
+    "./cli-options": "./dist/cli-options.js",
+    "./replay": "./dist/replay.js"
   },
   "types": "./dist/index.d.ts",
   "scripts": {
