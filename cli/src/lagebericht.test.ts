@@ -132,4 +132,45 @@ describe('Lagebericht erzählt die Lage', () => {
     expect(text).toContain('zufriedenheit:level');
     expect(text).toContain('-2.4');
   });
+
+  it('zeigt die frühe Warnung vor dem Machtcheck (§7/S0-C Punkt 11)', () => {
+    const ergebnis = turn(startState(1234), regeln, {
+      zuteilung: gleichmaessig,
+      entscheidung_id: 'entscheidung:infrastruktur',
+    });
+    expect(ergebnis.lagebericht_nach).toContain(
+      'Prognose: bei unveränderter Zuteilung verliert der Machtcheck Jahr 6',
+    );
+    expect(ergebnis.lagebericht_nach).toContain('wahl:gewichtete_unter_47');
+  });
+
+  it('lässt die Warnung weg, wenn die Prognose keinen Verlust vorhersagt (§7 Punkt 11)', () => {
+    const ergebnis = turn(startState(1234), regeln, {
+      zuteilung: gleichmaessig,
+      entscheidung_id: 'entscheidung:infrastruktur',
+    });
+    const text = lagebericht(ergebnis.ergebnis.state, regeln, { prognose: null });
+    expect(text).not.toContain('Prognose:');
+  });
+
+  it('warnet nicht mehr, wenn das Spiel schon verloren ist (§7 Punkt 11)', () => {
+    let state = startState(1234);
+    for (let jahr = 1; jahr <= 6; jahr++) {
+      const ergebnis = turn(state, regeln, {
+        zuteilung: gleichmaessig,
+        entscheidung_id: 'entscheidung:infrastruktur',
+      });
+      state = ergebnis.ergebnis.state;
+    }
+    const text = lagebericht(state, regeln, {
+      prognose: {
+        jahr: 12,
+        grund_id: 'wahl:gewichtete_unter_47',
+        gewichtete_zufriedenheit: 38.2,
+        schwächste_gruppe: 'arbeitnehmer',
+      },
+    });
+    expect(text).not.toContain('Prognose:');
+    expect(text).toContain('Spiel beendet');
+  });
 });

@@ -16,6 +16,7 @@ import type { NewsEintrag, TickErgebnis, TickRegeln } from '@staatslenker/core/t
 import type { GameState } from '@staatslenker/core/state';
 import { schwächsteGruppe } from '@staatslenker/core/wahl';
 import { gewichteteZufriedenheit } from '@staatslenker/core/zufriedenheit';
+import type { Prognose } from './vorhersage.js';
 
 /** Der Steueranker des M0-Packs ist `flat` (§1, K2) — der Bericht nutzt dasselbe Modell wie der Tick. */
 const STEUERMODELL_M0 = 'flat' as const;
@@ -45,6 +46,12 @@ export interface LageberichtOptionen {
   readonly gekuerzte_be?: number;
   /** Die Allokationen des Turns in BE — der Bericht nennt sie, weil die Basis-Entscheidung eine Allokation ist (PO-Ruling zu US-M0-14). */
   readonly allokation?: Readonly<Record<string, number>>;
+  /**
+   * Die Vorhersage des nächsten verlorenen Machtchecks (§7/S0-C Punkt 11) — ein Dry-Run des echten
+   * Ticks mit derselben Zuteilung (ADR-009). Der Bericht zeigt sie nur, wenn sie existiert; eine
+   * erfundene Warnung gibt es nicht.
+   */
+  readonly prognose?: Prognose | null;
 }
 
 export function lagebericht(
@@ -159,6 +166,16 @@ export function lagebericht(
     const intervall = regeln.wahl_intervall ?? 6;
     const naechster = Math.ceil((state.jahr + 1) / intervall) * intervall;
     zeilen.push(`Nächster Machtcheck: Jahr ${naechster} (Zyklus ${intervall} Jahre).`);
+  }
+
+  // Die frühe Warnung (§7/S0-C Punkt 11): der Dry-Run des echten Loops sagt den verlorenen
+  // Machtcheck vorher, den diese Zuteilung erzeugt. Nur wenn er existiert — sonst keine Warnung.
+  const prognose = optionen.prognose ?? null;
+  if (prognose !== null && state.wahl_niederlage === undefined) {
+    zeilen.push(
+      `Prognose: bei unveränderter Zuteilung verliert der Machtcheck Jahr ${prognose.jahr} — ` +
+        `${prognose.grund_id} (Ø ${fmt(prognose.gewichtete_zufriedenheit)}, schwächste ${prognose.schwächste_gruppe}).`,
+    );
   }
 
   if (state.wahl_niederlage !== undefined) {

@@ -13,7 +13,8 @@
     "./repl": "./dist/repl.js",
     "./cli-options": "./dist/cli-options.js",
     "./replay": "./dist/replay.js",
-    "./score-spread": "./dist/score-spread.js"
+    "./score-spread": "./dist/score-spread.js",
+    "./vorhersage": "./dist/vorhersage.js"
   },
   "types": "./dist/index.d.ts",
   "scripts": {
