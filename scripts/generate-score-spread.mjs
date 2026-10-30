@@ -2,8 +2,9 @@
  * Generiert das Score-Spread-Fixture für US-M0-18 (FR-049).
  *
  * Der Report kommt aus dem echten Harness (`scoreSpreadReport` über alle Läufe), nicht von Hand
- * abgeschrieben. `npm run build` muss vorher laufen. Aufruf:
- *   npm run build && node scripts/generate-score-spread.mjs
+ * abgeschrieben. `npm run build` muss vorher laufen. Der npm-Script normalisiert danach das
+ * Format mit Prettier — ein bare `node`-Aufruf liefert Prettier-unformes Format:
+ *   npm run golden:spread
  */
 import { mkdirSync, writeFileSync } from 'node:fs';
 
