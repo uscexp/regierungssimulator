@@ -89,6 +89,20 @@ Der Grundsatz: **im GameState steht nur persistent Kern-Zustand; alles Ableitbar
 - **G11 — News-Feed:** News-Einträge werden im `tick` aus deterministischen Templates erzeugt; Templates sind Pack-Content (tags), Variantenwahl über den seedbaren RNG. Kein LLM, kein seedloses Rauschen — News gehören damit in den Tick-Ausgaben und in den Golden-Hash.
 - **Budget-Allokation (PR #20 Ruling):** Budget-Allokation bleibt eine Tick-Action und wird über `TickErgebnis` narrativiert (`gekuerzte_be`-Durchreichung — Tick-Ausgabe ist transient, kein State-Schema-Change). Sie wird **nicht** als wirkungsloser Eintrag mit leerer `wirkung` ins Entscheidungsgedächtnis geschrieben: das Gedächtnis ist ein Effekte-Objekt (`effekteAusBeschlüsse`), wirkungslose Einträge verwässern es mit Nicht-Effekten, kosten Snapshot-Bytes und würden künftige Regeln, die Beschlüsse zählen (Agenda-/Populismus-Mechanik, News-Templates), mit Budget-Rauschen infizieren. Transparenz kommt aus dem Action-Log (ADR-005) bzw. einem Adapter-Store bis M6; ein eigenes Snapshot-Feld ist nicht nötig (§3a: ableitbar, schon im State). Wenn Budget-Beschlüsse *nachhaltig* in die Zufriedenheit sollen, ist das eine Content-Entscheidung mit echter `wirkung` — keine wirkungslose Kern-Action.
 
+### 3b. Regel-Register-Kanons (US-M1-01 — Pädu-Kanon, Feldnamen aus dem bestehenden Kern)
+
+Das Regel-Register ist ein Modul **im Kern** (`core/rules.ts`): Regel-Typen + Zod-Schema + Lookup nach Typ/Tag. Das Schema liegt im Kern, **nicht** in `content/base` — content/base enthält Regel-*Instanzen*, die gegen das Kern-Schema validieren; der Loader (M4) importiert das Schema aus core (Adapter→Kern erlaubt, Kern→Adapter verboten, ADR-002).
+
+`wahlregel` = discriminated union über `typ` (closed Variant-Set, ADR-011):
+
+- **praesidentialwahl** `{ regel_id, typ: 'praesidentialwahl', intervall_jahre, gewichtete_min, schwächste_min }` — Feldnamen = bestehende `core/wahl.ts` Wahlregel (`intervall_jahre`, `gewichtete_min`, `schwächste_min`; D18-Werte 6/47/35), ergänzt um `regel_id` (die `grund_id` der Wahlprüfung referenziert die Regel-Id). Der Wahl-Gate gilt für **alle** Demokratie-Formen (FR-013) — auch den Kanzler; der Variant-Name bindet nicht an die Regierungsform. Kein `term_jahre`: das bestehende Feld ist `intervall_jahre`.
+- **parlamentmehrheit** `{ regel_id, typ: 'parlamentmehrheit', mehrheit: number }` mit mehrheit ∈ [0.5, 1] — Gesetzes-Mehrheit (FR-016). **Keine Fraktions-Ids in Regeln**: Fraktionen sind abgeleitete Views (G3/§3a) ohne stabile Identität; Ids wären fragil. Der Anteil wird gegen die tick-abgeleitete Fraktions-Support-Summe geprüft.
+- **putsch_roll** `{ regel_id, typ: 'putsch_roll', elite_min, militaer_min, legitimitaet_min, wahrscheinlichkeit }` — Bedingung: `(elite < elite_min ODER militaer < militaer_min) UND (legitimitaet < legitimitaet_min)` ⇒ seedbarer Roll mit `wahrscheinlichkeit` (Wert: Ralf über balance-werte, G6–G10). `elite`/`militaer` sind Gruppen-Tags aus Content (US-M1-09: „Elite“ als eigene Gruppe); Feldnamen ASCII nach Kern-Stil (`legitimitaet` wie im State).
+
+**regierung** `{ regel_id, typ: 'regierung', form: 'praesidential'|'parlamentarisch'|'diktatur', amt: { modus: 'fixed_term'|'zyklisch'|'keins', jahre?: number }, machtverlust: 'wahl'|'misstrauen'|'putsch' }` mit refine exakt wie vorgeschlagen: praesidential ⇒ wahl + fixed_term mit jahre > 0; parlamentarisch ⇒ misstrauen; diktatur ⇒ putsch. Die Wahlniederlage des Kanzlers läuft über denselben Wahl-Gate (FR-013, demokratieübergreifend) — misstrauen ist die zusätzliche Roll, kein Ersatz.
+
+**Scope US-M1-01:** ja, das Register-Modul (`core/rules.ts`) ist Teil von US-M1-01 (Layer laut Spec: core/rules) — Typen + Schema + refine + Lookup. Der Loader bleibt M4 und validiert Packs gegen dieses Schema.
+
 ---
 
 ## 4. Tech-Stack
