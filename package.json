@@ -14,6 +14,7 @@
     "build": "tsc -b tsconfig.build.json",
     "typecheck": "tsc -p tsconfig.json",
     "check:core-isolation": "node scripts/check-core-isolation.mjs",
+    "golden:spread": "npm run build && node scripts/generate-score-spread.mjs",
     "test": "npm run build && vitest run",
     "test:watch": "vitest",
     "lint": "eslint .",
