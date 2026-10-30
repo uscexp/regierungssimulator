@@ -111,7 +111,7 @@ describe('Lagebericht erzählt die Lage', () => {
   it('meldet die M0-Limitation der Zufriedenheitsspuren, statt nichts zu zeigen (ADR-008, PO-Ruling)', () => {
     const text = lagebericht(startState(1234), regeln);
     expect(text).toContain(
-      'Zufriedenheits-Gründe: aktuell nicht verfügbar (M0-Limitation, M1-Ticket nach ADR-008)',
+      'Spuren: aktuell nicht verfügbar (M0-Limitation, M1-Ticket nach ADR-008)',
     );
   });
 

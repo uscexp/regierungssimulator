@@ -87,12 +87,12 @@ export function lagebericht(
   if (sauer.length > 0) {
     zeilen.push(`Gründe: ${sauer.join('; ')}.`);
   } else {
-    // PO-Ruling zu diesem Fund: der Kern rechnet die Spuren am Jahrsanfang aus den alten Leveln,
-    // die Bewegung läuft danach — alle Delta-Spuren sind 0. In M0 ist das eine bekannte Limitation
-    // (M1-Ticket: Spuren nach der Bewegung), der Bericht sagt es dem Spieler statt nichts zu zeigen.
-    zeilen.push(
-      'Zufriedenheits-Gründe: aktuell nicht verfügbar (M0-Limitation, M1-Ticket nach ADR-008).',
-    );
+    // PO-Ruling zu diesem Fund (Trix): das Label im Bericht heißt "Spuren:" — der Kern-Feldname ist
+    // `zufriedenheits_trace`, die Spieler-Sicht ist die Spur, nicht der Grund. Der Kern rechnet die
+    // Spuren am Jahrsanfang aus den alten Leveln, die Bewegung läuft danach — alle Delta-Spuren sind
+    // 0. In M0 ist das eine bekannte Limitation (M1-Ticket: Spuren nach der Bewegung), der Bericht
+    // sagt es dem Spieler statt nichts zu zeigen.
+    zeilen.push('Spuren: aktuell nicht verfügbar (M0-Limitation, M1-Ticket nach ADR-008).');
   }
 
   // Finanzlage in BE: Einnahmen, Unterhalt, Spielraum, Schulden — dieselben core-Funktionen wie der Tick.
