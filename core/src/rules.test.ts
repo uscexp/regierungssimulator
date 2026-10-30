@@ -28,10 +28,11 @@ const konstitution = {
       regel_id: 'entscheidung_presidency',
       label: 'Präsidentschaft einführen',
       beschreibung: 'Die Präsidentschaft wird eingeführt.',
-      sofort_effekte: [{ gruppe_tag: 'arbeitnehmer', delta: 6 }],
+      sofort_effekte: { arbeitnehmer: 6 },
       regelsatz_modifikator: {
         event_wahrscheinlichkeitfaktor: 1.2,
         gruppen_modifikatoren: { arbeitnehmer: 2 },
+        steuermodell: 'progressiv' as const,
       },
     },
   ],
@@ -132,8 +133,8 @@ describe('Setup-Regel-Typen im Schema (FR-034)', () => {
           regel_id: 'e',
           label: '',
           beschreibung: 'x',
-          sofort_effekte: [],
-          regelsatz_modifikator: { event_wahrscheinlichkeitfaktor: 1, gruppen_modifikatoren: {} },
+          sofort_effekte: { arbeitnehmer: 6 },
+          regelsatz_modifikator: { event_wahrscheinlichkeitfaktor: 1 },
         },
       ],
     };
@@ -141,11 +142,117 @@ describe('Setup-Regel-Typen im Schema (FR-034)', () => {
     expect(fehler.success).toBe(false);
     if (!fehler.success)
       expect(fehler.error.issues.map((i) => i.path.join('.'))).toContain('entscheidungen.0.label');
+    // Verdikt D21: der Modifikator ist Pflichtfeld — Konzept §3 verspricht jede Entscheidung mit
+    // dauerhaftem Regelsatz-Modifikator (Balance-Guard, M1-Gate). Ohne Modifikator ist sie ungültig.
     const ohneModifikator = {
       ...konstitution,
       entscheidungen: [{ ...konstitution.entscheidungen[0], regelsatz_modifikator: undefined }],
     };
-    expect(konstitutionSchema.safeParse(ohneModifikator).success).toBe(false);
+    const fehlend = konstitutionSchema.safeParse(ohneModifikator);
+    expect(fehlend.success).toBe(false);
+    if (!fehlend.success)
+      expect(fehlend.error.issues.map((i) => i.path.join('.'))).toContain(
+        'entscheidungen.0.regelsatz_modifikator',
+      );
+  });
+
+  it('nimmt Sofort-Effekte als Record je Gruppe und begrenzt den Delta auf die Kern-Invariante', () => {
+    expect(
+      konstitutionSchema.safeParse({
+        ...konstitution,
+        entscheidungen: [
+          {
+            ...konstitution.entscheidungen[0],
+            sofort_effekte: { arbeitnehmer: -100, eliten: 100 },
+          },
+        ],
+      }).success,
+    ).toBe(true);
+    const uebergrenze = konstitutionSchema.safeParse({
+      ...konstitution,
+      entscheidungen: [
+        { ...konstitution.entscheidungen[0], sofort_effekte: { arbeitnehmer: 200 } },
+      ],
+    });
+    expect(uebergrenze.success).toBe(false);
+    if (!uebergrenze.success)
+      expect(uebergrenze.error.issues.map((i) => i.path.join('.'))).toContain(
+        'entscheidungen.0.sofort_effekte.arbeitnehmer',
+      );
+    // Die alte Array-Form mit gruppe_tag/delta ist gegen den Record illegal — strict lehnt das Objekt.
+    expect(
+      konstitutionSchema.safeParse({
+        ...konstitution,
+        entscheidungen: [
+          {
+            ...konstitution.entscheidungen[0],
+            sofort_effekte: [{ gruppe_tag: 'arbeitnehmer', delta: 6 }],
+          },
+        ],
+      }).success,
+    ).toBe(false);
+  });
+
+  it('verlangt vom Modifikator mindestens eine Änderung und nimmt das Steuermodell als Enum', () => {
+    expect(
+      konstitutionSchema.safeParse({
+        ...konstitution,
+        entscheidungen: [
+          { ...konstitution.entscheidungen[0], regelsatz_modifikator: { steuermodell: 'hoch' } },
+        ],
+      }).success,
+    ).toBe(true);
+    const leer = konstitutionSchema.safeParse({
+      ...konstitution,
+      entscheidungen: [{ ...konstitution.entscheidungen[0], regelsatz_modifikator: {} }],
+    });
+    expect(leer.success).toBe(false);
+    if (!leer.success)
+      expect(leer.error.issues.map((i) => i.message).join(' · ')).toContain(
+        'mindestens eine Änderung',
+      );
+    expect(
+      konstitutionSchema.safeParse({
+        ...konstitution,
+        entscheidungen: [
+          {
+            ...konstitution.entscheidungen[0],
+            regelsatz_modifikator: { steuermodell: 'autoritär' },
+          },
+        ],
+      }).success,
+    ).toBe(false);
+    expect(
+      konstitutionSchema.safeParse({
+        ...konstitution,
+        entscheidungen: [
+          {
+            ...konstitution.entscheidungen[0],
+            regelsatz_modifikator: { event_wahrscheinlichkeitfaktor: -1 },
+          },
+        ],
+      }).success,
+    ).toBe(false);
+  });
+
+  it('die Entscheidungs-Ids bleiben ein Pattern-Feld, kein gepinntes enum im Kern-Schema', () => {
+    // Eine neue Entscheidung mit neuer Id ist gültig — der Loader validiert Ids gegen das Register,
+    // nicht gegen eine Kern-Liste (M4: Pack ohne Code).
+    expect(
+      konstitutionSchema.safeParse({
+        ...konstitution,
+        entscheidungen: [
+          { ...konstitution.entscheidungen[0], regel_id: 'grundrechte' },
+          { ...konstitution.entscheidungen[0], regel_id: 'weltlichkeit' },
+        ],
+      }).success,
+    ).toBe(true);
+    expect(
+      konstitutionSchema.safeParse({
+        ...konstitution,
+        entscheidungen: [{ ...konstitution.entscheidungen[0], regel_id: 'Grundrechte' }],
+      }).success,
+    ).toBe(false);
   });
 
   it('lehnt eine unbekannte Konstitutions-Wirkung ab — das Schema hat keinen Interpreter', () => {
