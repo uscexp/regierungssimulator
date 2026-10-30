@@ -8,4 +8,5 @@
  * Gruppen sind seit PO D10 und dem Ruling zu §3 entschieden (8 Gruppen, §1-Startbild).
  */
 export * from './schema.js';
+export * from './setup-schema.js';
 export * from './basis-pack.js';
