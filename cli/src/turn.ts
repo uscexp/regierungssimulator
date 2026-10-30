@@ -15,6 +15,7 @@ import type { GameState } from '@staatslenker/core/state';
 import { tick, type TickErgebnis, type TickRegeln } from '@staatslenker/core/tick';
 import type { Modus } from '@staatslenker/core/invariant';
 import { lagebericht } from './lagebericht.js';
+import { prognose } from './vorhersage.js';
 
 /** Die Eingabe eines Spielers für ein Jahr: Allokationen in BE und eine Basis-Entscheidung. */
 export interface TurnEingabe {
@@ -134,12 +135,15 @@ export function turn(
     modus,
   );
 
+  // Die frühe Warnung (§7/S0-C Punkt 11): der Bericht zeigt den Machtcheck, den diese Zuteilung in
+  // den folgenden Jahren verliert. Der Dry-Run ist der echte Tick (ADR-009), keine zweite Engine.
   const lagebericht_nach = lagebericht(ergebnis.state, regeln, {
     vorher: state,
     ergebnis,
     wahl_jahr: state.jahr,
     gekuerzte_be: ergebnis.gekuerzte_be,
     allokation: eingabe.zuteilung,
+    prognose: prognose(ergebnis.state, regeln, eingabe.zuteilung, modus),
   });
 
   return Object.freeze({
