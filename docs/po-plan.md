@@ -113,57 +113,8 @@ S0-A gesamt gebaut von Tyrdor: 27 Tests, typecheck/eslint/prettier grün, `npm r
 | US-M0-06 (Zufriedenheitsformel) | implemented | #6 | — | — |
 | US-M0-07 (Steuermodell) | implemented | #7 | — | — |
 | US-M0-08 (Entscheidungsgedächtnis) | implemented | #8 | — | — |
-| US-M0-09 (Politisches Kapital) | pending | #9 | — | — |
-| US-M0-10 (Budget/Zinsen/Spar-Event) | pending | #10 | — | — |
-| US-M0-11 (tick) | implemented | #11 | — | — |
-| US-M0-12 (Wahl mit Unruhe-Gate) | pending | #12 | — | — |
-
-### S0-C Inhalt (§7-Reihenfolge 09–11)
-
-**09 Politisches Kapital (PK)**
-- Machbarkeit von PK-Gewinn durch Appeasement vs. Opposition
-- PK als Währung für Entscheidungen und Agenda-Slots
-- Ereignis-Karten: PK-Gewinn/Verlust, Koalitionsdruck
-- PK-Entzug bei Nicht-Erfüllung von Agenda-Slots
-
-**10 Budget-Konflikt**
-- Priorisierung von Budget-Allokationen bei knapper Ressource
-- Konflikt zwischen "gleichmäßig investieren" und "fokussiertes Wachstum"
-- Ereignis: Finanzkrise bei Budget-Überschreitung
-- Entscheidungs-Mechanik: Sparen vs. Investieren
-
-**11 Fail-Fast**
-- Frühe Warning-Mechanik bei systemischem Versagen
-- Automatische Ereignisse bei langfristigem Verfall
-- Game-Over-Bedingungen (Bankrott, Verlust bei konstanter Fahrlässigkeit)
-
-### Merge-Reihenfolge
-#6 → #7 → #8 → #9 → #10 → #11 → #12
-Je PR: Lens OK + Maya PASS.
-
-### QA über S0-C
-Maya läuft nach Lens-OK. Test-Cases aus den Stories + AC (docs/akzeptanzkriterien.md). Failure Cases für Budget-Konflikt und Fail-Fast-Mechanik dokumentieren. Harness: C:/Users/muell/qa-berichte/ (persistiert nach jedem Merge).
-
-### Offene Fragen für Haui
-1. S0-C Scope: Sollen #9–#11 sofort nach #8 gestartet werden, oder gibt es Abhängigkeiten zu beachten?
-2. Optional: Checkout-Fix für geteiltes Repository (sieht Retos Worktree-Kanal als erledigt an).
-
----
-**Status:** S0-C ist aktiv gestartet. Die Stories #9–#11 beginnen nach #8. Checkout-Fix wurde durchgeführt und Main ist aufgeräumt.
-EOT
-## S0-C Budget-Konflikt (§7 09–11)
-
-**Pipeline:** Tyrdor (Game Developer) → PR → Lens (Code Reviewer) → bei OK Maya (QA) leitet Test-Cases aus der Story ab und testet → Fehler zurück an Tyrdor. Merge nur nach Lens-OK + Maya-Pass. PR-Branching erfordert Push der Docs-Baseline.
-
-### Sprint-Status S0-C
-
-| Story | Status | PR | Review (Lens) | Test (Maya) |
-|---|---|---|---|---|
-| US-M0-06 (Zufriedenheitsformel) | implemented | #6 | — | — |
-| US-M0-07 (Steuermodell) | implemented | #7 | — | — |
-| US-M0-08 (Entscheidungsgedächtnis) | implemented | #8 | — | — |
-| US-M0-09 (Politisches Kapital) | pending | #9 | — | — |
-| US-M0-10 (Budget/Zinsen/Spar-Event) | pending | #10 | — | — |
+| US-M0-09 (Politisches Kapital) | in progress | #9 | — | — |
+| US-M0-10 (Budget/Zinsen/Spar-Event) | in progress | #10 | — | — |
 | US-M0-11 (tick) | implemented | #11 | — | — |
 | US-M0-12 (Wahl mit Unruhe-Gate) | pending | #12 | — | — |
 
