@@ -17,7 +17,7 @@
 | Entscheidungen sind vor dem Klick verständlich | Karten mit vollständiger Vorhersage | 100 % der Karten |
 | Vorhersage ist wahr | Dry-Run-Ergebnis == echter Tick | 100 % Übereinstimmung (Test) |
 | Erweiterbarkeit ohne Code | neuer Pack mit Gruppe + Entscheidung | ladbar, ohne Kern-Änderung (M4) |
-| Balance ohne dominante Strategie | Score-Spread über ≥ 5 Strategien | kein Strategie-Anteil > 30 % der besten Score-Median |
+| Balance ohne dominante Strategie | Score-Spread über ≥ 5 Strategien | die schwächste Strategie erzielt mindestens 70 % der besten Score-Median |
 | Wiederholbarkeit/Replay | gleicher Seed + gleiche Aktionen | identischer State-Hash (Golden-Test) |
 
 **Kernfantasie (Konzept §1):** „Ich regiere ein Land. Jede Entscheidung hat sichtbare Folgen — ich balanciere Machterhalt gegen Fortschritt.“ Der Engpass ist **politisches Kapital**, nicht Geld — das ist das eigentliche Spielziel.
@@ -188,6 +188,7 @@ Legende: **MoSCoW** (M=Must, S=Should, C=Could, W=Won't), **Größe** S = ≤ 2 
 | US-M0-16 | Als QA will ich einen Golden-Replay-Test (fester Seed → 100 Jahre → State-Hash) im CI, damit Determinismus-Regressionen sofort auffallen. | cli/test | M | M | FR-004, NFR-001 |
 | US-M0-17 | als Balance-Analyst will ich den AutoSim-Harness (4 Naiv-Strategien × 20 Seeds × 30 Jahre), damit die Formel vor dem Content balanciert wird. | cli | M | M | FR-049 |
 | US-M0-18 | als Balance-Analyst will ich den Score-Spread als Fixture im Repo, damit jede spätere Regel gegen eine Baseline geprüft wird. | cli/test | S | S | FR-049 |
+| US-M0-19 | Als Spieler will ich im Lagebericht eine frühe Warnung vor dem Machtcheck, damit ich sehe, ob meine Zuteilung das Wahljahr verliert, bevor ich es spiele. | cli | S | S | FR-048 |
 
 **Abhängigkeiten M0:** US-M0-02 → US-M0-11 → US-M0-14; US-M0-06 hängt an US-M0-05 und US-M0-07. Gate-Storys: US-M0-14, US-M0-16, US-M0-17.
 
