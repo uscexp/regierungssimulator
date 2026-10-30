@@ -12,6 +12,7 @@
     "./turn": "./dist/turn.js",
     "./repl": "./dist/repl.js",
     "./cli-options": "./dist/cli-options.js",
+    "./replay": "./dist/replay.js",
     "./score-spread": "./dist/score-spread.js"
   },
   "types": "./dist/index.d.ts",
