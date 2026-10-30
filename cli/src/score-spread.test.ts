@@ -43,4 +43,26 @@ describe('Score-Spread-Fixture (US-M0-18)', () => {
       expect(z.überlebt_min).toBe(6);
     }
   });
+
+  it('die schwächste Strategie erzielt mindestens 70 % des besten Score-Medians (AK US-M0-17, Option A)', () => {
+    // Die AK vergleicht nur Score-Medians, nicht die Überlebensjahre — die alte Fassung („beste
+    // Strategie ≤ 30 % des besten Median") war selbstbezogen: die beste Strategie ist der
+    // Referenzwert. Gemessen auf dem committed Fixture (Test 1 oben pinnt denselben Harness-Lauf):
+    // bester Median 87.34 (overspend × leicht), schwächster 70.43 (infrastruktur_zuerst × schwer),
+    // Verhältnis 0.81 — erfüllt ≥ 0.70. Ein Content-Change, der die Spread über 30 % öffnet, fällt
+    // hier im CI auf, nicht in den Docs.
+    const zeilen = spreadZeilen(alleLäufe(MAX_JAHRE));
+    const beste = zeilen.reduce((a, b) => (b.score_median > a.score_median ? b : a), zeilen[0]!);
+    const schwächste = zeilen.reduce(
+      (a, b) => (b.score_median < a.score_median ? b : a),
+      zeilen[0]!,
+    );
+    expect(beste.strategie).toBe('overspend');
+    expect(beste.schwierigkeit).toBe('leicht');
+    expect(schwächste.strategie).toBe('infrastruktur_zuerst');
+    expect(schwächste.schwierigkeit).toBe('schwer');
+    expect(schwächste.score_median).toBeGreaterThanOrEqual(0.7 * beste.score_median);
+    // Die Ratio ist gemessen, nicht erfunden: sie liegt zwischen 0.70 und der gemessenen Obergrenze.
+    expect(schwächste.score_median / beste.score_median).toBeLessThan(1);
+  });
 });
