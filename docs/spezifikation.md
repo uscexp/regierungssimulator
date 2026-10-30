@@ -114,7 +114,8 @@ Jede Story ist genau einer Schicht aus `architektur.md §3` zugeordnet — der K
 | FR-048 | CLI (Text-UI) spielt das ganze Spiel durch; die Zufriedenheitsformel ist im Log sichtbar | Konzept §9 M0 | cli |
 | FR-049 | AutoSim-Harness: kopflose Strategien × Seeds × Jahre, reportet Score-Spread | Konzept §11, Architektur §2 | cli |
 | FR-050 | Spiel und alle Texte sind deutsch; keine realen Ländernamen | Konzept §7, §10 | content/base |
-| FR-051 | Erzwungene Agenda-Karten (G8/G10) kosten je 1 politisches Kapital; während des Koalitionsdrucks feuert das Populismus-Fenster nicht; die Agenda-Last überschreitet nie das Slot-Band | Konzept §12 (G14, G15), ADR-010 | core/tick |
+|| FR-051 | Erzwungene Agenda-Karten (G8/G10) kosten je 1 politisches Kapital; während des Koalitionsdrucks feuert das Populismus-Fenster nicht; die Agenda-Last überschreitet nie das Slot-Band | Konzept §12 (G14, G15), ADR-010 | core/tick |
+|| FR-052 | Frühe Warnung im Lagebericht: wenn die Prognose innerhalb des Session-Caps (50 Jahre) einen verlorenen Machtcheck vorhersagt, nennt der Bericht Jahr, Grund-Id, gewichtete Ø und schwächste Gruppe; keine Warnung, wenn kein Verlust im Cap oder das Spiel schon verloren ist (FR-052, §7/S0-C Punkt 11) | Konzept §7, §3a | cli |
 
 **Non-Goals (Konzept §10, unverändert übernommen):** keine Militär-/Kriegssimulation, keine Map/Territorium, kein Multiplayer, keine echte Volkswirtschafts-Gleichung, kein Echtzeit-Modus, keine realen Ländernamen.
 
@@ -183,11 +184,12 @@ Legende: **MoSCoW** (M=Must, S=Should, C=Could, W=Won't), **Größe** S = ≤ 2 
 | US-M0-11 | Als Kern-Entwickler will ich `tick(state, action, regeln, modus?) → Snapshot` als pure Funktion mit Action-API als einziger Schreibstraße. | core/tick | M | M | FR-003 |
 | US-M0-12 | Als Spieler will ich alle 6 Jahre eine Wahl, deren Verlust das Spiel beendet, damit der Kern-Loop ein Ende hat. | core/tick | M | M | FR-013 |
 | US-M0-13 | Als Content-Autor will ich den M0-Basis-Content (5 Indikatoren, 3 Gruppen, 5 Basis-Entscheidungen) als TS-Objekte gegen das Zod-Schema, damit der Loop spielbaren Content hat. | content/base | M | S | FR-034 |
-| US-M0-14 | Als Spieler will ich das Spiel komplett im Terminal spielen (Lagebericht → Budget → Karten → Auflösung → Machtcheck), damit M0 ohne UI abgenommen werden kann. | cli | M | M | FR-048 |
+|| US-M0-14 | Als Spieler will ich das Spiel komplett im Terminal spielen (Lagebericht → Budget → Auflösung → Machtcheck), damit M0 ohne UI abgenommen werden kann. | cli | M | M | FR-048 |
 | US-M0-15 | Als Spieler will ich im CLI einen textuellen Lagebericht pro Turn, damit die Zahlen erzählt statt getabellt werden. | cli | S | S | FR-041 |
 | US-M0-16 | Als QA will ich einen Golden-Replay-Test (fester Seed → 100 Jahre → State-Hash) im CI, damit Determinismus-Regressionen sofort auffallen. | cli/test | M | M | FR-004, NFR-001 |
 | US-M0-17 | als Balance-Analyst will ich den AutoSim-Harness (4 Naiv-Strategien × 20 Seeds × 30 Jahre), damit die Formel vor dem Content balanciert wird. | cli | M | M | FR-049 |
-| US-M0-18 | als Balance-Analyst will ich den Score-Spread als Fixture im Repo, damit jede spätere Regel gegen eine Baseline geprüft wird. | cli/test | S | S | FR-049 |
+|| US-M0-18 | als Balance-Analyst will ich den Score-Spread als Fixture im Repo, damit jede spätere Regel gegen eine Baseline geprüft wird. | cli/test | S | S | FR-049 |
+|| US-M0-19 | als Spieler will ich im Lagebericht eine Frühe Warnung, wenn die Prognose innerhalb des Session-Caps (50 Jahre) einen verlorenen Machtcheck vorhersagt — der Bericht nennt Jahr, Grund-Id, gewichtete Ø und schwächste Gruppe; keine Warnung, wenn kein Verlust im Cap oder Spiel schon verloren (FR-052, §7/S0-C Punkt 11). | cli | S | S | FR-052 |
 
 **Abhängigkeiten M0:** US-M0-02 → US-M0-11 → US-M0-14; US-M0-06 hängt an US-M0-05 und US-M0-07. Gate-Storys: US-M0-14, US-M0-16, US-M0-17.
 
