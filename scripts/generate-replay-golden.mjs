@@ -2,8 +2,9 @@
  * Generiert das Golden-Replay-Fixture für US-M0-16 (FR-004, NFR-001).
  *
  * Der Inhalt kommt aus der echten Implementierung (`spieleReplay` gegen den gebauten Kern),
- * nicht von Hand abgeschrieben. `npm run build` muss vorher laufen. Aufruf:
- *   npm run build && node scripts/generate-replay-golden.mjs
+ * nicht von Hand abgeschrieben. `npm run build` muss vorher laufen. Der npm-Script normalisiert
+ * danach das Format mit Prettier — ein bare `node`-Aufruf liefert Prettier-unformes Format:
+ *   npm run golden:replay
  */
 import { mkdirSync, writeFileSync } from 'node:fs';
 
