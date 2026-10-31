@@ -94,6 +94,12 @@ export function ereignisAuslosen(
   schwierigkeit: SchwierigkeitsPack,
   max_ereignisse = 1,
   modus: Modus = 'dev',
+  /**
+   * Der dauerhafte Event-Faktor der Konstitution (US-M1-06, FR-017): ein Wurf wird zusätzlich mit
+   * diesem Faktor gewürfelt, ein Faktor < 1 reduziert die Wahrscheinlichkeit. `undefined` oder ≥ 1
+   * würfelt nicht — kein verbrauchter RNG und keine erfundene Mechanik (FR-004, ADR-011).
+   */
+  wahrscheinlichkeit_faktor: number | undefined = undefined,
 ): EreignisErgebnis {
   // Ein kaputer Gewichtswert ist ein Content-Fehler: im Dev-Modus wirft er mit Regel-Id, im
   // Produktionsmodus wird die Regel aus den Kandidaten entfernt und der Tick läuft weiter (FR-002).
@@ -114,6 +120,24 @@ export function ereignisAuslosen(
   const ereignisse: AusgelöstesEreignis[] = [];
 
   const anzahl = Math.max(0, Math.round(max_ereignisse * schwierigkeit.event_wahrscheinlichkeit));
+
+  // Der Konstitutions-Faktor gate't den Wurf, bevor gewählt wird. Ein kaputter Wert ist ein
+  // Definitionfehler des Registers: im Dev-Modus wirft er, in Produktion wird nicht gewürfelt.
+  if (anzahl > 0 && kandidaten.length > 0 && wahrscheinlichkeit_faktor !== undefined) {
+    if (!Number.isFinite(wahrscheinlichkeit_faktor) || wahrscheinlichkeit_faktor <= 0) {
+      if (modus === 'dev') {
+        throw new TypeError(
+          `Regelsatz-Modifikator: event_wahrscheinlichkeitfaktor ist nicht positiv endlich (${String(wahrscheinlichkeit_faktor)})`,
+        );
+      }
+      return { ereignisse, rng };
+    }
+    if (wahrscheinlichkeit_faktor < 1) {
+      const gate = nextFloat(rng);
+      rng = gate.rng;
+      if (gate.wert >= wahrscheinlichkeit_faktor) return { ereignisse, rng };
+    }
+  }
   for (let wurf = 0; wurf < anzahl; wurf++) {
     if (kandidaten.length === 0) break;
 
