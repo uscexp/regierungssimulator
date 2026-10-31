@@ -55,6 +55,9 @@ export type SetupRegelTypString = z.infer<typeof setupRegelTyp>;
 
 /** Die drei Regierungsformen sind Spec-Vokabular (FR-015); eine vierte wäre ein neues Spiel. */
 const REGIERUNG_FORM = z.enum(['praesidential', 'parlamentarisch', 'diktatur']);
+/** Das Formen-Vokabular als Liste für Konsumenten (D22: die Setup-Phase nutzt dasselbe Enum wie das Schema). */
+export type Regierungsform = z.infer<typeof REGIERUNG_FORM>;
+export const REGIERUNGSFORMEN = REGIERUNG_FORM.options as readonly Regierungsform[];
 /** Der Amtsmodus ist Daten, kein Mechanismus (FR-015). */
 const AMTS_MODUS = z.enum(['fixed_term', 'zyklisch', 'keins']);
 /** Die Machtverlust-Mechanik je Form ist Spec-Vokabular (FR-013/FR-014). */
@@ -149,6 +152,10 @@ const sofortEffekteSchema = z.record(TAG, GRUPPE_DELTA);
 
 /** Das Steuermodell der Konstitution (FR-015/FR-017) — ein Enum, keine erfundene vierte Variante. */
 const STEUERMODELL = z.enum(['flat', 'progressiv', 'hoch', 'niedrig']);
+/** Die vier Steuermodelle als Liste (Setup-Validierung nutzt dasselbe Enum wie das Schema, D22). */
+export const STEUERMODELLE = STEUERMODELL.options as readonly (
+  'flat' | 'progressiv' | 'hoch' | 'niedrig'
+)[];
 
 /**
  * Der dauerhafte Modifikator (FR-017, Reto-Kanon + Verdikt D21): das Feld ist **Pflicht**, die drei

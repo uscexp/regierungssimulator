@@ -15,7 +15,8 @@
     "./replay": "./dist/replay.js",
     "./naiv-kurven": "./dist/naiv-kurven.js",
     "./score-spread": "./dist/score-spread.js",
-    "./vorhersage": "./dist/vorhersage.js"
+    "./vorhersage": "./dist/vorhersage.js",
+    "./setup-phase": "./dist/setup-phase.js"
   },
   "types": "./dist/index.d.ts",
   "scripts": {

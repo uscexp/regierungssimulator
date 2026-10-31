@@ -7,6 +7,10 @@
 import { describe, expect, it } from 'vitest';
 import { konstitutionSchema } from '@staatslenker/core/rules';
 import {
+  KONSTITUTION_WERTE,
+  SETUP_FORMEN,
+  SETUP_PFLICHT,
+  STANDARD_SETUP,
   basisKonstitution,
   basisSetupRegeln,
   validiereBasisKonstitution,
@@ -119,6 +123,22 @@ describe('Konstitutions-Instanzen gegen das Kern-Schema (US-M1-04)', () => {
     const regierung = basisSetupRegeln.find((r) => r.typ === 'regierung');
     expect(regierung?.form).toBe('praesidential');
     expect(regierung?.machtverlust).toBe('wahl');
+  });
+
+  it('die Setup-Pflicht, die Formen und die Konstitutions-Werte folgen dem Register (US-M1-02/D22)', () => {
+    expect(SETUP_PFLICHT.konstitutions_ids).toEqual(
+      basisKonstitution.entscheidungen.map((e) => e.regel_id),
+    );
+    expect(SETUP_FORMEN).toEqual(['praesidential']);
+    expect(STANDARD_SETUP.regierungsform).toBe('praesidential');
+    expect(STANDARD_SETUP.konstitutions_ids).toEqual(SETUP_PFLICHT.konstitutions_ids);
+    // Der Standard-Setup ändert das Steuermodell nicht (K2: M0-Anker bleibt flat) und setzt die
+    // Entscheidungs-Ids auf true — die Effekte werden erst US-M1-05/US-M1-06 angewendet.
+    expect(KONSTITUTION_WERTE.steuermodell).toBe('flat');
+    expect(KONSTITUTION_WERTE.grundrechte).toBe(true);
+    for (const tag of M0_BASIS_TAGS) {
+      expect(KONSTITUTION_WERTE[tag]).toBeUndefined();
+    }
   });
 
   it('ein kaputer Setup-Regelsatz wird im Register mit Feldnamen abgelehnt', () => {

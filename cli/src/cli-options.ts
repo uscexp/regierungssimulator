@@ -7,7 +7,8 @@
  */
 import { stdin as input } from 'node:process';
 
-import { startState, tickRegelnFür } from '@staatslenker/cli/content-pack';
+import { STANDARD_SETUP, tickRegelnFürMitSetup } from '@staatslenker/cli/content-pack';
+import { setupState } from '@staatslenker/cli/setup-phase';
 import type { SchwierigkeitId } from '@staatslenker/cli/autosim';
 import { tick } from '@staatslenker/core/tick';
 import { demonstration } from '@staatslenker/cli/turn';
@@ -105,14 +106,19 @@ export async function main(args: readonly string[]): Promise<number> {
     return 0;
   }
 
-  // Nicht interaktiv: ein echter Turn-Loop, deterministisch über den Seed im State (FR-004).
-  const regeln = tickRegelnFür(optionen.schwierigkeit);
+  // Nicht interaktiv: ein echter Turn-Loop, deterministisch über den Seed im State (FR-004). Der
+  // Standard-Setup wird vor Turn 1 angewendet (US-M1-02/D22): der Gate ist eine Kern-Datenregel aus
+  // dem Register, ohne Setup würde der dev-Tick werfen — der Boot spielt ihn daher zuerst.
+  const regeln = tickRegelnFürMitSetup(optionen.schwierigkeit);
+  console.log(
+    `Setup (Standard): Regierungsform ${STANDARD_SETUP.regierungsform}, Konstitution ${STANDARD_SETUP.konstitutions_ids.length} Entscheidungen.`,
+  );
   for (const zeile of demonstration(
     optionen.seed,
     optionen.schwierigkeit,
     optionen.jahre,
     regeln,
-    startState,
+    (seed: number) => setupState(seed, STANDARD_SETUP.regierungsform),
   )) {
     console.log(zeile);
   }

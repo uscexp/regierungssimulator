@@ -102,7 +102,7 @@ describe('Interaktiver Loop über Streams (US-M0-14)', () => {
   }
 
   it('spielt Turns mit gereichter Eingabe und endet bei q', async () => {
-    const text = await spiele(['2,2,2,2,2', '1', '3,2,2,2,1', '2', 'q']);
+    const text = await spiele(['praesidential', 'ja', '2,2,2,2,2', '1', '3,2,2,2,1', '2', 'q']);
     expect(text).toContain('Jahr 1');
     expect(text).toContain('Zuteilungen');
     expect(text).toContain('entscheidung:bildung');
@@ -114,6 +114,8 @@ describe('Interaktiver Loop über Streams (US-M0-14)', () => {
     // Entscheidung ohne BE auf ihrem Indikator wird abgelehnt, eine unbekannte Entscheidung wird
     // vom Parser abgelehnt. Der Loop fragt nach jeder Meldung erneut und spielt weiter.
     const text = await spiele([
+      'praesidential',
+      'ja',
       '2,2,2,2,2',
       '1',
       '5,0,0,0,0',
@@ -129,8 +131,30 @@ describe('Interaktiver Loop über Streams (US-M0-14)', () => {
     expect(text).toContain('Jahr 3');
   });
 
+  it('fragt die Regierungsform vor dem ersten Turn und setzt den State (US-M1-02/D22)', async () => {
+    const text = await spiele(['praesidential', 'ja', 'q']);
+    expect(text).toContain('Setup — die Regierung wird gegründet');
+    expect(text).toContain('Setup gesetzt: Regierungsform praesidential');
+    expect(text.indexOf('Setup gesetzt')).toBeLessThan(text.indexOf('Jahr 1'));
+  });
+
+  it('zeigt eine ungültige Form mit Grund und fragt erneut — kein Absturz', async () => {
+    const text = await spiele(['diktatur', 'banana', 'praesidential', 'ja', '2,2,2,2,2', '1', 'q']);
+    expect(text).toContain('Diese Eingabe ist ungültig: Unbekannte Regierungsform "banana"');
+    expect(text).toContain('Jahr 1');
+  });
+
+  it('beendet bei q während des Setups, bevor ein Turn läuft', async () => {
+    const text = await spiele(['q']);
+    expect(text).toContain('Regierungsform (Nummer oder Name)');
+    expect(text).not.toContain('Zuteilungen');
+    expect(text).not.toContain('Jahr 1');
+  });
+
   it('beendet das Spiel bei EOF ohne Absturz', async () => {
-    const input = Readable.from(['2,2,2,2,2\n', '1\n']);
+    // EOF mitten im Setup: die Fragen sind gestellt, der Loop endet definiert — kein Wurf, kein
+    // "readline was closed". Ein Turn läuft nicht, weil der Setup unvollständig ist (US-M1-02/D22).
+    const input = Readable.from(['praesidential\n']);
     const lines: string[] = [];
     const output = new Writable({
       write(chunk, _enc, cb) {
@@ -140,7 +164,9 @@ describe('Interaktiver Loop über Streams (US-M0-14)', () => {
     });
     await interaktiverLoop({ seed: 1234, schwierigkeit: 'normal', jahre: 5 }, { input, output });
     const text = lines.join('');
-    expect(text).toContain('Entscheidung (Nummer oder Regel-Id)');
+    expect(text).toContain('Konstitution übernehmen');
+    expect(text).not.toContain('Setup gesetzt');
+    expect(text).not.toContain('Jahr 1');
     expect(text).not.toContain('readline was closed');
   });
 });

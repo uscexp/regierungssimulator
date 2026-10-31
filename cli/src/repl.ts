@@ -12,9 +12,17 @@
 import { createInterface } from 'node:readline/promises';
 import { stdin as input, stdout as output } from 'node:process';
 
+import type { Regierungsform } from '@staatslenker/core/rules';
 import { entscheidungen, prüfeEingabe, turn, type TurnEingabe } from './turn.js';
 import { lagebericht } from './lagebericht.js';
-import { startState, tickRegelnFür } from './content-pack.js';
+import { SETUP_PFLICHT, tickRegelnFürMitSetup } from './content-pack.js';
+import {
+  konstitutionsKarten,
+  konstitutionAusText,
+  formsListe,
+  formAusText,
+  setupState,
+} from './setup-phase.js';
 import type { SchwierigkeitId } from './autosim.js';
 
 /** Eine Allokation-Eingabe: `2,2,2` (Positionsliste in Kategorie-Reihenfolge) oder `bildung=4 infrastruktur=2`. */
@@ -104,7 +112,7 @@ export async function interaktiverLoop(
   optionen: LoopOptionen,
   streams: { readonly input?: NodeJS.ReadableStream; readonly output?: NodeJS.WritableStream } = {},
 ): Promise<void> {
-  const regeln = tickRegelnFür(optionen.schwierigkeit);
+  const regeln = tickRegelnFürMitSetup(optionen.schwierigkeit);
   const kategorien = regeln.indikator_regeln.filter((r) => r.budget_wirkung > 0).map((r) => r.tag);
   const rl = createInterface({ input: streams.input ?? input, output: streams.output ?? output });
   // Der Loop schreibt auf den gereichten Stream (Standard: process.stdout) — damit ist er testbar.
@@ -121,7 +129,48 @@ export async function interaktiverLoop(
     }
   };
 
-  let state = startState(optionen.seed);
+  /**
+   * Die Setup-Phase vor Turn 1 (US-M1-02, FR-047, Verdikt D22): zuerst die Regierungsform, dann die
+   * Konstitution. Der Gate selbst ist eine Kern-Datenregel (`regeln.setup_pflicht` aus dem Register) —
+   * der Adapter fragt nur und setzt keinen Flag. EOF oder `q` während des Setups beendet das Spiel,
+   * bevor ein Turn läuft; eine ungültige Eingabe wird mit Grund gezeigt und erneut gefragt.
+   */
+  log('Setup — die Regierung wird gegründet. Turn 1 ist erst nach Form und Konstitution möglich.');
+  log(`Regierungsform (Nummer oder Name) — "q" beendet das Spiel:`);
+  log(formsListe());
+  let formEingabe = await frage('> ');
+  let form: Regierungsform | undefined;
+  while (form === undefined) {
+    if (formEingabe === null || formEingabe.trim() === 'q') return;
+    const parsed = formAusText(formEingabe);
+    if (!parsed.ok) {
+      log(`Diese Eingabe ist ungültig: ${parsed.grund}`);
+      formEingabe = await frage('> ');
+      continue;
+    }
+    form = parsed.form;
+  }
+
+  log('Konstitution — die Entscheidungen des Registers (US-M1-04):');
+  log(konstitutionsKarten());
+  log('Konstitution übernehmen (Enter oder "ja") — "q" beendet das Spiel:');
+  let konstitutionsEingabe = await frage('> ');
+  let konstitutionOk = false;
+  while (!konstitutionOk) {
+    if (konstitutionsEingabe === null || konstitutionsEingabe.trim() === 'q') return;
+    const parsed = konstitutionAusText(konstitutionsEingabe);
+    if (!parsed.ok) {
+      log(`Diese Eingabe ist ungültig: ${parsed.grund}`);
+      konstitutionsEingabe = await frage('> ');
+      continue;
+    }
+    konstitutionOk = true;
+  }
+
+  let state = setupState(optionen.seed, form);
+  log(
+    `Setup gesetzt: Regierungsform ${form}, Konstitution ${SETUP_PFLICHT.konstitutions_ids.join(', ')}.`,
+  );
   try {
     for (let jahr = 1; jahr <= optionen.jahre; jahr++) {
       log(lagebericht(state, regeln));

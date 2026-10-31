@@ -8,13 +8,19 @@
  * Tests unverändert importieren.
  */
 import {
+  BASIS_ENTSCHEIDUNGEN,
   GRUPPEN_START,
   INDIKATOR_REGELN,
+  KONSTITUTION_WERTE,
   NEWS_VORLAGEN,
   SCHWIERIGKEIT_PACKS,
+  SETUP_FORMEN,
+  SETUP_PFLICHT,
+  STANDARD_SETUP,
   START_INDICATOREN,
   STEUERFAKTOR,
   STEUERLAST,
+  basisKonstitution,
 } from '@staatslenker/content-base';
 import { erzeugeGameState, type GameState, type GruppenSnapshot } from '@staatslenker/core/state';
 import type { TickRegeln } from '@staatslenker/core/tick';
@@ -23,7 +29,6 @@ import { WAHLREGEL_M0, wahlRegelAlsPrüfung } from '@staatslenker/core/wahl';
 
 /** Content wird re-exportiert — eine Instanz der Zahlen, sie liegt im content-base-Pack. */
 export {
-  BASIS_ENTSCHEIDUNGEN,
   BASIS_PACK,
   BASIS_PACK_SCHEMA,
   GRUPPEN_START,
@@ -37,6 +42,17 @@ export {
   validiereBasisPack,
   validierePack,
 } from '@staatslenker/content-base';
+
+/** Das Setup-Register wird re-exportiert — die Werte liegen in `content-base`, der Adapter hat keine davon (D22).
+ */
+export {
+  BASIS_ENTSCHEIDUNGEN,
+  basisKonstitution,
+  KONSTITUTION_WERTE,
+  SETUP_FORMEN,
+  SETUP_PFLICHT,
+  STANDARD_SETUP,
+};
 
 /** US-M0-12: Der Machtcheck-Zyklus ist Content (`wahl_intervall` im Tick) und wird aus der Wahlregel
  * des Packs abgeleitet — Zyklus und Regel können nicht auseinanderfallen (Tick und Adapter prüfen
@@ -78,6 +94,16 @@ export function startState(seed: number): GameState {
 }
 
 /** Der Regelsatz für den Tick — alles als Daten, keine Kern-Zweige (ADR-002). */
+/**
+ * Der Regelsatz **mit** Setup-Pflicht (US-M1-02, Verdikt D22). Der Flag kommt aus dem geladenen
+ * Register (`SETUP_PFLICHT` aus content-base), nicht aus einer Adapter-Option: zwei Adapter bei
+ * identischen Regeln gate'n identisch (ADR-002). `tickRegelnFür` bleibt der Satz ohne Setup — der
+ * M0-Harness (Replay/Spread/Kurven) spielt weiter ohne Setup und seine Hashes bleiben bitgleich.
+ */
+export function tickRegelnFürMitSetup(schwierigkeitId: 'leicht' | 'normal' | 'schwer'): TickRegeln {
+  return Object.freeze({ ...tickRegelnFür(schwierigkeitId), setup_pflicht: SETUP_PFLICHT });
+}
+
 export function tickRegelnFür(schwierigkeitId: 'leicht' | 'normal' | 'schwer'): TickRegeln {
   return Object.freeze({
     indikator_regeln: INDIKATOR_REGELN,
