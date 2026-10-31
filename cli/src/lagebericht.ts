@@ -157,24 +157,52 @@ export function lagebericht(
   // Der Machtcheck (FR-013): gewonnen oder verloren — die Ursache ist die Regel-Id des Packs.
   const wahl = optionen.ergebnis?.wahl;
   if (wahl !== undefined) {
-    zeilen.push(
-      `Machtcheck Jahr ${optionen.wahl_jahr ?? state.jahr}: ${wahl.gewonnen ? 'gewonnen' : 'VERLOREN'} — ${wahl.grund_id} ` +
-        `(Ø ${fmt(wahl.gewichtete_zufriedenheit)}, schwächste ${wahl.schwächste_gruppe} ${fmt(schwächste?.zufriedenheit ?? 0)}).`,
-    );
+    if (wahl.typ === 'praesidentialwahl') {
+      zeilen.push(
+        `Machtcheck Jahr ${optionen.wahl_jahr ?? state.jahr}: ${wahl.gewonnen ? 'gewonnen' : 'VERLOREN'} — ${wahl.grund_id} ` +
+          `(Ø ${fmt(wahl.gewichtete_zufriedenheit)}, schwächste ${wahl.schwächste_gruppe} ${fmt(schwächste?.zufriedenheit ?? 0)}).`,
+      );
+    } else if (wahl.typ === 'parlamentmehrheit') {
+      zeilen.push(
+        `Machtcheck Jahr ${optionen.wahl_jahr ?? state.jahr}: ${wahl.gewonnen ? 'gewonnen' : 'VERLOREN'} — ${wahl.grund_id} ` +
+          `(Zustimmung ${fmt(wahl.zustimmung * 100)} %).`,
+      );
+    } else {
+      zeilen.push(
+        `Machtcheck Jahr ${optionen.wahl_jahr ?? state.jahr}: ${wahl.gewonnen ? 'Macht gehalten' : 'VERLOREN'} — ${wahl.grund_id} ` +
+          `(Legitimität ${fmt(wahl.legitimitaet)}, Elite ${fmt(wahl.elite_zufriedenheit ?? 0)}, Militär ${fmt(wahl.militaer_zufriedenheit ?? 0)}).`,
+      );
+    }
   } else {
-    // Kein Machtcheck in diesem Jahr — der nächste ist aus dem Zyklus des Packs ablesbar (US-M0-12).
-    const intervall = regeln.wahl_intervall ?? 6;
-    const naechster = Math.ceil((state.jahr + 1) / intervall) * intervall;
-    zeilen.push(`Nächster Machtcheck: Jahr ${naechster} (Zyklus ${intervall} Jahre).`);
+    // Kein Machtcheck in diesem Jahr — der nächste ist aus dem gereichten Regel-Objekt ablesbar
+    // (US-M0-12: Zyklus und Regel haben dieselbe Quelle, US-M1-03: der Tick liest das Register).
+    const regelset_fehlt = optionen.ergebnis?.machtverlust_regelset;
+    if (regelset_fehlt !== undefined) {
+      zeilen.push(
+        `Kein Machtcheck: ${regelset_fehlt} — die Inhalte dieser Regierungsform fehlen im geladenen Pack (FR-015).`,
+      );
+    } else if (regeln.wahlregel?.typ === 'praesidentialwahl') {
+      const intervall = regeln.wahlregel.intervall_jahre;
+      const naechster = Math.ceil((state.jahr + 1) / intervall) * intervall;
+      zeilen.push(`Nächster Machtcheck: Jahr ${naechster} (Zyklus ${intervall} Jahre).`);
+    } else {
+      zeilen.push('Nächster Machtcheck: dieser Pack liefert keinen Wahl-Zyklus.');
+    }
   }
 
   // Die frühe Warnung (§7/S0-C Punkt 11): der Dry-Run des echten Loops sagt den verlorenen
   // Machtcheck vorher, den diese Zuteilung erzeugt. Nur wenn er existiert — sonst keine Warnung.
   const prognose = optionen.prognose ?? null;
   if (prognose !== null && state.wahl_niederlage === undefined) {
+    const messe =
+      prognose.gewichtete_zufriedenheit !== undefined
+        ? `(Ø ${fmt(prognose.gewichtete_zufriedenheit)}, schwächste ${prognose.schwächste_gruppe ?? '-'})`
+        : prognose.zustimmung !== undefined
+          ? `(Zustimmung ${fmt(prognose.zustimmung * 100)} %)`
+          : '(Mechanik des Packs)';
     zeilen.push(
       `Prognose: bei unveränderter Zuteilung verliert der Machtcheck Jahr ${prognose.jahr} — ` +
-        `${prognose.grund_id} (Ø ${fmt(prognose.gewichtete_zufriedenheit)}, schwächste ${prognose.schwächste_gruppe}).`,
+        `${prognose.grund_id} ${messe}.`,
     );
   }
 

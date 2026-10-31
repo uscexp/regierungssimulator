@@ -27,8 +27,11 @@ export interface Prognose {
   readonly jahr: number;
   /** Ursache aus dem Pack (`wahl:gewichtete_unter_47` bzw. `wahl:schwächste_unter_35`). */
   readonly grund_id: string;
-  readonly gewichtete_zufriedenheit: number;
-  readonly schwächste_gruppe: string;
+  /** Die gemessenen Werte hängen von der gereichten Mechanik ab (US-M1-03): nur die Wahl hat Ø und schwächste Gruppe. */
+  readonly gewichtete_zufriedenheit?: number;
+  readonly schwächste_gruppe?: string;
+  /** Die Zustimmung der parlamentarischen Mehrheit als Anteil (0–1), aus der Mehrheit-Variante. */
+  readonly zustimmung?: number;
 }
 
 /** Nach so vielen Jahren bricht die Prognose ab — der Session-Hard-Cap ist 50 Jahre (§7). */
@@ -54,11 +57,19 @@ export function prognose(
     const ergebnis = tick(aktuell, { zuteilung }, regeln, modus);
     const wahl = ergebnis.wahl;
     if (wahl !== undefined && !wahl.gewonnen) {
+      // Die gemessenen Werte kommen aus der gereichten Variante (US-M1-03): nur die Wahl hat
+      // Ø und schwächste Gruppe, die Mehrheit hat die Zustimmung, die Putsch-Roll keine Messwert-Zeile.
       return Object.freeze({
         jahr: aktuell.jahr,
         grund_id: wahl.grund_id,
-        gewichtete_zufriedenheit: wahl.gewichtete_zufriedenheit,
-        schwächste_gruppe: wahl.schwächste_gruppe,
+        ...(wahl.typ === 'praesidentialwahl'
+          ? {
+              gewichtete_zufriedenheit: wahl.gewichtete_zufriedenheit,
+              schwächste_gruppe: wahl.schwächste_gruppe,
+            }
+          : wahl.typ === 'parlamentmehrheit'
+            ? { zustimmung: wahl.zustimmung }
+            : {}),
       });
     }
     aktuell = ergebnis.state;

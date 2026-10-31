@@ -153,25 +153,27 @@ export function validiereBasisKonstitution(
  * Regierungsform ist praesidential, weil der M0-Loop über den Wahl-Gate endet (D18/D19). Die
  * Regierungsformen mit der `regierung`-Bindung und die weiteren Varianten sind US-M1-05/US-M1-03.
  */
-export const basisSetupRegeln = [
-  basisKonstitution,
-  {
-    typ: 'regierung' as const,
-    regel_id: 'regierung_basis',
-    form: 'praesidential' as const,
-    amt: { modus: 'fixed_term' as const, jahre: 6 },
-    machtverlust: 'wahl' as const,
-  },
-  {
-    typ: 'praesidentialwahl' as const,
-    regel_id: 'wahl_basis',
-    /** D18: Wahlzyklus 6 Jahre, Jahr 4 ist kein Wahljahr. */
-    intervall_jahre: 6,
-    /** D18: gewichtete Ø ≥ 47 und schwächste Gruppe ≥ 35. */
-    gewichtete_min: 47,
-    schwächste_min: 35,
-  },
-];
+/** Die Regierungsregel des Basis-Packs (US-M1-03): praesidential, Amtszeit 6 Jahre, Machtverlust über die Wahl (D18/D19). */
+export const REGIERUNG_REGEL_M0 = Object.freeze({
+  typ: 'regierung' as const,
+  regel_id: 'regierung_basis',
+  form: 'praesidential' as const,
+  amt: { modus: 'fixed_term' as const, jahre: 6 },
+  machtverlust: 'wahl' as const,
+});
+
+/** Die Wahl-Machtcheck-Variante des Basis-Packs — D18-Werte als Register-Daten (Zyklus 6, Ø 47, schwächste 35). */
+export const WAHLREGEL_VARIANT_M0 = Object.freeze({
+  typ: 'praesidentialwahl' as const,
+  regel_id: 'wahl_basis',
+  /** D18: Wahlzyklus 6 Jahre, Jahr 4 ist kein Wahljahr. */
+  intervall_jahre: 6,
+  /** D18: gewichtete Ø ≥ 47 und schwächste Gruppe ≥ 35. */
+  gewichtete_min: 47,
+  schwächste_min: 35,
+});
+
+export const basisSetupRegeln = [basisKonstitution, REGIERUNG_REGEL_M0, WAHLREGEL_VARIANT_M0];
 
 /** Validierung des Setup-Regelsatzes gegen das Kern-Register (zwei Stufen, Feldnamen im Grund). */
 export function validiereBasisSetup(

@@ -6,13 +6,12 @@ import type { SteuerfaktorTabelle } from '@staatslenker/core/budget';
 import {
   erzeugeGameState,
   type Effekt,
-  type GruppenSnapshot,
   type GameState,
   type Startkonfiguration,
 } from '@staatslenker/core/state';
 import type { SteuerlastTabelle } from '@staatslenker/core/zufriedenheit';
 import type { EreignisRegel } from '@staatslenker/core/ereignisse';
-import { WAHLREGEL_M0, wahlRegelAlsPrüfung } from '@staatslenker/core/wahl';
+import type { RegierungRegel, WahlregelVariant } from '@staatslenker/core/rules';
 
 const indikator_regeln: readonly IndikatorRegel[] = [
   {
@@ -117,6 +116,87 @@ function regelnMit(extra: Partial<TickRegeln> = {}): TickRegeln {
     ...extra,
   };
 }
+
+/**
+ * Test-Instanzen des Registers. Die Werte sind hier Testdaten für die Mechanik, nicht die
+ * Balance-Quelle — die liegt im Content-Pack (`WAHLREGEL_VARIANT_M0`, D18: 6/47/35).
+ */
+const wahlBasis: WahlregelVariant = Object.freeze({
+  typ: 'praesidentialwahl',
+  regel_id: 'wahl_test_basis',
+  intervall_jahre: 6,
+  gewichtete_min: 47,
+  schwächste_min: 35,
+});
+const wahlStreng: WahlregelVariant = Object.freeze({
+  typ: 'praesidentialwahl',
+  regel_id: 'wahl_test_streng',
+  intervall_jahre: 6,
+  gewichtete_min: 60,
+  schwächste_min: 35,
+});
+const regierungPraesidential: RegierungRegel = Object.freeze({
+  typ: 'regierung',
+  regel_id: 'regierung_test_praes',
+  form: 'praesidential',
+  amt: { modus: 'fixed_term' as const, jahre: 6 },
+  machtverlust: 'wahl',
+});
+const regierungDiktatur: RegierungRegel = Object.freeze({
+  typ: 'regierung',
+  regel_id: 'regierung_test_diktatur',
+  form: 'diktatur',
+  amt: { modus: 'keins' as const },
+  machtverlust: 'putsch',
+});
+const regierungParlamentarisch: RegierungRegel = Object.freeze({
+  typ: 'regierung',
+  regel_id: 'regierung_test_parlament',
+  form: 'parlamentarisch',
+  amt: { modus: 'zyklisch' as const, jahre: 4 },
+  machtverlust: 'misstrauen',
+});
+// Die Zufriedenheit wird im Tick am Jahresanfang aus den Indikator-Leveln neu gerechnet — die
+// Snapshot-Werte der Gruppen gelten nicht durch den Turn hindurch. Die Schwellen dieser Instanzen
+// sind deshalb gegen den gerechneten Start-Ø (~48) gesetzt, nicht gegen die Snapshot-Werte.
+const putschOhneRisiko: WahlregelVariant = Object.freeze({
+  typ: 'putsch_roll',
+  regel_id: 'putsch_test_ohne_risiko',
+  elite_min: 40,
+  militaer_min: 40,
+  legitimitaet_min: 30,
+  wahrscheinlichkeit: 0.5,
+});
+const putschMitRisiko: WahlregelVariant = Object.freeze({
+  typ: 'putsch_roll',
+  regel_id: 'putsch_test_mit_risiko',
+  elite_min: 60,
+  militaer_min: 60,
+  legitimitaet_min: 40,
+  wahrscheinlichkeit: 0.5,
+});
+const parlamentmehrheit: WahlregelVariant = Object.freeze({
+  typ: 'parlamentmehrheit',
+  regel_id: 'mehrheit_test',
+  mehrheit: 0.5,
+});
+
+/** Gruppen, die die Putsch-Bedingung erfüllen (elite und militaer über der Schwelle). */
+const gruppenMitElite = [
+  ...start.gruppen,
+  {
+    tag: 'elite' as const,
+    zufriedenheit: 70,
+    bevölkerungsanteil: 5,
+    gewichte: { wirtschaft: 1 },
+  },
+  {
+    tag: 'militaer' as const,
+    zufriedenheit: 70,
+    bevölkerungsanteil: 5,
+    gewichte: { infrastruktur: 1 },
+  },
+];
 
 const deepcopy = (wert: unknown): unknown => structuredClone(wert);
 
@@ -243,60 +323,48 @@ describe('tick — ein Jahr Simulation (FR-001, US-M0-11)', () => {
     );
   });
 
-  it('der Machtcheck läuft alle sechs Jahre und die Wahlregel kommt von außen (PO-Ruling: Zyklus 6)', () => {
-    const verloren = (gruppen: readonly GruppenSnapshot[]) => ({
-      gewonnen: false,
-      grund_id: 'wahl:gewichtete_unter_47',
-      gewichtete_zufriedenheit: 46,
-      schwächste_gruppe: gruppen[0]!.tag,
-    });
+  it('der Machtcheck läuft alle sechs Jahre und die Mechanik kommt als Register-Datum (PO-Ruling: Zyklus 6)', () => {
+    // Eine strenge Variante (Ø ≥ 60) verliert den Start-Ø 48.33 — die Schwelle kommt aus dem
+    // Regel-Objekt, der Tick erfindet keine Zahl (ADR-011).
     const sechste = tick(
       stateMit({ jahr: 6 }),
       { zuteilung: {} },
-      regelnMit({ ereignis_regeln: [], wahlPruefen: verloren }),
+      regelnMit({ ereignis_regeln: [], regierung: regierungPraesidential, wahlregel: wahlStreng }),
     );
     expect(sechste.wahl?.gewonnen).toBe(false);
+    expect(sechste.wahl?.typ).toBe('praesidentialwahl');
     expect(sechste.state.wahl_niederlage).toEqual({
       jahr: 6,
-      grund_id: 'wahl:gewichtete_unter_47',
+      grund_id: 'wahl:gewichtete_unter_60',
     });
 
     const dritte = tick(
       stateMit({ jahr: 3 }),
       { zuteilung: {} },
-      regelnMit({ ereignis_regeln: [], wahlPruefen: verloren }),
+      regelnMit({ ereignis_regeln: [], regierung: regierungPraesidential, wahlregel: wahlStreng }),
     );
     expect(dritte.wahl).toBeUndefined();
     expect(dritte.state.wahl_niederlage).toBeUndefined();
   });
 
-  it('ein Intervall-Konflikt protokolliert keinen Gewinn: der Adapter sagt „kein Wahljahr", der Tick sagt „Wahljahr" (Lens-Fund zu PR #12)', () => {
-    // Der Tick-Zyklus ist Content (`wahl_intervall`), der Adapter folgt der Wahlregel (Intervall 6).
-    // Bei Intervall 3 wäre Jahr 3 für den Tick ein Wahljahr — der Adapter prüft nicht, und es
-    // darf kein stiller `gewonnen: true` im Ergebnis stehen.
-    const konflikt = tick(
+  it('ein Nicht-Wahljahr protokolliert keinen Gewinn: der Zyklus kommt aus dem Regel-Objekt, nicht aus einem Adapter-Zweig (Lens-Fund zu PR #12)', () => {
+    // Der Fund zu PR #12 war ein Konflikt zwischen Tick-Zyklus und Adapter-Regel. Mit der
+    // Mechanik als Daten (US-M1-03) gibt es nur eine Quelle: Jahr 3 ist bei Intervall 6 kein
+    // Wahljahr und darf kein Ergebnis liefern — weder Gewinn noch Niederlage.
+    const nonWahljahr = tick(
       stateMit({ jahr: 3 }),
       { zuteilung: {} },
-      regelnMit({
-        ereignis_regeln: [],
-        wahl_intervall: 3,
-        wahlPruefen: wahlRegelAlsPrüfung(WAHLREGEL_M0),
-      }),
+      regelnMit({ ereignis_regeln: [], regierung: regierungPraesidential, wahlregel: wahlBasis }),
     );
-    expect(konflikt.wahl).toBeUndefined();
-    expect(konflikt.state.wahl_niederlage).toBeUndefined();
+    expect(nonWahljahr.wahl).toBeUndefined();
+    expect(nonWahljahr.state.wahl_niederlage).toBeUndefined();
 
-    // Jahr 12 ist durch beide Intervalle teilbar (3 und 6): hier prüfen beide, und das Ergebnis
-    // ist ein echter Machtcheck, kein Stumm-Gewinn. Mit dem Start-Content (Ø 48.33) ist er bei der
-    // M0-Schwelle 47 gewonnen; mit einem Snapshot unter der Schwelle verliert er end-to-end im Tick.
+    // Jahr 12 ist ein Wahljahr der Variante: ein echter Machtcheck, kein Stumm-Gewinn. Mit dem
+    // Start-Ø 48.33 ist er bei Schwelle 47 gewonnen.
     const zwölfte = tick(
       stateMit({ jahr: 12 }),
       { zuteilung: {} },
-      regelnMit({
-        ereignis_regeln: [],
-        wahl_intervall: 3,
-        wahlPruefen: wahlRegelAlsPrüfung(WAHLREGEL_M0),
-      }),
+      regelnMit({ ereignis_regeln: [], regierung: regierungPraesidential, wahlregel: wahlBasis }),
     );
     expect(zwölfte.wahl?.gewonnen).toBe(true);
     expect(zwölfte.wahl?.grund_id).toBe('wahl:gewonnen');
@@ -318,11 +386,7 @@ describe('tick — ein Jahr Simulation (FR-001, US-M0-11)', () => {
     const verloren = tick(
       tief,
       { zuteilung: {} },
-      regelnMit({
-        ereignis_regeln: [],
-        wahl_intervall: 3,
-        wahlPruefen: wahlRegelAlsPrüfung(WAHLREGEL_M0),
-      }),
+      regelnMit({ ereignis_regeln: [], regierung: regierungPraesidential, wahlregel: wahlBasis }),
     );
     expect(verloren.wahl?.gewonnen).toBe(false);
     expect(verloren.wahl?.grund_id).toBe('wahl:gewichtete_unter_47');
@@ -332,26 +396,145 @@ describe('tick — ein Jahr Simulation (FR-001, US-M0-11)', () => {
     });
   });
 
-  it('die reale M0-Regel (Schwelle 47, Zyklus 6) gewinnt Jahr 6 mit dem Start-Content — Ø 48.33 ≥ 47', () => {
+  it('die M0-Regel als Daten (Schwelle 47, Zyklus 6) gewinnt Jahr 6 mit dem Start-Content — Ø 48.33 ≥ 47', () => {
     const ergebnis = tick(
       stateMit({ jahr: 6 }),
       { zuteilung: {} },
-      regelnMit({ ereignis_regeln: [], wahlPruefen: wahlRegelAlsPrüfung(WAHLREGEL_M0) }),
+      regelnMit({ ereignis_regeln: [], regierung: regierungPraesidential, wahlregel: wahlBasis }),
     );
     expect(ergebnis.wahl?.gewonnen).toBe(true);
     expect(ergebnis.wahl?.grund_id).toBe('wahl:gewonnen');
+    // Die Messwerte gehören zur Wahl-Variante (US-M1-03: der Rückgabewert ist die Auswertung).
+    const auswertung = ergebnis.wahl;
+    if (auswertung === undefined || auswertung.typ !== 'praesidentialwahl') {
+      throw new Error('Test: erwartet eine praesidentialwahl-Auswertung');
+    }
     // Die M0-Anteile aus balance-werte.md summieren 100.1 (nicht 100) — die Formel normalisiert,
     // deshalb ist Ø 48.33 und nicht die Docs-Zahl 48.4. Die Anteile sind Content, der Kern nicht.
-    expect(ergebnis.wahl?.gewichtete_zufriedenheit).toBeCloseTo(48.3296, 4);
+    expect(auswertung.gewichtete_zufriedenheit).toBeCloseTo(48.3296, 4);
     expect(ergebnis.state.wahl_niederlage).toBeUndefined();
 
     // Jahr 5 ist kein Wahljahr (Zyklus 6): der Tick protokolliert nichts.
     const fünfte = tick(
       stateMit({ jahr: 5 }),
       { zuteilung: {} },
-      regelnMit({ ereignis_regeln: [], wahlPruefen: wahlRegelAlsPrüfung(WAHLREGEL_M0) }),
+      regelnMit({ ereignis_regeln: [], regierung: regierungPraesidential, wahlregel: wahlBasis }),
     );
     expect(fünfte.wahl).toBeUndefined();
+  });
+
+  it('ein Setup ohne geladenes Regel-Set für die gewählte Form läuft ohne Machtcheck und meldet den Grund (US-M1-03, FR-015)', () => {
+    // Das Basis-Pack liefert nur das praesidential-Regel-Set. Eine legale Setup-Wahl ohne
+    // Regel-Set darf keine erfundene Mechanik ausführen: der State bleibt unverändert, der
+    // Grund-Muster-Wert im Ergebnis ist die Transparenz dafür (Adapter narrativiert ihn).
+    const ohneRegelset = tick(
+      stateMit({
+        jahr: 6,
+        setup: { regierungsform: 'parlamentarisch', konstitutions_ids: [] },
+      }),
+      { zuteilung: {} },
+      regelnMit({ ereignis_regeln: [], regierung: regierungPraesidential, wahlregel: wahlBasis }),
+    );
+    expect(ohneRegelset.wahl).toBeUndefined();
+    expect(ohneRegelset.machtverlust_regelset).toBe(
+      'machtverlust:kein_regelset_fuer_parlamentarisch',
+    );
+    expect(ohneRegelset.state.wahl_niederlage).toBeUndefined();
+    expect(ohneRegelset.state.jahr).toBe(7);
+  });
+
+  it('ein falsches Form-Variante-Paar im Register wirft im Dev-Modus mit Regel-Id und läuft in Produktion ohne Check (FR-002, ADR-011)', () => {
+    const falsch = regelnMit({
+      ereignis_regeln: [],
+      regierung: regierungPraesidential,
+      wahlregel: putschMitRisiko,
+    });
+    expect(() => tick(stateMit({ jahr: 6 }), { zuteilung: {} }, falsch, 'dev')).toThrow(
+      /Machtverlust-Bindung falsch/,
+    );
+    const produktion = tick(stateMit({ jahr: 6 }), { zuteilung: {} }, falsch, 'produktion');
+    expect(produktion.wahl).toBeUndefined();
+    expect(produktion.state.wahl_niederlage).toBeUndefined();
+  });
+
+  it('die Diktatur würfelt die Putsch-Roll in jedem Jahr und verbraucht den RNG nur bei echter Roll (US-M1-03, FR-014)', () => {
+    // Die Semantik ist die aus US-M1-11: keine Risiko-Gründe ⇒ kein Wurf, die Macht bleibt.
+    // Risiko-Gründe ⇒ genau ein Wurf aus dem State-RNG, eingetreten bei `roll < wahrscheinlichkeit`.
+    const ungefährdet = stateMit({ jahr: 2, gruppen: gruppenMitElite, legitimitaet: 90 });
+    const gehalten = tick(
+      ungefährdet,
+      { zuteilung: {} },
+      regelnMit({ ereignis_regeln: [], regierung: regierungDiktatur, wahlregel: putschOhneRisiko }),
+    );
+    expect(gehalten.wahl?.typ).toBe('putsch_roll');
+    expect(gehalten.wahl?.gewonnen).toBe(true);
+    expect(gehalten.wahl?.grund_id).toBe('putsch:bedingung_erfüllt');
+    expect(gehalten.state.rng.counter).toBe(0);
+    expect(gehalten.state.wahl_niederlage).toBeUndefined();
+    // Kein Amts-Zyklus bei `keins`: Jahr 2 ist kein Wahljahr, aber die Roll-Linie läuft trotzdem.
+
+    // Risiko (Elite unter der Schwelle) + wahrscheinlichkeit 1 ⇒ der Wurf tritt immer ein:
+    // Spielende über das Grund-Muster der fehlenden Bedingung, der RNG-Counter steigt um 1.
+    const riskant = stateMit({
+      jahr: 2,
+      gruppen: [
+        ...start.gruppen,
+        { tag: 'elite', zufriedenheit: 30, bevölkerungsanteil: 5, gewichte: { wirtschaft: 1 } },
+        {
+          tag: 'militaer',
+          zufriedenheit: 70,
+          bevölkerungsanteil: 5,
+          gewichte: { infrastruktur: 1 },
+        },
+      ],
+      legitimitaet: 90,
+    });
+    const eingetreten = tick(
+      riskant,
+      { zuteilung: {} },
+      regelnMit({
+        ereignis_regeln: [],
+        regierung: regierungDiktatur,
+        wahlregel: { ...putschMitRisiko, wahrscheinlichkeit: 1 },
+      }),
+    );
+    expect(eingetreten.wahl?.gewonnen).toBe(false);
+    expect(eingetreten.wahl?.grund_id).toBe('putsch:elite_unter_60');
+    expect(eingetreten.state.wahl_niederlage).toEqual({
+      jahr: 2,
+      grund_id: 'putsch:elite_unter_60',
+    });
+    expect(eingetreten.state.rng.counter).toBe(1);
+
+    // Derselbe Risiko-Fall mit wahrscheinlichkeit 0 ⇒ der Wurf findet statt, die Macht bleibt.
+    const abgewehrt = tick(
+      riskant,
+      { zuteilung: {} },
+      regelnMit({
+        ereignis_regeln: [],
+        regierung: regierungDiktatur,
+        wahlregel: { ...putschMitRisiko, wahrscheinlichkeit: 0 },
+      }),
+    );
+    expect(abgewehrt.wahl?.gewonnen).toBe(true);
+    expect(abgewehrt.wahl?.grund_id).toBe('putsch:gerollt_abgewehrt');
+    expect(abgewehrt.state.rng.counter).toBe(1);
+    expect(abgewehrt.state.wahl_niederlage).toBeUndefined();
+  });
+
+  it('das Misstrauens-Votum ist im Register gebunden, der Check läuft in dieser Story noch nicht (US-M1-08)', () => {
+    const ergebnis = tick(
+      stateMit({ jahr: 4 }),
+      { zuteilung: {} },
+      regelnMit({
+        ereignis_regeln: [],
+        regierung: regierungParlamentarisch,
+        wahlregel: parlamentmehrheit,
+      }),
+    );
+    expect(ergebnis.wahl).toBeUndefined();
+    expect(ergebnis.machtverlust_regelset).toBeUndefined();
+    expect(ergebnis.state.wahl_niederlage).toBeUndefined();
   });
 
   it('ein kaputer Regelsatz wirft im Dev-Modus mit Regel-Id, der Produktionsmodus läuft weiter (FR-002)', () => {
