@@ -111,7 +111,7 @@ Das Regel-Register ist ein Modul **im Kern** (`core/rules.ts`): Regel-Typen + Zo
 - Refine „mindestens eine Änderung" im `regelsatz_modifikator`: angenommen — leerer Modifikator ist Rauschen.
 - `regelsatz_modifikator` ist **Pflichtfeld**, nicht optional — Konzept §3 verspricht „jede Entscheidung mit dauerhaftem Regelsatz-Modifikator", und dieses Versprechen ist der Balance-Guard, der das Setup relevant macht (M1-Gate: zwei Konstitutionen ändern Mechanik). Symbolische Nur-Baseline-Entscheidungen sind erst gültig, wenn Ralf §3/§12 revidiert.
 - Entscheidungs-Ids: Pattern-Feld `^[a-z][a-z0-9_]*$` (snake_case wie die Kern-Tags), kein enum — konsistent mit D20/M4; „Grundrechte" (Großbuchstabe) wird korrekt abgelehnt.
-- `beschreibung` Pflichtfeld: architektonisch begünstigt — M5-Karten und News-Templates (G11) referenzieren Entscheidungstext; ohne Pflichtfeld fehlen Karten Titel. Retos Wortlaut bleibt Requirements-Autorität, aber ein Fall zu „optional" braucht dann einen M5-Text-Ersatz.
+- `beschreibung` Pflichtfeld: architektonisch begünstigt — M5-Karten und News-Templates (G11) referenzieren Entscheidungstext; ohne Pflichtfeld fehlen Karten Titel. Retos Wortlaut bleibt Requirements-Autorität, aber ein Fall zu „optional" braucht dann einen M5-Text-Ersatz. **Update (Reto confirmed):** „beschreibung Pflicht" ist eingetroffen und im gebauten Kopf umgesetzt (label + beschreibung Pflicht). Retos Schema-Snip schrieb `regelnatz_modifikator?` optional — das widerspricht D21 und seiner eigenen Begründungslogik; das Pflichtfeld bleibt, bis Ralf §3/§12 revidiert (dann amendiert der Kanon, nicht das Schema).
 
 ---
 
