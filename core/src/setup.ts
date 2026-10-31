@@ -15,12 +15,55 @@
  * kaputer Setup erzeugt nie einen halb gesetzten State. Die Regierungsform nutzt das bestehende
  * `regierung`-Enum aus `core/rules.ts` (§3b/D20), kein zweites Vokabular.
  */
-import { REGIERUNGSFORMEN, STEUERMODELLE, type Regierungsform } from './rules.js';
+import {
+  REGIERUNGSFORMEN,
+  STEUERMODELLE,
+  type KonstitutionsEntscheidung,
+  type Regierungsform,
+} from './rules.js';
 import { freezeSnapshot, type GameState, type Konstitution, type SetupPhase } from './state.js';
+import {
+  gruppenZufriedenheit,
+  steuermodellAusKonstitution,
+  type SteuerlastTabelle,
+} from './zufriedenheit.js';
 
 /** Die Setup-Pflicht eines Packs — die Ids, die die Konstitution enthalten muss (aus dem Register). */
 export interface SetupPflicht {
   readonly konstitutions_ids: readonly string[];
+  /**
+   * Die Entscheidungs-Instanzen des Registers (US-M1-05): `setupAnwenden` liest die Sofort-Effekte
+   * daraus und schreibt den Gruppen-Offset. Sie kommen — wie der Flag selbst — aus dem geladenen
+   * Register, nie aus einem Adapter (D22/ADR-002). Ohne Feld wird kein Offset geschrieben.
+   */
+  readonly entscheidungen?: readonly KonstitutionsEntscheidung[];
+  /**
+   * Die Steuerlast-Tabelle desselben Registers (US-M1-05): nur damit die Zufriedenheitsformel am
+   * Setup gerechnet werden kann — dieselbe Formel, dieselbe Instanz wie im Tick (core/zufriedenheit).
+   * Ohne Feld wird die Zufriedenheit nicht neu gerechnet (der M0-Harness bleibt bitgleich).
+   */
+  readonly steuerlast?: SteuerlastTabelle;
+}
+
+/**
+ * Der Baseline-Offset je Gruppe aus den Sofort-Effekten der gewählten Entscheidungen (US-M1-05).
+ * Die Summe ist die Wirkung der Konstitution auf die Zufriedenheitsformel (`baseline + Σ gewicht ×
+ * level − steuerlast + konstitutions_modifikator`, core/zufriedenheit); eine Gruppe ohne Effekt
+ * erscheint nicht im Record. Die Werte sind Register-Daten, der Kern erfindet keine Zahl.
+ */
+export function konstitutionsOffset(
+  ids: readonly string[],
+  entscheidungen: readonly KonstitutionsEntscheidung[],
+): Readonly<Record<string, number>> {
+  const gewählt = new Set(ids);
+  const offset: Record<string, number> = {};
+  for (const entscheidung of entscheidungen) {
+    if (!gewählt.has(entscheidung.regel_id)) continue;
+    for (const [tag, delta] of Object.entries(entscheidung.sofort_effekte)) {
+      offset[tag] = (offset[tag] ?? 0) + delta;
+    }
+  }
+  return Object.freeze(offset);
 }
 
 /** Die Setup-Aktion des Spielers: Form + die gewählten Konstitutions-Entscheidungen. */
@@ -74,12 +117,40 @@ export function setupAnwenden(
     );
   }
 
+  const entscheidungen = pflicht.entscheidungen ?? [];
+
   const setup: SetupPhase = Object.freeze({
     regierungsform: aktion.regierungsform,
     konstitutions_ids: Object.freeze([...ids]),
+    // US-M1-05: die Sofort-Effekte der gewählten Entscheidungen als dauerhafter Baseline-Offset. Der
+    // Key wird nur bei vorhandenen Effekten geschrieben — ein Setup ohne Effekte serialisiert ihn nicht.
+    ...(entscheidungen.length > 0
+      ? { konstitutions_offset: konstitutionsOffset(ids, entscheidungen) }
+      : {}),
   });
   const konstitution = Object.freeze({ ...state.konstitution, ...(aktion.konstitution ?? {}) });
-  return freezeSnapshot({ ...state, setup, konstitution }) as GameState;
+
+  // US-M1-05: die Verschiebung ist sofort sichtbar — die Gruppen-Zufriedenheit wird am Setup mit
+  // dem Offset gerechnet, mit derselben Formel und demselben Steuermodell wie der Tick. Ohne
+  // Steuerlast-Tabelle im Register bleibt der State unverändert (M0-Harness, bitgleich).
+  const gruppen =
+    pflicht.steuerlast === undefined || Object.keys(setup.konstitutions_offset ?? {}).length === 0
+      ? state.gruppen
+      : gruppenZufriedenheit(
+          state.gruppen,
+          state.indikatoren,
+          steuermodellAusKonstitution(konstitution, 'dev'),
+          pflicht.steuerlast,
+          0,
+          setup.konstitutions_offset,
+        );
+
+  return freezeSnapshot({
+    ...state,
+    setup,
+    konstitution,
+    gruppen: Object.freeze(gruppen),
+  }) as GameState;
 }
 
 /** true, wenn der Setup vollständig ist: Form gesetzt und alle Pflicht-Ids der Konstitution gewählt. */

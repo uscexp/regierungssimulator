@@ -13,11 +13,13 @@ import { SCHWIERIGKEIT_NORMAL, type IndikatorRegel } from '@staatslenker/core/in
 import type { SteuerfaktorTabelle } from '@staatslenker/core/budget';
 import type { SteuerlastTabelle } from '@staatslenker/core/zufriedenheit';
 import {
+  konstitutionsOffset,
   setupAnwenden,
   setupAbweisung,
   setupVollständig,
   type SetupPflicht,
 } from '@staatslenker/core/setup';
+import type { KonstitutionsEntscheidung } from '@staatslenker/core/rules';
 import {
   erzeugeGameState,
   type GameState,
@@ -238,5 +240,152 @@ describe('kanonische Serialisierung bleibt bitgleich (Haui-Ruling, D22)', () => 
     );
     expect(mit.includes('"setup"')).toBe(true);
     expect(mit.includes('"grundrechte"')).toBe(true);
+  });
+});
+
+describe('Konstitutions-Baseline (US-M1-05, AC: sofort verschiebt)', () => {
+  const entscheidungen: readonly KonstitutionsEntscheidung[] = [
+    {
+      regel_id: 'grundrechte',
+      label: 'Grundrechte garantieren',
+      beschreibung: 'Liberale gewinnen, Konservative verlieren.',
+      sofort_effekte: { liberale_minderheiten: 6, konservative: -4 },
+      regelsatz_modifikator: { steuermodell: 'flat' },
+    },
+    {
+      regel_id: 'weltlichkeit',
+      label: 'Weltlichkeit des Staates',
+      beschreibung: 'Weltlichkeit drueckt die Konservativen.',
+      sofort_effekte: { konservative: -2 },
+      regelsatz_modifikator: { steuermodell: 'flat' },
+    },
+    {
+      regel_id: 'steuermodell',
+      label: 'Steuermodell festlegen',
+      beschreibung: 'Das Modell wird festgelegt.',
+      sofort_effekte: {},
+      regelsatz_modifikator: { steuermodell: 'flat' },
+    },
+  ];
+  const ids = ['grundrechte', 'weltlichkeit', 'steuermodell'];
+  const pflichtMitRegister: SetupPflicht = { konstitutions_ids: ids, entscheidungen };
+  const pflichtMitSteuerlast: SetupPflicht = {
+    konstitutions_ids: ids,
+    entscheidungen,
+    steuerlast: steuerlast,
+  };
+
+  /**
+   * Start-Gruppen, deren Zufriedenheit der Formel entspricht. Die Steuerlast-Tabelle dieses Tests
+   * enthaelt nur `arbeitnehmer` (last 4) — die beiden neuen Gruppen haben last 0, also 10 + 40 = 50.
+   */
+  function stateMitGruppen(): GameState {
+    return erzeugeGameState({
+      ...start,
+      gruppen: [
+        {
+          tag: 'arbeitnehmer',
+          zufriedenheit: 46,
+          bevölkerungsanteil: 51.1,
+          gewichte: { bildung: 1 },
+        },
+        {
+          tag: 'liberale_minderheiten',
+          zufriedenheit: 50,
+          bevölkerungsanteil: 24.9,
+          gewichte: { bildung: 1 },
+        },
+        {
+          tag: 'konservative',
+          zufriedenheit: 50,
+          bevölkerungsanteil: 24.9,
+          gewichte: { bildung: 1 },
+        },
+      ],
+    });
+  }
+
+  function setupMit(pflichtValue: SetupPflicht): GameState {
+    return setupAnwenden(
+      stateMitGruppen(),
+      { regierungsform: 'praesidential', konstitutions_ids: ids },
+      pflichtValue,
+    );
+  }
+
+  it('die Sofort-Effekte der gewaehlten Entscheidungen werden als Offset summiert', () => {
+    const nach = setupMit(pflichtMitRegister);
+    expect(nach.setup?.konstitutions_offset).toEqual({
+      liberale_minderheiten: 6,
+      konservative: -6,
+    });
+    expect(Object.isFrozen(nach.setup?.konstitutions_offset)).toBe(true);
+    expect(konstitutionsOffset(['weltlichkeit'], entscheidungen)).toEqual({ konservative: -2 });
+    expect(konstitutionsOffset([], entscheidungen)).toEqual({});
+  });
+
+  it('ein Setup ohne Register-Entscheidungen schreibt keinen Offset-Key (M0-Pfad unveraendert)', () => {
+    const nach = setupAnwenden(
+      stateMitGruppen(),
+      { regierungsform: 'praesidential', konstitutions_ids: pflicht.konstitutions_ids },
+      pflicht,
+    );
+    expect(nach.setup?.konstitutions_offset).toBeUndefined();
+    expect(JSON.stringify(nach.setup).includes('konstitutions_offset')).toBe(false);
+  });
+
+  it('die Verschiebung ist sofort sichtbar: das Setup rechnet die Gruppen-Zufriedenheit neu', () => {
+    const nach = setupMit(pflichtMitSteuerlast);
+    const liberale = nach.gruppen.find((g) => g.tag === 'liberale_minderheiten');
+    const konservative = nach.gruppen.find((g) => g.tag === 'konservative');
+    // AC: liberaler hoeher, konservativer niedriger als ohne Grundrechte (Baseline 50).
+    // 50 + 6 = 56, 50 - 6 = 44.
+    expect(liberale?.zufriedenheit).toBe(56);
+    expect(konservative?.zufriedenheit).toBe(44);
+    expect(liberale?.zufriedenheit).toBeGreaterThan(50);
+    expect(konservative?.zufriedenheit).toBeLessThan(50);
+  });
+
+  it('der Tick erhaelt den Offset am Jahrsanfang und erfindet keinen Delta-Grund dafuer', () => {
+    const state = setupMit(pflichtMitSteuerlast);
+    const ergebnis = tick(
+      state,
+      { zuteilung: {} },
+      regelnMit({ setup_pflicht: pflichtMitSteuerlast }),
+    );
+    const liberale = ergebnis.state.gruppen.find((g) => g.tag === 'liberale_minderheiten');
+    // Der Tick rechnet die Zufriedenheit am Jahrsanfang aus den Leveln des letzten Tick (Tick-
+    // Semantik, US-M0-11): die Bildung ist noch 40, der Offset bleibt — 10 + 40 + 6 = 56. Der
+    // Verschleiss erscheint im Folgejahr. Die Spur ist leer, weil der Offset kein Delta ist: ein
+    // erfundener Konstitutions-Grund waere ein Grund ohne Wirkung (ADR-008).
+    expect(liberale?.zufriedenheit).toBe(56);
+    expect(ergebnis.state.zufriedenheits_trace['liberale_minderheiten']).toEqual([]);
+    expect(ergebnis.state.setup?.konstitutions_offset).toEqual({
+      liberale_minderheiten: 6,
+      konservative: -6,
+    });
+  });
+
+  it('ein State ohne Setup rechnet bitgleich weiter (M0-Fixtures bleiben unveraendert)', () => {
+    const a = tick(stateMitGruppen(), { zuteilung: {} }, regelnMit());
+    const b = tick(stateMitGruppen(), { zuteilung: {} }, regelnMit());
+    expect(JSON.stringify(a.state)).toBe(JSON.stringify(b.state));
+    expect(JSON.stringify(stateMitGruppen()).includes('"setup"')).toBe(false);
+  });
+
+  it('der Offset ist atomisch: eine kapute Id wirft, bevor Offset und Zufriedenheit entstehen', () => {
+    const state = stateMitGruppen();
+    expect(() =>
+      setupAnwenden(
+        state,
+        {
+          regierungsform: 'praesidential',
+          konstitutions_ids: ['grundrechte', 'nicht_im_register'],
+        },
+        pflichtMitSteuerlast,
+      ),
+    ).toThrow(/nicht_im_register/);
+    expect(state.setup).toBeUndefined();
+    expect(state.gruppen.find((g) => g.tag === 'liberale_minderheiten')?.zufriedenheit).toBe(50);
   });
 });
