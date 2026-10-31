@@ -46,6 +46,8 @@ import {
   type SteuerlastTabelle,
 } from './zufriedenheit.js';
 import { setupAbweisung, type SetupPflicht } from './setup.js';
+import { wahlAuswerten, type WahlAuswertung } from './wahl-eval.js';
+import type { RegierungRegel, WahlregelVariant } from './rules.js';
 import type { DeltaGrund, Effekt, GruppenSnapshot, GameState, IndikatorTag } from './state.js';
 import type { Wahlprüfung } from './wahl.js';
 
@@ -80,13 +82,18 @@ export interface TickRegeln {
   readonly steuerlast: SteuerlastTabelle;
   readonly schwierigkeit: SchwierigkeitsPack;
   readonly ereignis_regeln?: readonly EreignisRegel[];
-  /** Wahlzyklus in Jahren (M0: alle 4 Jahre, AC US-M0-12). */
-  readonly wahl_intervall?: number;
-  /** Die Wahlregel wird von außen gereicht (US-M0-12), damit der Tick sie nicht erfindet. `undefined` vom Adapter heißt: in diesem Jahr wird nicht geprüft. */
-  readonly wahlPruefen?: (
-    gruppen: readonly GruppenSnapshot[],
-    jahr: number,
-  ) => WahlErgebnis | undefined;
+  /**
+   * Die Regierungsregel des Packs als Daten (US-M1-03, FR-015): Form, Amtsmodus und
+   * Machtverlust-Mechanik. Der Kern liest sie als Register-Wert, nicht als Code-Zweig — ein Pack
+   * ohne Regierungs-Register prüft den gereichten Wahl-Zyklus unverändert (M0-Harness ohne Setup).
+   */
+  readonly regierung?: RegierungRegel;
+  /**
+   * Die gereichte Wahl-Mechanik als Register-Variante (ADR-011): der Kern interpretiert den
+   * Discriminator typisch (`wahlAuswerten`), kein injizierter Callback. `undefined` heißt: dieser
+   * Pack liefert keinen Machtcheck.
+   */
+  readonly wahlregel?: WahlregelVariant;
   /** News-Vorlagen je Event-Id; Templates sind Pack-Content (G11), ohne Template fällt der Text auf die Id zurück. */
   readonly news_vorlagen?: Readonly<Record<string, string>>;
   /**
@@ -110,7 +117,13 @@ export interface TickErgebnis {
   readonly state: GameState;
   readonly ereignisse: readonly AusgelöstesEreignis[];
   readonly news: readonly NewsEintrag[];
-  readonly wahl?: WahlErgebnis;
+  readonly wahl?: WahlAuswertung;
+  /**
+   * Grund-Muster, wenn für die gewählte Regierungsform kein Regel-Set im geladenen Pack liegt
+   * (US-M1-03, FR-015): dieser Turn läuft ohne Machtcheck, der State bleibt unverändert. Die
+   * Inhalte von `parlamentarisch` und `diktatur` warten auf ihre Balance-Werte (Ralf/FR-015).
+   */
+  readonly machtverlust_regelset?: string;
   readonly unterhalt_be: number;
   /**
    * Der Grund, warum dieser Turn abgewiesen wurde (US-M1-02/D22, Produktionsmodus): der State ist
@@ -125,6 +138,59 @@ export interface TickErgebnis {
  * seinen eigenen Zyklus über `regeln.wahl_intervall`; dieser Wert ist nur der Default, damit ein
  * Pack nicht zwei Zahlen für denselben Zyklus schreibt (cli/content-pack importiert ihn). */
 export const WAHL_INTERVALL = 6;
+
+/** Die Variante, die zu einer Machtverlust-Mechanik gehört (Register-Bindung, FR-015). */
+const MACHTVERLUST_VARIANTEN: Readonly<
+  Record<RegierungRegel['machtverlust'], WahlregelVariant['typ']>
+> = Object.freeze({
+  wahl: 'praesidentialwahl',
+  misstrauen: 'parlamentmehrheit',
+  putsch: 'putsch_roll',
+});
+
+/**
+ * Das Machtverlust-Paar aus dem Register (US-M1-03): der Kern wertet nur die Variante, die zur
+ * Form passt und deren Mechanik in dieser Story gebaut ist. Fehlt für die gewählte Form das
+ * Regel-Set — die Inhalte von `parlamentarisch` und `diktatur` warten auf ihre Balance-Werte
+ * (FR-015) — läuft **kein** Check und das Ergebnis meldet den Grund. Eine erfundene Mechanik
+ * würde den State desync'en. Der Dev-Modus wirft nur bei einem falschen Paar im Register
+ * (FR-002, Definitionfehler des Packs), nie bei einer legalen Setup-Wahl ohne Regel-Set.
+ */
+function machtverlustAuswerten(
+  regeln: TickRegeln,
+  setupForm: RegierungRegel['form'] | undefined,
+  modus: Modus,
+): { readonly variante?: WahlregelVariant; readonly regelset_fehlt?: string } {
+  const variante = regeln.wahlregel;
+  if (variante === undefined) return {};
+  const form = regeln.regierung;
+  if (form === undefined) {
+    // Kein Regierungs-Register: der M0-Pfad prüft den gereichten Wahl-Zyklus unverändert.
+    return variante.typ === 'praesidentialwahl' ? { variante } : {};
+  }
+  const erwartet = MACHTVERLUST_VARIANTEN[form.machtverlust];
+  if (variante.typ !== erwartet) {
+    if (modus === 'dev') {
+      throw new Error(
+        `Machtverlust-Bindung falsch: Form '${form.form}' erwartet die Variante '${erwartet}', gereicht ist '${variante.typ}' (regel_id '${variante.regel_id}')`,
+      );
+    }
+    return {};
+  }
+  if (setupForm !== undefined && setupForm !== form.form) {
+    return { regelset_fehlt: `machtverlust:kein_regelset_fuer_${setupForm}` };
+  }
+  if (form.machtverlust === 'misstrauen') {
+    // Das Misstrauens-Votum ist US-M1-08, die Gesetzes-Mehrheit US-M1-07: die Bindung steht im
+    // Register, der Check läuft in dieser Story noch nicht.
+    return {};
+  }
+  if (form.amt.modus === 'keins') {
+    // Diktatur: kein Amts-Zyklus; die Mechanik ist die Putsch-Roll in jedem Jahr.
+    return form.machtverlust === 'putsch' ? { variante } : {};
+  }
+  return { variante };
+}
 
 /**
  * Ein Jahr Simulation. Wirft bei einem illegalen Action (Karte ohne genug PK, negative Allokation)
@@ -212,17 +278,28 @@ export function tick(
   const beschlussEffekte = effekteAusBeschlüsse(aktuell);
   aktuell = effekteAnwenden(aktuell, skalarEffekte(beschlussEffekte), 'beschlüsse', modus);
 
-  // 4) Wahlzyklus — die Wahlregel kommt von außen (US-M0-12), der Intervall ist Content.
-  let wahl: WahlErgebnis | undefined;
-  const intervall = regeln.wahl_intervall ?? WAHL_INTERVALL;
-  if (regeln.wahlPruefen !== undefined && state.jahr % intervall === 0) {
-    const ergebnis = regeln.wahlPruefen(aktuell.gruppen, state.jahr);
-    if (ergebnis !== undefined) {
-      wahl = ergebnis;
-      if (!ergebnis.gewonnen) {
+  // 4) Machtverlust — der Kern interpretiert die gereichten Register-Varianten (US-M1-03, ADR-011).
+  //    Kein injizierter Callback mehr: die Mechanik steht als Daten im Register und der Kern
+  //    verzweigt typisch über den Discriminator (`wahlAuswerten`). Die Bindung von Regierungsform
+  //    und Variante ist Teil des Registers; ein falsches Paar ist im Dev-Modus ein
+  //    Definitionfehler und in Produktion kein Check (erfundene Mechanik wäre ein Desync).
+  //    Der Amtsmodus entscheidet, ob ein Amts-Zyklus läuft: `keins` (Diktatur) prüft keinen
+  //    Zyklus, `fixed_term`/`zyklisch` prüfen in den Jahren des gereichten Intervalls.
+  let wahl: WahlAuswertung | undefined;
+  const paar = machtverlustAuswerten(regeln, aktuell.setup?.regierungsform, modus);
+  const machtverlust_regelset = paar.regelset_fehlt;
+  if (paar.variante !== undefined) {
+    const auswertung = wahlAuswerten(paar.variante, aktuell, modus);
+    if (auswertung !== undefined) {
+      wahl = auswertung;
+      if (auswertung.typ === 'putsch_roll' && auswertung.rng !== undefined) {
+        // Die Roll verbraucht den State-RNG nur, wenn tatsächlich gewürfelt wurde (FR-004).
+        aktuell = Object.freeze({ ...aktuell, rng: auswertung.rng }) as GameState;
+      }
+      if (!auswertung.gewonnen) {
         aktuell = Object.freeze({
           ...aktuell,
-          wahl_niederlage: Object.freeze({ jahr: state.jahr, grund_id: ergebnis.grund_id }),
+          wahl_niederlage: Object.freeze({ jahr: state.jahr, grund_id: auswertung.grund_id }),
         }) as GameState;
       }
     }
@@ -270,6 +347,7 @@ export function tick(
     ereignisse: Object.freeze(ereignisse),
     news: Object.freeze(newsAus(ereignisse, regeln.news_vorlagen)),
     wahl,
+    machtverlust_regelset,
     unterhalt_be: unterhaltOhneEvents(
       regeln.indikator_regeln,
       (tag) => indikatoren[tag] ?? 0,

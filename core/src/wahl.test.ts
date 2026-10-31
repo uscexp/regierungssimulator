@@ -1,12 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import {
-  WAHLREGEL_M0,
-  wahlJahr,
-  wahlPrüfen,
-  wahlRegelAlsPrüfung,
-  schwächsteGruppe,
-} from '@staatslenker/core/wahl';
+import { WAHLREGEL_M0, wahlJahr, wahlPrüfen, schwächsteGruppe } from '@staatslenker/core/wahl';
 import type { GruppenSnapshot } from '@staatslenker/core/state';
 
 const gruppe = (tag: string, zufriedenheit: number, anteil: number): GruppenSnapshot =>
@@ -80,12 +74,11 @@ describe('core/wahl — der Machtcheck mit Unruhe-Gate (FR-013, US-M0-12, PO D12
     expect(wahlJahr(5, { ...WAHLREGEL_M0, intervall_jahre: 0 })).toBe(false);
   });
 
-  it('ein Nicht-Wahljahr liefert kein Ergebnis, damit der Tick keinen Machtcheck protokolliert (Lens-Fund)', () => {
-    const prüfung = wahlRegelAlsPrüfung(WAHLREGEL_M0);
-    expect(prüfung(fixtureB, 3)).toBeUndefined();
-    expect(prüfung(fixtureB, 1)).toBeUndefined();
-    // Ein Snapshot ohne Gruppen ist trotzdem kein Ergebnis: der Check findet nicht statt.
-    expect(prüfung([], 3)).toBeUndefined();
+  it('ein Nicht-Wahljahr ist kein Check, damit der Tick keinen Machtcheck protokolliert (Lens-Fund zu PR #12)', () => {
+    // Der Zyklus ist Teil des Regel-Objekts (US-M1-03: die Mechanik ist Daten, kein Adapter-Callback).
+    expect(wahlJahr(3, WAHLREGEL_M0)).toBe(false);
+    expect(wahlJahr(1, WAHLREGEL_M0)).toBe(false);
+    expect(wahlJahr(6, WAHLREGEL_M0)).toBe(true);
   });
 
   it('ein Snapshot ohne Gruppen ist ein Definitionfehler mit eigener Regel-Id (FR-002)', () => {

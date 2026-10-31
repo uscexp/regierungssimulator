@@ -20,12 +20,13 @@ import {
   START_INDICATOREN,
   STEUERFAKTOR,
   STEUERLAST,
+  REGIERUNG_REGEL_M0,
+  WAHLREGEL_VARIANT_M0,
   basisKonstitution,
 } from '@staatslenker/content-base';
 import { erzeugeGameState, type GameState, type GruppenSnapshot } from '@staatslenker/core/state';
 import type { TickRegeln } from '@staatslenker/core/tick';
 import { gruppenZufriedenheit } from '@staatslenker/core/zufriedenheit';
-import { WAHLREGEL_M0, wahlRegelAlsPrüfung } from '@staatslenker/core/wahl';
 
 /** Content wird re-exportiert — eine Instanz der Zahlen, sie liegt im content-base-Pack. */
 export {
@@ -54,10 +55,9 @@ export {
   STANDARD_SETUP,
 };
 
-/** US-M0-12: Der Machtcheck-Zyklus ist Content (`wahl_intervall` im Tick) und wird aus der Wahlregel
- * des Packs abgeleitet — Zyklus und Regel können nicht auseinanderfallen (Tick und Adapter prüfen
- * denselben Wert; ein Auseinanderfallen wäre der Lens-Fund zu PR #12). */
-export const WAHL_INTERVALL = WAHLREGEL_M0.intervall_jahre;
+/** Der Machtcheck-Zyklus des Packs (M0: 6 Jahre) — abgeleitet aus der gereichten Wahl-Variante, damit
+ * Zyklus und Regel nicht auseinanderfallen (Tick und Adapter lesen denselben Register-Wert). */
+export const WAHL_INTERVALL = WAHLREGEL_VARIANT_M0.intervall_jahre;
 
 /**
  * Die Start-Gruppen mit gerechneter Zufriedenheit — die Formel kommt aus core/zufriedenheit
@@ -110,8 +110,10 @@ export function tickRegelnFür(schwierigkeitId: 'leicht' | 'normal' | 'schwer'):
     steuerfaktor: STEUERFAKTOR,
     steuerlast: STEUERLAST,
     schwierigkeit: SCHWIERIGKEIT_PACKS[schwierigkeitId],
-    wahl_intervall: WAHL_INTERVALL,
-    wahlPruefen: wahlRegelAlsPrüfung(WAHLREGEL_M0),
+    // Die Machtverlust-Mechanik ist Register-Daten (US-M1-03, ADR-011): der Tick interpretiert
+    // Form und Variante, der Adapter reicht keine Funktion.
+    regierung: REGIERUNG_REGEL_M0,
+    wahlregel: WAHLREGEL_VARIANT_M0,
     news_vorlagen: NEWS_VORLAGEN,
     // Keine Event-Regeln: balance-werte.md definiert keine konkreten Events (das ist M2-Content).
     // Ohne Kandidaten würfelt der Tick nicht — der AutoSim ist damit rein deterministisch.
