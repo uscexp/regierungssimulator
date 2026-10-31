@@ -113,6 +113,14 @@ Das Regel-Register ist ein Modul **im Kern** (`core/rules.ts`): Regel-Typen + Zo
 - Entscheidungs-Ids: Pattern-Feld `^[a-z][a-z0-9_]*$` (snake_case wie die Kern-Tags), kein enum — konsistent mit D20/M4; „Grundrechte" (Großbuchstabe) wird korrekt abgelehnt.
 - `beschreibung` Pflichtfeld: architektonisch begünstigt — M5-Karten und News-Templates (G11) referenzieren Entscheidungstext; ohne Pflichtfeld fehlen Karten Titel. Retos Wortlaut bleibt Requirements-Autorität, aber ein Fall zu „optional" braucht dann einen M5-Text-Ersatz. **Update (Reto confirmed):** „beschreibung Pflicht" ist eingetroffen und im gebauten Kopf umgesetzt (label + beschreibung Pflicht). Retos Schema-Snip schrieb `regelnatz_modifikator?` optional — das widerspricht D21 und seiner eigenen Begründungslogik; das Pflichtfeld bleibt, bis Ralf §3/§12 revidiert (dann amendiert der Kanon, nicht das Schema).
 
+**Verdikt D22 (Pädu, Setup-Gate US-M1-02):** Tyrdors Richtung 1/2/3 angenommen, mit einem Kanon-Punkt:
+
+- `GameState.setup` ist optional und wird **nur bei gesetztem Setup serialisiert** (der Key fehlt bei undefined) — die kanonische M0-Serialisierung bleibt bitgleich (Haui-Ruling: Replay/Spread/Kurven ohne Diff). Pflichtfeld über `schema_version` 2 (Alternative b) ist verworfen: es benennt die M0-Referenz um und ist gegen Haui/Ralf-Ruling.
+- Der Gate lebt **im Kern als Datenregel**, aber `setup_pflicht` ist ein Feld des **geladenen Regelsatzes** (Pack-Level, aus dem Register), kein Adapter-Option: identische Regeln ⇒ identischer Gate über CLI und Web (ADR-002 — derselbe Grund wie D20 gegen injizierte Verhalten). Ein Adapter darf den Flag nicht selbst setzen — sonst hätten zwei Adapter bei identischen Regeln verschiedene Gate-Wirkung, und der Determinismus ist gebrochen.
+- `setupAnwenden(state, aktion) → neuer Snapshot` ist pure; die Konstitutions-Ids werden gegen das geladene Register validiert, **bevor** der Snapshot geschrieben wird (atomisch wie die Pack-Validierung, ADR-003). `regierungsform` nutzt das bestehende `regierung`-Enum.
+- Turn ohne vollständigen Setup: dev wirft mit Grund; Produktion gibt den unveränderten State zurück plus `TickErgebnis.setup_abgewiesen` — der Grund wird über News-Templates (G11) narrativiert („die Regierung ist noch nicht gegründet“), damit es nicht wie ein Bug wirkt.
+- Adapter-Gate allein (Alternative a) ist verworfen: Spielregeln gehören nicht in Adapter — zwei Adapter dürfen nicht zwei Regelautoritäten sein. Der REPL-Order (Form → Konstitution → Turn 1) und der Standard-Setup im non-interaktiven Boot sind Adapter-Angelegenheit und ok.
+
 ---
 
 ## 4. Tech-Stack
