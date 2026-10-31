@@ -9,3 +9,4 @@
  */
 export * from './schema.js';
 export * from './basis-pack.js';
+export * from './setup-regeln.js';
