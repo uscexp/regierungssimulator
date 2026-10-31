@@ -14,9 +14,15 @@
  * Die Feldnamen der `wahlregel`- und `regierung`-Varianten sind Pädu-Kanon (§3b, gemerged als PR #30):
  * `typ` als Discriminator, `intervall_jahre` statt `term_jahre` (bestehendes Feld aus core/wahl.ts),
  * `mehrheit` ohne Fraktions-Ids (Fraktionen sind abgeleitete Views, G3/§3a), `putsch_roll` mit
- * `wahrscheinlichkeit` und ASCII-Feldnamen nach Kern-Stil (`militaer_min`, `legitimitaet_min`).
- * Die Pflichtfelder der `constitution` sind aus FR-017 abgeleitet und warten Retos Bestätigung
- * (Requirements-Autorität) — ein rename danach ist eine Schema-Zeile plus Test-Zeile, kein Kern-Change.
+ * `wahrscheinlichkeit` und ASCII-Feldnamen nach Kern-Stil (`militaer_min`, `legitimitaet_min`). Verdikt
+ * D20 (PR #33) hält diese Form: ein `variant`/`parameter`-Envelope ist verworfen, weil er die
+ * variant-spezifischen Schwellen aus der Zod-Validierung beim Pack-Laden herauszieht (ADR-003, ADR-011).
+ * Die Konstitutions-Felder folgen Retos Kanon (FR-017) und Verdikt D21 (PR #34): Sofort-Effekte als
+ * Record je Gruppe, Modifikator als Pflichtfeld mit positivem Faktor, Gruppen-Modifikatoren und
+ * `steuermodell`-Enum; die Entscheidungs-Ids sind ein Pattern-Feld aus dem Content, kein enum im
+ * Kern-Schema (sonst bindet der Kern neue Entscheidungen an Code und bricht M4). `beschreibung` bleibt
+ * Pflichtfeld — M5-Karten und News-Templates referenzieren den Entscheidungstext; Retos Wortlaut ist
+ * Requirements-Autorität, ein Fall zu „optional" braucht einen M5-Text-Ersatz.
  */
 import { z } from 'zod';
 
@@ -133,41 +139,55 @@ export const wahlregelSchema = z.discriminatedUnion('typ', [
   putschRollSchema,
 ]);
 
-/** Der baseline-Effekt einer Konstitutions-Entscheidung auf eine Gruppe (FR-017, sofort). */
-const gruppenDeltaSchema = z
-  .object({ gruppe_tag: TAG, delta: z.number().finite().min(-100).max(100) })
-  .strict();
+/**
+ * Gruppen-Deltas als Record je Gruppe (FR-017, Reto-Kanon): ein Record ist per Schlüssel eindeutig,
+ * eine duplicierte Gruppe ist in JSON nicht darstellbar — die Eindeutigkeits-Refine über ein Array ist
+ * damit entfallen. Die Grenze ist dieselbe Kern-Invariante wie vorher (−100…100).
+ */
+const GRUPPE_DELTA = z.number().finite().min(-100).max(100);
+const sofortEffekteSchema = z.record(TAG, GRUPPE_DELTA);
+
+/** Das Steuermodell der Konstitution (FR-015/FR-017) — ein Enum, keine erfundene vierte Variante. */
+const STEUERMODELL = z.enum(['flat', 'progressiv', 'hoch', 'niedrig']);
 
 /**
- * Der dauerhafte Modifikator (FR-017): Event-Wahrscheinlichkeits-Faktor und Gruppen-Modifikatoren.
- * Ein Faktor ist positiv — ein negativer Faktor wäre eine erfundene Inversion der Event-Mechanik.
+ * Der dauerhafte Modifikator (FR-017, Reto-Kanon + Verdikt D21): das Feld ist **Pflicht**, die drei
+ * Änderungen einzeln optional — Konzept §3 verspricht „jede Entscheidung mit dauerhaftem
+ * Regelsatz-Modifikator", und dieses Versprechen ist der Balance-Guard, der das Setup relevant macht
+ * (M1-Gate: zwei Konstitutionen ändern Mechanik). Ein leerer Modifikator ist Rauschen, deshalb verlangt
+ * die refine mindestens eine Änderung. Ein Faktor ist positiv — ein negativer wäre eine erfundene
+ * Inversion der Event-Mechanik. Symbolische Nur-Baseline-Entscheidungen werden erst legal, wenn Ralf
+ * §3/§12 revidiert; dann amendiert der Kanon, nicht dieses Schema.
  */
 const regelsatzModifikatorSchema = z
   .object({
-    event_wahrscheinlichkeitfaktor: z.number().finite().positive(),
-    gruppen_modifikatoren: z.record(TAG, z.number().finite().min(-100).max(100)),
+    event_wahrscheinlichkeitfaktor: z.number().finite().positive().optional(),
+    gruppen_modifikatoren: z.record(TAG, GRUPPE_DELTA).optional(),
+    steuermodell: STEUERMODELL.optional(),
   })
-  .strict();
+  .strict()
+  .refine(
+    (modifikator) =>
+      modifikator.event_wahrscheinlichkeitfaktor !== undefined ||
+      modifikator.gruppen_modifikatoren !== undefined ||
+      modifikator.steuermodell !== undefined,
+    { message: 'Ein Regelsatz-Modifikator muss mindestens eine Änderung enthalten' },
+  );
 
-/** Struktur einer Konstitutions-Entscheidung — die Eindeutigkeit der Effekte kommt als refine dazu. */
-const konstitutionEntscheidungBasisSchema = z
+/** Konstitutions-Entscheidung (FR-017, Reto-Kanon): label + Sofort-Effekte je Gruppe + optionaler Modifikator. */
+export const konstitutionEntscheidungSchema = z
   .object({
+    /** Die Entscheidungs-Id ist ein Pattern-Feld aus dem Content (Pädu-Kanon), kein gepinntes enum — ein
+     * enum im Kern-Schema würde neue Entscheidungen an Code binden und M4 (Pack ohne Code) brechen. */
     regel_id: REGEL_ID,
     label: z.string().min(1),
+    /** `beschreibung` bleibt bis Retos Wortlaut dazu Pflichtfeld (gestrichen/optional fällt als AC-Nachzug). */
     beschreibung: z.string().min(1),
     /** Der Sofort-Effekt ist Daten; die Gruppenzufriedenheit rechnet der Kern (core/zufriedenheit). */
-    sofort_effekte: z.array(gruppenDeltaSchema),
+    sofort_effekte: sofortEffekteSchema,
     regelsatz_modifikator: regelsatzModifikatorSchema,
   })
   .strict();
-
-/** Eine Konstitutions-Entscheidung (FR-017) mit Sofort-Effekt und Dauer-Modifikator. */
-export const konstitutionEntscheidungSchema = konstitutionEntscheidungBasisSchema.refine(
-  (entscheidung) =>
-    entscheidung.sofort_effekte.length ===
-    new Set(entscheidung.sofort_effekte.map((e) => e.gruppe_tag)).size,
-  { message: 'Sofort-Effekte müssen je Gruppe eindeutig sein' },
-);
 
 /** Struktur einer Konstitutionsregel — die Id-Eindeutigkeit der Entscheidungen kommt als refine dazu. */
 const konstitutionBasisSchema = z
@@ -175,7 +195,7 @@ const konstitutionBasisSchema = z
     typ: z.literal('constitution'),
     regel_id: REGEL_ID,
     label: z.string().min(1),
-    entscheidungen: z.array(konstitutionEntscheidungBasisSchema).min(1),
+    entscheidungen: z.array(konstitutionEntscheidungSchema).min(1),
   })
   .strict();
 
