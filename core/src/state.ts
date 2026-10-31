@@ -75,6 +75,16 @@ export interface Konstitution {
   readonly [regel_id: string]: string | boolean;
 }
 
+/**
+ * Die Setup-Phase vor Turn 1 (US-M1-02, Verdikt D22): die gewählte Regierungsform und die Ids der
+ * Konstitutions-Entscheidungen. **Optional** — ein Start ohne Setup serialisiert den Key nicht, damit
+ * die kanonische M0-Serialisierung bitgleich bleibt (Haui-Ruling: Replay/Spread/Kurven ohne Diff).
+ */
+export interface SetupPhase {
+  readonly regierungsform: 'praesidential' | 'parlamentarisch' | 'diktatur';
+  readonly konstitutions_ids: readonly string[];
+}
+
 /** Das Entscheidungsgedächtnis ist Teil des Snapshots; ein verlorener Machtcheck wird ebenfalls gespeichert. */
 export interface WahlNiederlage {
   readonly jahr: number;
@@ -100,6 +110,8 @@ export interface GameState {
   readonly radikalisierung: number;
   readonly rng: RngState;
   readonly konstitution: Konstitution;
+  /** Setup-Phase vor Turn 1 (US-M1-02/D22); fehlt bei einem Start ohne Setup — Key wird dann nicht serialisiert. */
+  readonly setup?: SetupPhase;
   readonly zufriedenheits_trace: Readonly<Record<GruppenTag, readonly DeltaGrund[]>>;
   /** Entscheidungsgedächtnis (FR-006, US-M0-08) — Beschlüsse, die noch wirken. */
   readonly beschlüsse: readonly AktiverBeschluss[];

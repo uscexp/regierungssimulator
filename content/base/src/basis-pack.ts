@@ -197,6 +197,9 @@ export const SCHWIERIGKEIT_NORMAL: SchwierigkeitsPack = SCHWIERIGKEIT_PACKS.norm
  * den der Tick ohne M2-Event-Regeln selbst erzeugt. */
 export const NEWS_VORLAGEN: Readonly<Record<string, string>> = Object.freeze({
   sparen: 'Austerität: Schulden beim Limit — alle Gruppen −5 (balance-werte.md §6).',
+  /** US-M1-02/D22: ein Turn ohne Setup wird abgewiesen — narrativiert, damit es nicht wie ein Bug wirkt (G11). */
+  setup_abgewiesen:
+    'Die Regierung ist noch nicht gegründet — Turn 1 erst nach Regierungsform und Konstitution.',
 });
 
 /**

@@ -21,3 +21,4 @@ export * from './ereignisse.js';
 export * from './tick.js';
 export * from './wahl.js';
 export * from './rules.js';
+export * from './setup.js';

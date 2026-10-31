@@ -45,6 +45,7 @@ import {
   type Steuermodell,
   type SteuerlastTabelle,
 } from './zufriedenheit.js';
+import { setupAbweisung, type SetupPflicht } from './setup.js';
 import type { DeltaGrund, Effekt, GruppenSnapshot, GameState, IndikatorTag } from './state.js';
 import type { Wahlprüfung } from './wahl.js';
 
@@ -88,6 +89,13 @@ export interface TickRegeln {
   ) => WahlErgebnis | undefined;
   /** News-Vorlagen je Event-Id; Templates sind Pack-Content (G11), ohne Template fällt der Text auf die Id zurück. */
   readonly news_vorlagen?: Readonly<Record<string, string>>;
+  /**
+   * Die Setup-Pflicht des geladenen Regelsatzes (US-M1-02, Verdikt D22): ein Turn ohne vollständigen
+   * Setup wird abgewiesen. Der Wert kommt aus dem Register des Packs, **nicht** aus einem Adapter —
+   * zwei Adapter bei identischen Regeln müssen identisch gate'en (ADR-002). Ein Pack ohne Setup-
+   * Register lässt das Feld `undefined` und gate't nie (der M0-Harness spielt ohne Setup).
+   */
+  readonly setup_pflicht?: SetupPflicht;
 }
 
 export type WahlErgebnis = Wahlprüfung;
@@ -104,6 +112,11 @@ export interface TickErgebnis {
   readonly news: readonly NewsEintrag[];
   readonly wahl?: WahlErgebnis;
   readonly unterhalt_be: number;
+  /**
+   * Der Grund, warum dieser Turn abgewiesen wurde (US-M1-02/D22, Produktionsmodus): der State ist
+   * unverändert, der Jahr-Schritt lief nicht. Im Dev-Modus wirft der Kern stattdessen.
+   */
+  readonly setup_abgewiesen?: string;
   /** BE, die im Budget-Schritt nicht ausgegeben werden konnten (§1/§6) — der Lagebericht narrativiert sie (FR-041). */
   readonly gekuerzte_be: number;
 }
@@ -124,6 +137,24 @@ export function tick(
   regeln: TickRegeln,
   modus: Modus = 'dev',
 ): TickErgebnis {
+  // 0) Setup-Gate (US-M1-02, D22): ohne vollständige Setup-Phase läuft kein Jahr Simulation. Der
+  //    Grund wird über ein News-Template narrativiert, damit es nicht wie ein Bug wirkt (G11).
+  const setupGrund = setupAbweisung(state, regeln.setup_pflicht);
+  if (setupGrund !== undefined) {
+    if (modus === 'dev') {
+      throw new TypeError(`Turn ohne Setup: ${setupGrund}`);
+    }
+    const text = regeln.news_vorlagen?.['setup_abgewiesen'] ?? setupGrund;
+    return {
+      state,
+      ereignisse: [],
+      news: [{ id: 'setup_abgewiesen', text }],
+      unterhalt_be: 0,
+      gekuerzte_be: 0,
+      setup_abgewiesen: setupGrund,
+    };
+  }
+
   const schwierigkeit = regeln.schwierigkeit;
   const modell = steuermodellAusKonstitution(state.konstitution, modus);
 

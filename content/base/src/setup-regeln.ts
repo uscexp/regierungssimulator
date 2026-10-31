@@ -25,6 +25,8 @@
  *   Konzept-Richtung und einen dokumentierten Hinweis.
  */
 import { konstitutionSchema, validiereSetupRegeln } from '@staatslenker/core/rules';
+import type { SetupAktion, SetupPflicht } from '@staatslenker/core/setup';
+import type { Konstitution } from '@staatslenker/core/state';
 
 /** Die vier Gruppen, die der M0-Basis-Pack nicht simuliert — hier dürfen Effekte stehen. */
 const NICHT_M0_GRUPPEN = [
@@ -179,3 +181,34 @@ export function validiereBasisSetup(
 
 /** Die Gruppen, die ein Konstitutions-Effekt berühren darf (M0-Messbasis-Guard). */
 export const EFFEKT_GRUPPEN_NICH_M0 = NICHT_M0_GRUPPEN;
+
+/**
+ * Die Werte der Konstitution als `regel_id → Wert` (US-M1-02/D22): die Steuermodell-Entscheidung setzt
+ * das Modell (flat, K2), alle anderen Entscheidungen sind gesetzt. Der Tick liest daraus in M0 nur das
+ * Steuermodell — die Sofort-Effekte und Dauer-Modifikatoren angewendet erst US-M1-05/US-M1-06.
+ */
+export const KONSTITUTION_WERTE: Konstitution = Object.freeze(
+  Object.fromEntries(
+    basisKonstitution.entscheidungen.map((e) => [
+      e.regel_id,
+      e.regelsatz_modifikator.steuermodell ?? true,
+    ]),
+  ),
+);
+
+/** Die Setup-Pflicht des Registers (D22): der Wert kommt aus dem geladenen Register, nicht aus einem Adapter. */
+export const SETUP_PFLICHT: SetupPflicht = Object.freeze({
+  konstitutions_ids: Object.freeze(basisKonstitution.entscheidungen.map((e) => e.regel_id)),
+});
+
+/** Die im Basis-Register verfügbaren Regierungsformen — US-M1-03 liefert die weiteren Formen. */
+export const SETUP_FORMEN = Object.freeze(
+  basisSetupRegeln.filter((r) => r.typ === 'regierung').map((r) => r.form),
+);
+
+/** Der Standard-Setup des non-interaktiven Boots: praesidential + alle 8 Entscheidungen (K2: flat). */
+export const STANDARD_SETUP: SetupAktion = Object.freeze({
+  regierungsform: 'praesidential',
+  konstitutions_ids: Object.freeze(basisKonstitution.entscheidungen.map((e) => e.regel_id)),
+  konstitution: KONSTITUTION_WERTE,
+});
