@@ -232,6 +232,8 @@ export type SetupRegel = z.infer<typeof setupRegelSchema>;
 export type RegierungRegel = z.infer<typeof regierungSchema>;
 export type WahlregelVariant = z.infer<typeof wahlregelSchema>;
 export type KonstitutionRegel = z.infer<typeof konstitutionSchema>;
+/** Eine einzelne Konstitutions-Entscheidung (US-M1-05): `setupAnwenden` liest die Sofort-Effekte daraus. */
+export type KonstitutionsEntscheidung = z.infer<typeof konstitutionEntscheidungSchema>;
 
 /** Ein Setup-Regelsatz: eindeutige Ids und mindestens eine Regierung plus eine Wahl-Mechanik. */
 export const setupRegelnSchema = z

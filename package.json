@@ -17,6 +17,7 @@
     "golden:replay": "npm run build && node scripts/generate-replay-golden.mjs && npx prettier --write cli/fixtures/replay.golden.ts",
     "golden:spread": "npm run build && node scripts/generate-score-spread.mjs && npx prettier --write cli/fixtures/score-spread.golden.ts",
     "golden:curves": "npm run build && node scripts/generate-naiv-kurven.mjs && npx prettier --write cli/fixtures/naiv-kurven.golden.ts",
+    "balance:konstitution": "npm run build && node scripts/konstitution-messung.mjs",
     "test": "npm run build && vitest run",
     "test:watch": "vitest",
     "lint": "eslint .",

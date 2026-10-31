@@ -87,6 +87,13 @@ export function gruppenZufriedenheit(
   modell: Steuermodell,
   tabelle: SteuerlastTabelle,
   konstitutions_modifikator = 0,
+  /**
+   * Der per-Gruppe-Offset der gewählten Konstitution (US-M1-05, `SetupPhase.konstitutions_offset`).
+   * Er addiert auf den gemeinsamen Modifikator und ist ein Baseline-Term der Formel, kein einmaliger
+   * Snapshot-Wert — der Tick rechnet ihn am Jahrsanfang, sonst wäre der Setup-Einfluss nach Jahr 1
+   * weg (Ralf-Option B). Ein fehlender Tag zählt 0, `undefined` lässt die Formel bitgleich.
+   */
+  konstitutions_offset?: Readonly<Record<GruppenTag, number>>,
 ): GruppenSnapshot[] {
   return gruppen.map((gruppe) => ({
     ...gruppe,
@@ -94,7 +101,7 @@ export function gruppenZufriedenheit(
       gruppe,
       indikatoren,
       steuerlastFuer(gruppe.tag, modell, tabelle),
-      konstitutions_modifikator,
+      konstitutions_modifikator + (konstitutions_offset?.[gruppe.tag] ?? 0),
     ),
   }));
 }

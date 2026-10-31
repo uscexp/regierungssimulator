@@ -158,14 +158,24 @@ export function tick(
   const schwierigkeit = regeln.schwierigkeit;
   const modell = steuermodellAusKonstitution(state.konstitution, modus);
 
-  // 1) Zufriedenheit am Jahrsanfang — aus den Leveln, die der letzte Tick hinterlassen hat.
-  const gruppen = gruppenZufriedenheit(state.gruppen, state.indikatoren, modell, regeln.steuerlast);
+  // 1) Zufriedenheit am Jahrsanfang — aus den Leveln, die der letzte Tick hinterlassen hat. Der
+  //    Konstitutions-Offset der Setup-Phase (US-M1-05) ist ein Baseline-Term der Formel und bleibt
+  //    erhalten, bis die nächste Konstitution ihn ersetzt (Ralf-Option B, kein Reset am Turn 1).
+  const gruppen = gruppenZufriedenheit(
+    state.gruppen,
+    state.indikatoren,
+    modell,
+    regeln.steuerlast,
+    0,
+    state.setup?.konstitutions_offset,
+  );
   const spuren = zufriedenheitsSpuren(
     state.gruppen,
     gruppen,
     state.indikatoren,
     modell,
     regeln.steuerlast,
+    state.setup?.konstitutions_offset,
   );
   let aktuell: GameState = Object.freeze({
     ...state,
@@ -314,6 +324,8 @@ function zufriedenheitsSpuren(
   indikatoren: Readonly<Record<IndikatorTag, number>>,
   modell: Steuermodell,
   tabelle: SteuerlastTabelle,
+  /** Der Konstitutions-Offset beider Seiten (US-M1-05) — er ist kein Delta, sonst wäre der Grund erfunden. */
+  offset?: Readonly<Record<string, number>>,
 ): Readonly<Record<string, readonly DeltaGrund[]>> {
   const spuren: Record<string, readonly DeltaGrund[]> = {};
 
@@ -322,9 +334,10 @@ function zufriedenheitsSpuren(
     if (alt === undefined) continue;
 
     const last = steuerlastFuer(gruppe.tag, modell, tabelle);
+    const beitrag = offset?.[gruppe.tag] ?? 0;
     // Der gewichtete Level am Jahrsanfang ist aus der alten Zufriedenheit ableitbar:
-    // alt = baseline + gewichtete Level − last.
-    const gewichtetAlt = alt.zufriedenheit - ZUFRIEDENHEIT_BASELINE + last;
+    // alt = baseline + gewichtete Level − last + offset.
+    const gewichtetAlt = alt.zufriedenheit - ZUFRIEDENHEIT_BASELINE + last - beitrag;
     let gewichtetNeu = 0;
     for (const [tag, gewicht] of Object.entries(gruppe.gewichte)) {
       gewichtetNeu += gewicht * (indikatoren[tag] ?? 0);

@@ -79,10 +79,18 @@ export interface Konstitution {
  * Die Setup-Phase vor Turn 1 (US-M1-02, Verdikt D22): die gewählte Regierungsform und die Ids der
  * Konstitutions-Entscheidungen. **Optional** — ein Start ohne Setup serialisiert den Key nicht, damit
  * die kanonische M0-Serialisierung bitgleich bleibt (Haui-Ruling: Replay/Spread/Kurven ohne Diff).
+ *
+ * `konstitutions_offset` (US-M1-05) ist die Summe der Sofort-Effekte der gewählten Entscheidungen je
+ * Gruppe. Er bleibt erhalten, bis die nächste Konstitution ihn ersetzt (Ralf-Option B: kein Reset am
+ * Turn 1, "sofort" heißt "sofort sichtbar und dauerhaft bis zur nächsten Konstitution"). Das Feld ist
+ * optional: ein Setup ohne Register-Entscheidungen hat keinen Offset, und ein Start ohne Setup
+ * serialisiert ohnehin keinen Key — die M0-Formel und ihre Fixtures bleiben bitgleich.
  */
 export interface SetupPhase {
   readonly regierungsform: 'praesidential' | 'parlamentarisch' | 'diktatur';
   readonly konstitutions_ids: readonly string[];
+  /** Dauerhafter Baseline-Offset je Gruppe aus den Sofort-Effekten (US-M1-05); fehlt ohne Effekte. */
+  readonly konstitutions_offset?: Readonly<Record<string, number>>;
 }
 
 /** Das Entscheidungsgedächtnis ist Teil des Snapshots; ein verlorener Machtcheck wird ebenfalls gespeichert. */

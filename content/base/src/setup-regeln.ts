@@ -24,9 +24,14 @@
  *   Gruppen-Delta. Die betroffenen Entscheidungen tragen deshalb nur die Gruppen-Anteilung der
  *   Konzept-Richtung und einen dokumentierten Hinweis.
  */
-import { konstitutionSchema, validiereSetupRegeln } from '@staatslenker/core/rules';
+import {
+  konstitutionSchema,
+  validiereSetupRegeln,
+  type KonstitutionsEntscheidung,
+} from '@staatslenker/core/rules';
 import type { SetupAktion, SetupPflicht } from '@staatslenker/core/setup';
 import type { Konstitution } from '@staatslenker/core/state';
+import { STEUERLAST } from './basis-pack.js';
 
 /** Die vier Gruppen, die der M0-Basis-Pack nicht simuliert — hier dürfen Effekte stehen. */
 const NICHT_M0_GRUPPEN = [
@@ -37,7 +42,7 @@ const NICHT_M0_GRUPPEN = [
 ] as const;
 
 /** Die Entscheidungstexte sind M5-Karten- und News-Referenz (D21: `beschreibung` ist Pflichtfeld). */
-const entscheidungen = [
+const entscheidungen: readonly KonstitutionsEntscheidung[] = [
   {
     regel_id: 'grundrechte',
     label: 'Grundrechte garantieren',
@@ -199,6 +204,10 @@ export const KONSTITUTION_WERTE: Konstitution = Object.freeze(
 /** Die Setup-Pflicht des Registers (D22): der Wert kommt aus dem geladenen Register, nicht aus einem Adapter. */
 export const SETUP_PFLICHT: SetupPflicht = Object.freeze({
   konstitutions_ids: Object.freeze(basisKonstitution.entscheidungen.map((e) => e.regel_id)),
+  /** Die Entscheidungs-Instanzen desselben Registers (US-M1-05): daraus liest der Kern die Sofort-Effekte. */
+  entscheidungen: Object.freeze(basisKonstitution.entscheidungen),
+  /** Dieselbe Steuerlast-Tabelle wie im Tick (US-M1-05): nur damit die Formel am Setup gerechnet wird. */
+  steuerlast: STEUERLAST,
 });
 
 /** Die im Basis-Register verfügbaren Regierungsformen — US-M1-03 liefert die weiteren Formen. */
