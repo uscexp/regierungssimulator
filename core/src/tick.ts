@@ -48,6 +48,7 @@ import {
 import { setupAbweisung, type SetupPflicht } from './setup.js';
 import { wahlAuswerten, type WahlAuswertung } from './wahl-eval.js';
 import type { KonstitutionsEntscheidung, RegierungRegel, WahlregelVariant } from './rules.js';
+import { ereignisKetteVerarbeiten, type Entscheidungskarte } from './entscheidung.js';
 import type {
   DeltaGrund,
   Effekt,
@@ -103,6 +104,11 @@ export interface TickRegeln {
   readonly wahlregel?: WahlregelVariant;
   /** News-Vorlagen je Event-Id; Templates sind Pack-Content (G11), ohne Template fällt der Text auf die Id zurück. */
   readonly news_vorlagen?: Readonly<Record<string, string>>;
+  /**
+   * Entscheidungs-Karten für Event-Ketten (US-M2-03, FR-025): der Spieler wählt bei einem Event
+   * zwischen Optionen, jede Option kann zu einem Folge-Event führen. Tiefen-Limit garantiert Exit.
+   */
+  readonly entscheidungskarten?: readonly Entscheidungskarte[];
   /**
    * Die Setup-Pflicht des geladenen Regelsatzes (US-M1-02, Verdikt D22): ein Turn ohne vollständigen
    * Setup wird abgewiesen. Der Wert kommt aus dem Register des Packs, **nicht** aus einem Adapter —
@@ -339,6 +345,24 @@ export function tick(
     rng: lost.rng,
   }) as GameState;
   const ereignisse: AusgelöstesEreignis[] = [...lost.ereignisse];
+
+  // 2b) Event-Ketten mit Entscheidungs-Karten (US-M2-03): für jedes ausgelöste Event prüfen,
+  // ob eine entsprechende Entscheidungskarte existiert und die Kette verarbeiten.
+  for (const ereignis of lost.ereignisse) {
+    const karte = (regeln.entscheidungskarten ?? []).find((k) => k.regel_id === ereignis.ereignis_id);
+    if (karte === undefined) continue;
+
+    const kettenErgebnis = ereignisKetteVerarbeiten(
+      regeln.entscheidungskarten ?? [],
+      karte.regel_id,
+      aktuell,
+      modus,
+      0,
+      5,
+    );
+    aktuell = Object.freeze({ ...aktuell, ...kettenErgebnis.state }) as GameState;
+    ereignisse.push(...kettenErgebnis.ereignisse);
+  }
 
   // 3) Karten: PK zuerst prüfen und verbrauchen, dann ins Entscheidungsgedächtnis schreiben.
   let mitKarten = aktuell;

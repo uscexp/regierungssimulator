@@ -25,6 +25,7 @@
  * Requirements-Autorität, ein Fall zu „optional" braucht einen M5-Text-Ersatz.
  */
 import { z } from 'zod';
+import { praedikatSchema } from './eval.js';
 
 /** Level-Grenzen sind Kern-Invarianten (core/invariant.ts, LEVEL_MIN/LEVEL_MAX) — das Schema spiegelt sie. */
 const LEVEL = z.number().finite().min(0).max(100);
@@ -50,6 +51,7 @@ export const setupRegelTyp = z.enum([
   'praesidentialwahl',
   'parlamentmehrheit',
   'putsch_roll',
+  'entscheidungskarte',
 ]);
 export type SetupRegelTypString = z.infer<typeof setupRegelTyp>;
 
@@ -196,7 +198,39 @@ export const konstitutionEntscheidungSchema = z
   })
   .strict();
 
-/** Struktur einer Konstitutionsregel — die Id-Eindeutigkeit der Entscheidungen kommt als refine dazu. */
+/** Eine Entscheidungs-Karte (US-M2-03, FR-025): eine Karte mit Optionen, die zu Folge-Events führen können.
+ * Die Instanzen werden in core/src/entscheidung.ts definiert und von dort importiert.
+ */
+export const entscheidungskarteSchema = z
+  .object({
+    typ: z.literal('entscheidungskarte'),
+    regel_id: REGEL_ID,
+    label: z.string().min(1),
+    optionen: z.array(
+      z.object({
+        id: REGEL_ID,
+        bedingung: praedikatSchema.optional(),
+        effekte: z.array(
+          z.object({
+            ziel: z.enum([
+              'indikatoren',
+              'gruppen',
+              'legitimitaet',
+              'radikalisierung',
+              'politisches_kapital',
+              'budget',
+            ]),
+            tag: z.string().optional(),
+            delta: z.number(),
+          }),
+        ),
+      }),
+    ).min(1),
+    maxTiefe: z.number().int().min(1).max(50).default(5),
+  })
+  .strict();
+
+/** Struktur einer Konstitutionsregel — die Entscheidungs-Felder warten Retos Kanons (US-M1-04 zählt ~8). */
 const konstitutionBasisSchema = z
   .object({
     typ: z.literal('constitution'),
@@ -225,6 +259,7 @@ export const setupRegelSchema = z.discriminatedUnion('typ', [
   praesidentialwahlSchema,
   parlamentmehrheitSchema,
   putschRollSchema,
+  entscheidungskarteSchema,
 ]);
 
 /** TS-Struktur für Konsumenten — der Kern kennt die Struktur, das Schema ist die Validierung. */
@@ -259,6 +294,7 @@ const verfeinertNachTyp: Record<SetupRegelTypString, z.ZodType<unknown>> = {
   praesidentialwahl: praesidentialwahlSchema,
   parlamentmehrheit: parlamentmehrheitSchema,
   putsch_roll: putschRollSchema,
+  entscheidungskarte: entscheidungskarteSchema,
 };
 
 /** Lookup nach Typ (FR-034): alle Regeln eines Typs, in Register-Reihenfolge. */
