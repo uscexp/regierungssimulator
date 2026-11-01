@@ -47,8 +47,15 @@ import {
 } from './zufriedenheit.js';
 import { setupAbweisung, type SetupPflicht } from './setup.js';
 import { wahlAuswerten, type WahlAuswertung } from './wahl-eval.js';
-import type { RegierungRegel, WahlregelVariant } from './rules.js';
-import type { DeltaGrund, Effekt, GruppenSnapshot, GameState, IndikatorTag } from './state.js';
+import type { KonstitutionsEntscheidung, RegierungRegel, WahlregelVariant } from './rules.js';
+import type {
+  DeltaGrund,
+  Effekt,
+  GruppenSnapshot,
+  GruppenTag,
+  GameState,
+  IndikatorTag,
+} from './state.js';
 import type { Wahlprüfung } from './wahl.js';
 
 /** Eine Karte aus dem Content-Katalog (M3) — Kosten und Wirkung sind Daten, keine Kern-Konstanten. */
@@ -197,6 +204,61 @@ function machtverlustAuswerten(
  * mit Regel-Id; ein kaputter Regelsatz wirft im Dev-Modus und läuft im Produktionsmodus weiter
  * (FR-002). Der alte Snapshot wird nie mutiert (ADR-002).
  */
+/**
+ * Die dauerhaften Regelsatz-Modifikatoren der gewählten Konstitutions-Entscheidungen (US-M1-06,
+ * FR-017, Verdikt D21): Event-Faktoren multiplizieren, Gruppen-Deltas addieren, das Steuermodell
+ * gewinnt gegen eine frühere Entscheidung. Die Instanzen kommen aus dem Register des Packs
+ * (`SetupPflicht.entscheidungen`), der Kern erfindet keine Zahl — ohne Setup oder ohne Register-
+ * Instanzen ist der Modifikator leer und die M0-Mechanik läuft unverändert.
+ */
+function dauerhafterModifikator(
+  ids: readonly string[] | undefined,
+  entscheidungen: readonly KonstitutionsEntscheidung[] | undefined,
+): {
+  readonly event_wahrscheinlichkeitfaktor?: number;
+  readonly gruppen_modifikatoren?: Readonly<Record<GruppenTag, number>>;
+  readonly steuermodell?: Steuermodell;
+} {
+  if (ids === undefined || entscheidungen === undefined || ids.length === 0) return {};
+  const gewählt = new Set(ids);
+  let faktor: number | undefined;
+  const deltas: Record<string, number> = {};
+  let modell: Steuermodell | undefined;
+  for (const entscheidung of entscheidungen) {
+    if (!gewählt.has(entscheidung.regel_id)) continue;
+    const modifikator = entscheidung.regelsatz_modifikator;
+    if (modifikator.event_wahrscheinlichkeitfaktor !== undefined) {
+      faktor = (faktor ?? 1) * modifikator.event_wahrscheinlichkeitfaktor;
+    }
+    for (const [tag, delta] of Object.entries(modifikator.gruppen_modifikatoren ?? {})) {
+      deltas[tag] = (deltas[tag] ?? 0) + delta;
+    }
+    if (modifikator.steuermodell !== undefined) modell = modifikator.steuermodell;
+  }
+  return Object.freeze({
+    ...(faktor === undefined ? {} : { event_wahrscheinlichkeitfaktor: faktor }),
+    ...(Object.keys(deltas).length === 0 ? {} : { gruppen_modifikatoren: Object.freeze(deltas) }),
+    ...(modell === undefined ? {} : { steuermodell: modell }),
+  });
+}
+
+/**
+ * Der Baseline-Term der Zufriedenheitsformel für dieses Jahr: der Setup-Offset (US-M1-05) plus die
+ * dauerhaften Gruppen-Deltas der Konstitution (US-M1-06). Beide sind Terms derselben Formel, die
+ * Spur behält den bestehenden Grund (`konstitutions_modifikator`) — ADR-008 erlaubt keinen neuen
+ * Delta-Grund in der Spur.
+ */
+function baselineOffset(
+  setupOffset: Readonly<Record<GruppenTag, number>> | undefined,
+  dauerhafte: Readonly<Record<GruppenTag, number>> | undefined,
+): Readonly<Record<GruppenTag, number>> | undefined {
+  if (dauerhafte === undefined) return setupOffset;
+  if (setupOffset === undefined) return dauerhafte;
+  const merged: Record<string, number> = { ...setupOffset };
+  for (const [tag, delta] of Object.entries(dauerhafte)) merged[tag] = (merged[tag] ?? 0) + delta;
+  return Object.freeze(merged);
+}
+
 export function tick(
   state: GameState,
   action: TickAction,
@@ -222,7 +284,21 @@ export function tick(
   }
 
   const schwierigkeit = regeln.schwierigkeit;
-  const modell = steuermodellAusKonstitution(state.konstitution, modus);
+  // Die dauerhaften Modifikatoren des Registers (US-M1-06, FR-017) wirken in jedem Jahr — sie sind
+  // Daten aus den gewählten Konstitutions-Ids, nicht ein Adapter-Zweig.
+  const modifikator = dauerhafterModifikator(
+    state.setup?.konstitutions_ids,
+    regeln.setup_pflicht?.entscheidungen,
+  );
+  const konstitution =
+    modifikator.steuermodell === undefined
+      ? state.konstitution
+      : Object.freeze({ ...state.konstitution, steuermodell: modifikator.steuermodell });
+  const modell = steuermodellAusKonstitution(konstitution, modus);
+  const baseline = baselineOffset(
+    state.setup?.konstitutions_offset,
+    modifikator.gruppen_modifikatoren,
+  );
 
   // 1) Zufriedenheit am Jahrsanfang — aus den Leveln, die der letzte Tick hinterlassen hat. Der
   //    Konstitutions-Offset der Setup-Phase (US-M1-05) ist ein Baseline-Term der Formel und bleibt
@@ -233,7 +309,7 @@ export function tick(
     modell,
     regeln.steuerlast,
     0,
-    state.setup?.konstitutions_offset,
+    baseline,
   );
   const spuren = zufriedenheitsSpuren(
     state.gruppen,
@@ -241,7 +317,7 @@ export function tick(
     state.indikatoren,
     modell,
     regeln.steuerlast,
-    state.setup?.konstitutions_offset,
+    baseline,
   );
   let aktuell: GameState = Object.freeze({
     ...state,
@@ -250,7 +326,14 @@ export function tick(
   }) as GameState;
 
   // 2) Events: gewichtete Auswahl über den State-RNG, Effekte auf Gruppen und Skalar-Ziele.
-  const lost = ereignisAuslosen(aktuell, regeln.ereignis_regeln ?? [], schwierigkeit, 1, modus);
+  const lost = ereignisAuslosen(
+    aktuell,
+    regeln.ereignis_regeln ?? [],
+    schwierigkeit,
+    1,
+    modus,
+    modifikator.event_wahrscheinlichkeitfaktor,
+  );
   aktuell = Object.freeze({
     ...ereignisAnwenden(aktuell, lost.ereignisse, modus),
     rng: lost.rng,

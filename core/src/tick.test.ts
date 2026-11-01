@@ -11,7 +11,11 @@ import {
 } from '@staatslenker/core/state';
 import type { SteuerlastTabelle } from '@staatslenker/core/zufriedenheit';
 import type { EreignisRegel } from '@staatslenker/core/ereignisse';
-import type { RegierungRegel, WahlregelVariant } from '@staatslenker/core/rules';
+import type {
+  KonstitutionsEntscheidung,
+  RegierungRegel,
+  WahlregelVariant,
+} from '@staatslenker/core/rules';
 
 const indikator_regeln: readonly IndikatorRegel[] = [
   {
@@ -558,5 +562,201 @@ describe('tick — ein Jahr Simulation (FR-001, US-M0-11)', () => {
     const grund = zweiter.state.zufriedenheits_trace.bildung_jugend![0]!;
     expect(grund.grund_id).toBe('zufriedenheit:level');
     expect(grund.delta).toBeCloseTo(-1.412, 10);
+  });
+});
+
+describe('tick — dauerhafte Regelsatz-Modifikatoren der Konstitution (US-M1-06, FR-017, D21)', () => {
+  /** Test-Instanzen des Registers: die Werte sind Mechanik-Testdaten, nicht die Balance-Quelle. */
+  const deltaEntscheidung: KonstitutionsEntscheidung = Object.freeze({
+    regel_id: 'modifikator_test_delta',
+    label: 'Test: dauerhafter Gruppen-Delta',
+    beschreibung: 'Testdaten für den dauerhaften Gruppen-Modifikator (US-M1-06).',
+    sofort_effekte: {},
+    regelsatz_modifikator: { gruppen_modifikatoren: { unternehmen: 5 } },
+  });
+  const faktorEntscheidung: KonstitutionsEntscheidung = Object.freeze({
+    regel_id: 'modifikator_test_faktor',
+    label: 'Test: Event-Faktor',
+    beschreibung: 'Testdaten für den Event-Wahrscheinlichkeits-Faktor (US-M1-06).',
+    sofort_effekte: {},
+    regelsatz_modifikator: { event_wahrscheinlichkeitfaktor: 0.2 },
+  });
+  const faktorEntscheidungZwei: KonstitutionsEntscheidung = Object.freeze({
+    regel_id: 'modifikator_test_faktor_zwei',
+    label: 'Test: zweiter Event-Faktor',
+    beschreibung: 'Testdaten für die Multiplikation zweier Faktoren (US-M1-06).',
+    sofort_effekte: {},
+    regelsatz_modifikator: { event_wahrscheinlichkeitfaktor: 0.9 },
+  });
+  const steuerEntscheidung: KonstitutionsEntscheidung = Object.freeze({
+    regel_id: 'modifikator_test_steuer',
+    label: 'Test: Steuermodell',
+    beschreibung: 'Testdaten für den Steuermodell-Modifikator (US-M1-06).',
+    sofort_effekte: {},
+    regelsatz_modifikator: { steuermodell: 'progressiv' as const },
+  });
+
+  const pflichtMit = (entscheidungen: readonly KonstitutionsEntscheidung[]) =>
+    Object.freeze({
+      konstitutions_ids: entscheidungen.map((e) => e.regel_id),
+      entscheidungen,
+      steuerlast,
+    });
+  const setupMit = (ids: readonly string[]) =>
+    Object.freeze({ regierungsform: 'praesidential' as const, konstitutions_ids: ids });
+  const zufriedenheitDer = (
+    ergebnis: ReturnType<typeof tick>,
+    tag: 'unternehmen' | 'arbeitnehmer',
+  ): number => ergebnis.state.gruppen.find((g) => g.tag === tag)!.zufriedenheit;
+
+  it('ein dauerhafter Gruppen-Delta wirkt am Jahrsanfang und bleibt im nächsten Jahr erhalten (AC FR-017)', () => {
+    const regelnOhne = regelnMit({ ereignis_regeln: [] });
+    const regelnMitModifikator = regelnMit({
+      ereignis_regeln: [],
+      setup_pflicht: pflichtMit([deltaEntscheidung]),
+    });
+    const setup = setupMit(['modifikator_test_delta']);
+
+    const ersteOhne = tick(stateMit({ jahr: 1 }), { zuteilung: {} }, regelnOhne);
+    const ersteMit = tick(stateMit({ jahr: 1, setup }), { zuteilung: {} }, regelnMitModifikator);
+    expect(
+      zufriedenheitDer(ersteMit, 'unternehmen') - zufriedenheitDer(ersteOhne, 'unternehmen'),
+    ).toBeCloseTo(5, 6);
+    // Die Spur bleibt bei ihrem bestehenden Grund (ADR-008): der Offset ist ein Term, kein Delta.
+    const spur = ersteMit.state.zufriedenheits_trace.unternehmen ?? [];
+    expect(spur.map((g) => g.grund_id)).toEqual(['zufriedenheit:level']);
+
+    // Der Modifikator ist dauerhaft — kein Reset am nächsten Turn (Ralf-Option B, wie der Offset).
+    const zweiteOhne = tick(ersteOhne.state, { zuteilung: {} }, regelnOhne);
+    const zweiteMit = tick(ersteMit.state, { zuteilung: {} }, regelnMitModifikator);
+    expect(
+      zufriedenheitDer(zweiteMit, 'unternehmen') - zufriedenheitDer(zweiteOhne, 'unternehmen'),
+    ).toBeCloseTo(5, 6);
+  });
+
+  it('ein Event-Faktor begrenzt den Wurf und verbraucht den RNG nur, wenn begrenzt wird (FR-004, FR-017)', () => {
+    // Seed 424242: erster Wurf 0.6539 — ein Faktor 0.2 gate't ab, ein Faktor 0.9 lässt durch.
+    const gegatet = tick(
+      stateMit({ jahr: 1, setup: setupMit(['modifikator_test_faktor']) }),
+      { zuteilung: {} },
+      regelnMit({ ereignis_regeln, setup_pflicht: pflichtMit([faktorEntscheidung]) }),
+    );
+    expect(gegatet.ereignisse.length).toBe(0);
+    expect(gegatet.state.rng.counter).toBe(1);
+
+    const durch = tick(
+      stateMit({ jahr: 1, setup: setupMit(['modifikator_test_faktor_zwei']) }),
+      { zuteilung: {} },
+      // Nur der zweite Faktor (0.9) ist gewählt: 0.6539 < 0.9 ⇒ der Gate-Wurf läuft und der
+      // Auswahl-Wurf danach auch.
+      regelnMit({ ereignis_regeln, setup_pflicht: pflichtMit([faktorEntscheidungZwei]) }),
+    );
+    expect(durch.ereignisse.length).toBe(1);
+    expect(durch.state.rng.counter).toBe(2);
+
+    // Ohne Setup läuft die M0-Mechanik unverändert: ein Wurf, ein verbrauchter Counter.
+    const ohne = tick(stateMit({ jahr: 1 }), { zuteilung: {} }, regelnMit({ ereignis_regeln }));
+    expect(ohne.ereignisse.length).toBe(1);
+    expect(ohne.state.rng.counter).toBe(1);
+  });
+
+  it('zwei Faktoren multiplizieren und zwei Deltas addieren — die Merge-Semantik ist im Kern eindeutig', () => {
+    const beide = tick(
+      stateMit({
+        jahr: 1,
+        setup: setupMit(['modifikator_test_faktor', 'modifikator_test_faktor_zwei']),
+      }),
+      { zuteilung: {} },
+      regelnMit({
+        ereignis_regeln,
+        setup_pflicht: pflichtMit([faktorEntscheidung, faktorEntscheidungZwei]),
+      }),
+    );
+    // 0.2 × 0.9 = 0.18: der erste Wurf (0.6539) liegt darüber ⇒ kein Event, nur der Gate-Wurf.
+    expect(beide.ereignisse.length).toBe(0);
+    expect(beide.state.rng.counter).toBe(1);
+
+    const doppel = tick(
+      stateMit({
+        jahr: 1,
+        setup: setupMit(['modifikator_test_delta', 'modifikator_test_delta']),
+      }),
+      { zuteilung: {} },
+      regelnMit({ ereignis_regeln: [], setup_pflicht: pflichtMit([deltaEntscheidung]) }),
+    );
+    const baseline = tick(
+      stateMit({ jahr: 1 }),
+      { zuteilung: {} },
+      regelnMit({ ereignis_regeln: [] }),
+    );
+    // Eine Id wird nicht doppelt gezählt: die Summe ist einmal der Delta, nicht zweimal.
+    expect(
+      zufriedenheitDer(doppel, 'unternehmen') - zufriedenheitDer(baseline, 'unternehmen'),
+    ).toBeCloseTo(5, 6);
+  });
+
+  it('der Steuermodell-Modifikator wirkt auf die Steuerlast desselben Jahres (FR-017, eine Formel)', () => {
+    const progressiv = tick(
+      stateMit({ jahr: 1, setup: setupMit(['modifikator_test_steuer']) }),
+      { zuteilung: {} },
+      regelnMit({ ereignis_regeln: [], setup_pflicht: pflichtMit([steuerEntscheidung]) }),
+    );
+    const flat = tick(stateMit({ jahr: 1 }), { zuteilung: {} }, regelnMit({ ereignis_regeln: [] }));
+    // §3: progressiv ist auf die wohlhabende Gruppe höher als flat — die Zufriedenheit sinkt.
+    expect(zufriedenheitDer(progressiv, 'unternehmen')).toBeLessThan(
+      zufriedenheitDer(flat, 'unternehmen'),
+    );
+    expect(progressiv.state.konstitution).toEqual(flat.state.konstitution);
+  });
+
+  it('ein kaputter Event-Faktor wirft im Dev-Modus und würfelt in Produktion nicht (FR-002)', () => {
+    const kaputt: KonstitutionsEntscheidung = Object.freeze({
+      regel_id: 'modifikator_test_kaputt',
+      label: 'Test: kaputter Faktor',
+      beschreibung: 'Testdaten für einen nicht endlichen Event-Faktor (FR-002).',
+      sofort_effekte: {},
+      regelsatz_modifikator: { event_wahrscheinlichkeitfaktor: Number.NaN },
+    });
+    const regeln = regelnMit({
+      ereignis_regeln,
+      setup_pflicht: pflichtMit([kaputt]),
+    });
+    expect(() =>
+      tick(
+        stateMit({ jahr: 1, setup: setupMit(['modifikator_test_kaputt']) }),
+        { zuteilung: {} },
+        regeln,
+        'dev',
+      ),
+    ).toThrow(/event_wahrscheinlichkeitfaktor/);
+
+    const produktion = tick(
+      stateMit({ jahr: 1, setup: setupMit(['modifikator_test_kaputt']) }),
+      { zuteilung: {} },
+      regeln,
+      'produktion',
+    );
+    expect(produktion.ereignisse.length).toBe(0);
+    expect(produktion.state.rng.counter).toBe(0);
+  });
+
+  it('ein Setup ohne Register-Instanzen lässt die Mechanik unverändert (M0-Pfad, Fixtures bitgleich)', () => {
+    const ohneEntscheidungen = tick(
+      stateMit({ jahr: 1, setup: setupMit(['modifikator_test_delta']) }),
+      { zuteilung: {} },
+      regelnMit({
+        ereignis_regeln: [],
+        setup_pflicht: { konstitutions_ids: ['modifikator_test_delta'] },
+      }),
+    );
+    const baseline = tick(
+      stateMit({ jahr: 1 }),
+      { zuteilung: {} },
+      regelnMit({ ereignis_regeln: [] }),
+    );
+    expect(zufriedenheitDer(ohneEntscheidungen, 'unternehmen')).toBeCloseTo(
+      zufriedenheitDer(baseline, 'unternehmen'),
+      6,
+    );
   });
 });
