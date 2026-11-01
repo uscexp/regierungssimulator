@@ -759,4 +759,96 @@ describe('tick — dauerhafte Regelsatz-Modifikatoren der Konstitution (US-M1-06
       6,
     );
   });
+
+  describe('Radikalisierungskurve (US-M2-09, FR-021)', () => {
+    // Alle Indikatoren auf 0 → Zufriedenheit aller Gruppen < 50 → Opposition hoch
+    const stateRadikalisierung = stateMit({
+      jahr: 1,
+      indikatoren: { wirtschaft: 0, bildung: 0, gesundheit: 0, infrastruktur: 0, forschung: 0 },
+      legitimitaet: 30, // < 40 → Radikalisierung kann wachsen
+      radikalisierung: 50, // hoher Startwert für Opposition > 40
+    });
+
+    it('Radikalisierung wächst wenn Opposition > 40 UND Legitimität < 40', () => {
+      const ergebnis = tick(
+        stateRadikalisierung,
+        { zuteilung: {} },
+        regelnMit({ ereignis_regeln: [] }),
+        'dev',
+      );
+      // Opposition ≈ 100.1 × 0.5 = 50.05 > 40
+      // E_new = 50 + (50.05 - 40) × 0.3 + (40 - 30) × 0.2 ≈ 50 + 3.015 + 2 = 55.015
+      expect(ergebnis.state.radikalisierung).toBeGreaterThan(50);
+      expect(ergebnis.state.radikalisierung).toBeCloseTo(55, 0);
+    });
+
+    it('Radikalisierung verfällt um 3 wenn Legitimität ≥ 40', () => {
+      const ergebnis = tick(
+        stateMit({
+          ...stateRadikalisierung,
+          legitimitaet: 50, // ≥ 40 → kein Wachstum
+        }),
+        { zuteilung: {} },
+        regelnMit({ ereignis_regeln: [] }),
+        'dev',
+      );
+      expect(ergebnis.state.radikalisierung).toBe(47); // 50 - 3
+    });
+
+    it('Radikalisierung verfällt um 3 wenn Opposition ≤ 40', () => {
+      const ergebnis = tick(
+        stateMit({
+          ...stateRadikalisierung,
+          radikalisierung: 10, // niedrig → Opposition ≈ 10 ≤ 40
+        }),
+        { zuteilung: {} },
+        regelnMit({ ereignis_regeln: [] }),
+        'dev',
+      );
+      expect(ergebnis.state.radikalisierung).toBeCloseTo(7, 0); // 10 - 3
+    });
+
+    it('Radikalisierung bleibt bei 0 geklappt (nicht negativ)', () => {
+      const ergebnis = tick(
+        stateMit({
+          ...stateRadikalisierung,
+          radikalisierung: 1,
+          legitimitaet: 50,
+        }),
+        { zuteilung: {} },
+        regelnMit({ ereignis_regeln: [] }),
+        'dev',
+      );
+      expect(ergebnis.state.radikalisierung).toBeGreaterThanOrEqual(0);
+    });
+
+    it('Radikalisierung bleibt bei 100 geklappt', () => {
+      const ergebnis = tick(
+        stateMit({
+          ...stateRadikalisierung,
+          radikalisierung: 100,
+        }),
+        { zuteilung: {} },
+        regelnMit({ ereignis_regeln: [] }),
+        'dev',
+      );
+      expect(ergebnis.state.radikalisierung).toBeLessThanOrEqual(100);
+    });
+
+    it('Determinismus: gleicher Seed → gleiche Radikalisierung', () => {
+      const links = tick(
+        stateRadikalisierung,
+        { zuteilung: {} },
+        regelnMit({ ereignis_regeln: [] }),
+        'dev',
+      );
+      const rechts = tick(
+        stateRadikalisierung,
+        { zuteilung: {} },
+        regelnMit({ ereignis_regeln: [] }),
+        'dev',
+      );
+      expect(links.state.radikalisierung).toBe(rechts.state.radikalisierung);
+    });
+  });
 });

@@ -20,7 +20,11 @@ export interface EntscheidungsOption {
   readonly id: string;
   readonly bedingung?: Praedikat; // Optional: Nur verfügbar wenn Bedingung erfüllt
   /** Effekte im Pack-Format: { ziel, tag?, delta } — wird vor Anwendung in Effekt[] konvertiert. */
-  readonly effekte: readonly { readonly ziel: string; readonly tag?: string; readonly delta: number }[];
+  readonly effekte: readonly {
+    readonly ziel: string;
+    readonly tag?: string;
+    readonly delta: number;
+  }[];
   readonly nachfolgeEreignisId?: string; // Id des Folge-Events in der Kette
 }
 
@@ -87,9 +91,7 @@ export function karteVerarbeiten(
     modus,
   );
 
-  const ereignisse: AusgelöstesEreignis[] = [
-    { ereignis_id: karte.regel_id, effekte: kernEffekte },
-  ];
+  const ereignisse: AusgelöstesEreignis[] = [{ ereignis_id: karte.regel_id, effekte: kernEffekte }];
 
   return { ereignisse, rng: nachEffekten.rng, state: nachEffekten };
 }

@@ -9,7 +9,11 @@
 
 import { describe, expect, it } from 'vitest';
 
-import { karteVerarbeiten, ereignisKetteVerarbeiten, type Entscheidungskarte } from './entscheidung.js';
+import {
+  karteVerarbeiten,
+  ereignisKetteVerarbeiten,
+  type Entscheidungskarte,
+} from './entscheidung.js';
 import { erzeugeGameState, type GameState } from './state.js';
 import { praedikatSchema, type Praedikat } from './eval.js';
 

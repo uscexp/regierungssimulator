@@ -36,7 +36,7 @@ import {
   type SchwierigkeitsPack,
 } from './indikatoren.js';
 import { karteWählbar, pkAusgeben, pkRegenerieren } from './kapital.js';
-import { pruefeInvarianten, type Modus } from './invariant.js';
+import { pruefeInvarianten, type Modus, clampLevel } from './invariant.js';
 import {
   ZUFRIEDENHEIT_BASELINE,
   gruppenZufriedenheit,
@@ -265,6 +265,37 @@ function baselineOffset(
   return Object.freeze(merged);
 }
 
+/**
+ * Opposition der Bevölkerung (FR-020, US-M2-08):
+ * Summe über alle unzufriedenen Gruppen (Zufriedenheit < 50) von
+ * Bevölkerungsanteil × (Radikalisierung / 100). Je unzufriedener und je
+ * höher der Extremismus-Anteil, desto größer die Opposition.
+ */
+function berechneOpposition(gruppen: readonly GruppenSnapshot[], radikalisierung: number): number {
+  let opposition = 0;
+  for (const gruppe of gruppen) {
+    if (gruppe.zufriedenheit < 50) {
+      opposition += gruppe.bevölkerungsanteil * (radikalisierung / 100);
+    }
+  }
+  return opposition;
+}
+
+/**
+ * Radikalisierungskurve (FR-021, US-M2-09):
+ * Extremismus-Anteil E (0–100) wächst/Jahr wenn Opposition > 40 UND
+ * Legitimität < 40:
+ *   E += (Opposition − 40) × 0.3 + (40 − Legitimität) × 0.2
+ * sonst: E − 3
+ * Ergebnis auf 0–100 geklappt.
+ */
+function berechneRadikalisierung(E: number, opposition: number, legitimitaet: number): number {
+  if (opposition > 40 && legitimitaet < 40) {
+    return clampLevel(E + (opposition - 40) * 0.3 + (40 - legitimitaet) * 0.2);
+  }
+  return clampLevel(E - 3);
+}
+
 export function tick(
   state: GameState,
   action: TickAction,
@@ -349,7 +380,9 @@ export function tick(
   // 2b) Event-Ketten mit Entscheidungs-Karten (US-M2-03): für jedes ausgelöste Event prüfen,
   // ob eine entsprechende Entscheidungskarte existiert und die Kette verarbeiten.
   for (const ereignis of lost.ereignisse) {
-    const karte = (regeln.entscheidungskarten ?? []).find((k) => k.regel_id === ereignis.ereignis_id);
+    const karte = (regeln.entscheidungskarten ?? []).find(
+      (k) => k.regel_id === ereignis.ereignis_id,
+    );
     if (karte === undefined) continue;
 
     const kettenErgebnis = ereignisKetteVerarbeiten(
@@ -384,6 +417,19 @@ export function tick(
   // Beschlüsse des Gedächtnisses (inklusive der gerade gespielten Karten) wirken in diesem Jahr.
   const beschlussEffekte = effekteAusBeschlüsse(aktuell);
   aktuell = effekteAnwenden(aktuell, skalarEffekte(beschlussEffekte), 'beschlüsse', modus);
+
+  // 3b) Radikalisierungskurve (US-M2-09, FR-021):
+  // Extremismus-Anteil E wächst bei Opposition > 40 UND Legitimität < 40,
+  // sonst verfällt er um 3 pro Jahr.
+  const opposition = berechneOpposition(aktuell.gruppen, aktuell.radikalisierung);
+  aktuell = Object.freeze({
+    ...aktuell,
+    radikalisierung: berechneRadikalisierung(
+      aktuell.radikalisierung,
+      opposition,
+      aktuell.legitimitaet,
+    ),
+  }) as GameState;
 
   // 4) Machtverlust — der Kern interpretiert die gereichten Register-Varianten (US-M1-03, ADR-011).
   //    Kein injizierter Callback mehr: die Mechanik steht als Daten im Register und der Kern
