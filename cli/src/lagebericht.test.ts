@@ -18,7 +18,7 @@ describe('Lagebericht erzählt die Lage', () => {
     const text = lagebericht(startState(1234), regeln);
     expect(text).toContain('Jahr 1');
     expect(text).toContain('8 Indikatoren');
-    expect(text).toContain('8 Gruppen');
+    expect(text).toContain('10 Gruppen');
     expect(text).toContain('wirtschaft 45.0');
     expect(text).toContain('gewichtete Ø');
     expect(text).toContain('schwächste Gruppe');

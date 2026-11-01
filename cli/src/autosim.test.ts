@@ -26,7 +26,7 @@ const gateZu = (tag: string) => (tag === 'wirtschaft' ? 45 : 40); // Bildung 40 
 describe('Content-Pack gegen balance-werte.md validiert (K4: Σ-Anteile 100, Gewichte Σ 1)', () => {
   it('Gruppenanteile summieren auf 100 % und Gewichte je Gruppe auf 1 (§3, K4)', () => {
     const anteile = GRUPPEN_START.reduce((s, g) => s + g.bevölkerungsanteil, 0);
-    expect(anteile).toBe(100);
+    expect(anteile).toBeCloseTo(100, 6);
     for (const gruppe of GRUPPEN_START) {
       const summe = Object.values(gruppe.gewichte).reduce((s, w) => s + w, 0);
       expect(summe).toBeCloseTo(1, 10);
@@ -149,11 +149,11 @@ describe('gewichtete Start-Ø gemessen über core gewichteteZufriedenheit (§4)'
     expect(gewichteteZufriedenheit(gruppen)).toBeCloseTo(46.0, 10);
   });
 
-  it('gemessener §1-Start (Wirtschaft 45, übrige 40) ergibt 47.215 — nicht 46.0 wie §4 behauptet', () => {
+  it('gemessener §1-Start (Wirtschaft 45, übrige 40) ergibt 47.3678 (mit den US-M1-09-Gruppen elite/militaer)', () => {
     // §4 rechnet mit "Startlevel 40", §1 setzt Wirtschaft auf 45. Über das §1-Startbild gemessen:
-    // Arbeitnehmer 48.25, Unternehmen 48.75, Konservative 47, Landwirte 49, übrige 46 → 47.215.
+    // Die zwei neuen Gruppen (elite 5%, militaer 3%) verschieben den gewichteten Ø.
     const gruppen = gruppenZufriedenheit(GRUPPEN_START, START_INDICATOREN, 'flat', STEUERLAST);
-    expect(gewichteteZufriedenheit(gruppen)).toBeCloseTo(47.215, 6);
+    expect(gewichteteZufriedenheit(gruppen)).toBeCloseTo(47.3678, 6);
   });
 });
 

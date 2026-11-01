@@ -94,57 +94,72 @@ export const STEUERLAST: SteuerlastTabelle = Object.freeze({
   liberale_minderheiten: Object.freeze({ niedrig: 2, flat: 4, progressiv: 2, hoch: 7 }),
   staatsapparat: Object.freeze({ niedrig: 3, flat: 4, progressiv: 3, hoch: 8 }),
   landwirte: Object.freeze({ niedrig: 2, flat: 4, progressiv: 2, hoch: 7 }),
+  // Platzhalter — von Ralf/Reto zu bestätigen:
+  elite: Object.freeze({ niedrig: 2, flat: 4, progressiv: 2, hoch: 7 }),
+  militaer: Object.freeze({ niedrig: 2, flat: 4, progressiv: 2, hoch: 7 }),
 });
 
-/** §3 — die acht Gruppen mit Anteilen (Σ = 100, K4) und Gewichten (je Σ = 1). */
+/** §3 — die zehn Gruppen mit Anteilen (Σ = 100, K4) und Gewichten (je Σ = 1). Elite und Militaer sind US-M1-09 (Ralf: 5% / 3% Rohwerte, zusammen mit den bestehenden 92 auf 100 normalisiert). Ihre Gewichte und die Putsch-Schwellen fehlen noch (Ralf nachzuliefern). */
 export const GRUPPEN_START: readonly GruppenSnapshot[] = Object.freeze([
   Object.freeze({
     tag: 'arbeitnehmer',
     zufriedenheit: 0, // wird beim Start über core/zufriedenheit gerechnet — keine zweite Formel
-    bevölkerungsanteil: 24,
+    bevölkerungsanteil: 22.08, // 24 × 0.92 (Normalisierung mit Elite 5% + Militaer 3%, Σ = 100)
     gewichte: Object.freeze({ wirtschaft: 0.45, gesundheit: 0.25, recht: 0.15, sicherheit: 0.15 }),
   }),
   Object.freeze({
     tag: 'unternehmen',
     zufriedenheit: 0,
-    bevölkerungsanteil: 10,
+    bevölkerungsanteil: 9.2, // 10 × 0.92
     gewichte: Object.freeze({ wirtschaft: 0.55, infrastruktur: 0.3, sicherheit: 0.15 }),
   }),
   Object.freeze({
     tag: 'bildung_jugend',
     zufriedenheit: 0,
-    bevölkerungsanteil: 13,
+    bevölkerungsanteil: 11.96, // 13 × 0.92
     gewichte: Object.freeze({ bildung: 0.6, forschung: 0.25, freiheit: 0.15 }),
   }),
   Object.freeze({
     tag: 'gesundheit_wesen',
     zufriedenheit: 0,
-    bevölkerungsanteil: 12,
+    bevölkerungsanteil: 11.04, // 12 × 0.92
     gewichte: Object.freeze({ gesundheit: 0.7, forschung: 0.15, infrastruktur: 0.15 }),
   }),
   Object.freeze({
     tag: 'konservative',
     zufriedenheit: 0,
-    bevölkerungsanteil: 16,
+    bevölkerungsanteil: 14.72, // 16 × 0.92
     gewichte: Object.freeze({ sicherheit: 0.55, recht: 0.25, wirtschaft: 0.2 }),
   }),
   Object.freeze({
     tag: 'liberale_minderheiten',
     zufriedenheit: 0,
-    bevölkerungsanteil: 9,
+    bevölkerungsanteil: 8.28, // 9 × 0.92
     gewichte: Object.freeze({ freiheit: 0.6, recht: 0.25, bildung: 0.15 }),
   }),
   Object.freeze({
     tag: 'staatsapparat',
     zufriedenheit: 0,
-    bevölkerungsanteil: 8,
+    bevölkerungsanteil: 7.36, // 8 × 0.92
     gewichte: Object.freeze({ infrastruktur: 0.5, sicherheit: 0.3, bildung: 0.2 }),
   }),
   Object.freeze({
     tag: 'landwirte',
     zufriedenheit: 0,
-    bevölkerungsanteil: 8,
+    bevölkerungsanteil: 7.36, // 8 × 0.92
     gewichte: Object.freeze({ wirtschaft: 0.6, infrastruktur: 0.4 }),
+  }),
+  Object.freeze({
+    tag: 'elite',
+    zufriedenheit: 0, // wird beim Start über core/zufriedenheit gerechnet
+    bevölkerungsanteil: 5, // Rohwert aus docs/balance-werte.md (Ralf), zusammen mit militaer auf 100 normalisiert
+    gewichte: Object.freeze({ wirtschaft: 1 }), // Platzhalter — Gewichte von Ralf/Reto zu bestätigen
+  }),
+  Object.freeze({
+    tag: 'militaer',
+    zufriedenheit: 0, // wird beim Start über core/zufriedenheit gerechnet
+    bevölkerungsanteil: 3, // Rohwert aus docs/balance-werte.md (Ralf), zusammen mit elite auf 100 normalisiert
+    gewichte: Object.freeze({ sicherheit: 1 }), // Platzhalter — Gewichte von Ralf/Reto zu bestätigen
   }),
 ]);
 

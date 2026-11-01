@@ -14,20 +14,20 @@ export const GOLDEN_REPLAY_CHECKPOINTS: readonly {
   readonly jahr: number;
   readonly hash: string;
 }[] = [
-  { jahr: 10, hash: '07a56d1b6ee86a9e0b037d87302304d7b51c1232d8b2dd06a505ea078d4b2c61' },
-  { jahr: 20, hash: '70e7d0385a687da0d2f417cf9151382569e2347c4380ddf4b6c83f00f11c0cf4' },
-  { jahr: 30, hash: '620e62e742e0c8b295c55458db47c8ca822ef5ac7d819e5765b39eb354c5c46d' },
-  { jahr: 40, hash: 'beb79139731c7a823153670367bc842ceeadabebaf46a1538d504918a49fb3c1' },
-  { jahr: 50, hash: '0ef5ad382045d6a322d4a51767c2a5bb8881c0bd29cb45cd291eab48063fb2ef' },
-  { jahr: 60, hash: '1cc76875a4113ba5ca0e82f9cbec722dc50437a5339def68e998772b38f3a1ec' },
-  { jahr: 70, hash: 'a5b64219f008806ff7bd9a4b43f42b1e6de71d4aae59986cc88879dd63133a2d' },
-  { jahr: 80, hash: '640ee99f1be588f7a060ae116d522c00a9fee145eb4f563d6100940332fa3adb' },
-  { jahr: 90, hash: '0581b66341d6476d7d7907591700430c9fe3c3cb0e396afaad6b8dd8bdf3ab9f' },
-  { jahr: 100, hash: 'f202571d8408c0556787eae3d721719d3086fa62cea2e721dee06ccd6ebf5f02' },
+  { jahr: 10, hash: '40c300bf9e0a15285039a870b217c43750f583ab89638d36da8f49baec421edc' },
+  { jahr: 20, hash: 'cb3357d13c79989f2435bb4381f0c3a87b5364729517018d0016dce6074b9dc7' },
+  { jahr: 30, hash: 'ae981718eac3097f2003a887ad79684509081b15c4fe2f1a91a9fd9ab542cf3e' },
+  { jahr: 40, hash: '86724740641f3f8aa59923fca2472b3b58ca52f8c1783465cf227e29362a2c54' },
+  { jahr: 50, hash: '9002d838d9f2662ad405992fdb42eceace5de00f509eb240318c20120b6a6e6e' },
+  { jahr: 60, hash: 'accfc698c62594192261e301c5fa73ebc68145384a7895660cd02cf704552380' },
+  { jahr: 70, hash: '895406ea96730cf2b256e64891f20fcfaafd02339cb930b543a0e48e29432bcc' },
+  { jahr: 80, hash: '8a3f8ce57135353cb6d6ae4d55a9bdce46299ae299c5bf9809135fd5adbb6e81' },
+  { jahr: 90, hash: '9221bf2d83b2eab41526d4d4d566d59352cc4432d71f981d1a197175ae40d46a' },
+  { jahr: 100, hash: '5fb41a48a57fb8678d94b9ea32f99b871a32195eef7373a0820c3f2249610256' },
 ];
 
 export const GOLDEN_REPLAY_FINAL_HASH =
-  'f202571d8408c0556787eae3d721719d3086fa62cea2e721dee06ccd6ebf5f02';
+  '5fb41a48a57fb8678d94b9ea32f99b871a32195eef7373a0820c3f2249610256';
 
 /** Jahre mit gekuerzte_be > 0 (FR-041): die überallokierten Muster. */
 export const GOLDEN_REPLAY_GEKUERZTE_JAHRE: readonly number[] = [

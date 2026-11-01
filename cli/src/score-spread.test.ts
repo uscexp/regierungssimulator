@@ -59,7 +59,7 @@ describe('Score-Spread-Fixture (US-M0-18)', () => {
     );
     expect(beste.strategie).toBe('overspend');
     expect(beste.schwierigkeit).toBe('leicht');
-    expect(schwächste.strategie).toBe('infrastruktur_zuerst');
+    expect(schwächste.strategie).toBe('bildung_zuerst');
     expect(schwächste.schwierigkeit).toBe('schwer');
     expect(schwächste.score_median).toBeGreaterThanOrEqual(0.7 * beste.score_median);
     // Die Ratio ist gemessen, nicht erfunden: sie liegt zwischen 0.70 und der gemessenen Obergrenze.
