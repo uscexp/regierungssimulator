@@ -114,9 +114,10 @@ describe('§1 — Einnahmen und Start', () => {
 });
 
 describe('§3 — Gruppen', () => {
-  it('hat die acht Gruppen mit den §3-Anteilen (Σ = 100, K4)', () => {
-    expect(GRUPPEN_START.map((g) => g.bevölkerungsanteil)).toEqual([24, 10, 13, 12, 16, 9, 8, 8]);
-    expect(GRUPPEN_START.reduce((acc, g) => acc + g.bevölkerungsanteil, 0)).toBe(100);
+  it('hat die zehn Gruppen mit den §3-Anteilen (Σ = 100, K4)', () => {
+    const anteile = GRUPPEN_START.map((g) => g.bevölkerungsanteil);
+    expect(anteile).toEqual([22.08, 9.2, 11.96, 11.04, 14.72, 8.28, 7.36, 7.36, 5, 3]);
+    expect(anteile.reduce((acc, g) => acc + g, 0)).toBeCloseTo(100, 6);
   });
 
   it('hat die §3-Gewichte je Gruppe (je Σ = 1)', () => {
@@ -129,6 +130,8 @@ describe('§3 — Gruppen', () => {
       liberale_minderheiten: { freiheit: 0.6, recht: 0.25, bildung: 0.15 },
       staatsapparat: { infrastruktur: 0.5, sicherheit: 0.3, bildung: 0.2 },
       landwirte: { wirtschaft: 0.6, infrastruktur: 0.4 },
+      elite: { wirtschaft: 1 },
+      militaer: { sicherheit: 1 },
     };
     for (const gruppe of GRUPPEN_START) {
       expect(gruppe.gewichte, gruppe.tag).toEqual(erwartet[gruppe.tag]);
@@ -147,6 +150,8 @@ describe('§3 — Gruppen', () => {
       liberale_minderheiten: [2, 4, 2, 7],
       staatsapparat: [3, 4, 3, 8],
       landwirte: [2, 4, 2, 7],
+      elite: [2, 4, 2, 7],
+      militaer: [2, 4, 2, 7],
     };
     for (const [tag, werte] of Object.entries(erwartet)) {
       const last = STEUERLAST[tag]!;

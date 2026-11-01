@@ -58,8 +58,23 @@ Gewichte je Gruppe Σ = 1 (nachgerechnet ✓). Steuerlast als direkter Abzug auf
 | Liberale/Minderheiten | 9 % | — | Freiheit .60, Recht .25, Bildung .15 | 2 / 4 / 2 / 7 |
 | Staatsapparat | 8 % | — | Infrastruktur .50, Sicherheit .30, Bildung .20 | 3 / 4 / 3 / 8 |
 | Landwirte | 8 % | — | Wirtschaft .60, Infrastruktur .40 | 2 / 4 / 2 / 7 |
+| Elite | 5 | — | Wirtschaft 1.0 | 2 / 4 / 2 / 7 |
+| Militaer | 3 | — | Sicherheit 1.0 | 2 / 4 / 2 / 7 |
 
-**K4 korrigiert durch Ralf:** die Anteile summieren jetzt auf **100 %** (nachgerechnet ✓). Die Loader-Normalisierung ist nicht mehr nötig, bleibt aber als Safety net für Mod-Packs bestehen (ein Pack kann Anteile verschieben).
+**K4 korrigiert durch Ralf:** die Roh-Anteile summieren auf 108 % (92 bestehende + 5 Elite + 3 Militaer) und werden im Loader auf 100 % normalisiert (Elite 5%, Militaer 3%, bestehende × 0.92). Die Loader-Normalisierung bleibt als Safety net für Mod-Packs bestehen.
+
+## 13. Putsch-Schwellen (US-M1-09, FR-014)
+
+Die Putsch-Bedingung prüft die Zufriedenheit der Gruppen `elite` und `militaer` sowie die Legitimität gegen die folgenden Schwellen (alle inklusiv erreicht = Bedingung erfüllt):
+
+| Schwelle | Wert | Bedeutung |
+|---|---|---|
+| `elite_min` | 30 | Elite-Zufriedenheit muss ≥ 30 sein, sonst Putsch-Risiko |
+| `militaer_min` | 30 | Militär-Zufriedenheit muss ≥ 30 sein, sonst Putsch-Risiko |
+| `legitimitaet_min` | 40 | Legitimität muss ≥ 40 sein, sonst Putsch-Risiko |
+| `wahrscheinlichkeit` | 0.1 | 10% Grundwahrscheinlichkeit für Putsch-Ereignisse pro Jahr, sofern Schwellen unterschritten |
+
+Die Schwellen sind funktionale Platzhalter für den Baubeginn; genaue Finalwerte werden von Trix/Reto basierend auf dem Spiel-Equilibrium feinjustiert.
 
 ## 4. Zufriedenheit beim Start (nachgerechnet)
 
