@@ -206,26 +206,28 @@ export const entscheidungskarteSchema = z
     typ: z.literal('entscheidungskarte'),
     regel_id: REGEL_ID,
     label: z.string().min(1),
-    optionen: z.array(
-      z.object({
-        id: REGEL_ID,
-        bedingung: praedikatSchema.optional(),
-        effekte: z.array(
-          z.object({
-            ziel: z.enum([
-              'indikatoren',
-              'gruppen',
-              'legitimitaet',
-              'radikalisierung',
-              'politisches_kapital',
-              'budget',
-            ]),
-            tag: z.string().optional(),
-            delta: z.number(),
-          }),
-        ),
-      }),
-    ).min(1),
+    optionen: z
+      .array(
+        z.object({
+          id: REGEL_ID,
+          bedingung: praedikatSchema.optional(),
+          effekte: z.array(
+            z.object({
+              ziel: z.enum([
+                'indikatoren',
+                'gruppen',
+                'legitimitaet',
+                'radikalisierung',
+                'politisches_kapital',
+                'budget',
+              ]),
+              tag: z.string().optional(),
+              delta: z.number(),
+            }),
+          ),
+        }),
+      )
+      .min(1),
     maxTiefe: z.number().int().min(1).max(50).default(5),
   })
   .strict();
