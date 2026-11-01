@@ -21,5 +21,6 @@ export * from './ereignisse.js';
 export * from './tick.js';
 export * from './wahl.js';
 export * from './wahl-eval.js';
+export * from './eval.js';
 export * from './rules.js';
 export * from './setup.js';
