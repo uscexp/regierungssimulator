@@ -189,7 +189,8 @@ describe('Konstitutions-Instanzen gegen das Kern-Schema (US-M1-04)', () => {
       const ergebnis = putschRollSchema.safeParse(kaput);
       expect(ergebnis.success).toBe(false);
       if (!ergebnis.success) {
-        expect(ergebnis.error.issues[0].path.join('.')).toContain('elite_min');
+        const erstesIssue = ergebnis.error.issues[0];
+        expect(erstesIssue?.path.join('.')).toContain('elite_min');
       }
     });
   });
