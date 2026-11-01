@@ -5,9 +5,10 @@
  * darf durch Konstitutions-Werte nicht verschoben werden).
  */
 import { describe, expect, it } from 'vitest';
-import { konstitutionSchema } from '@staatslenker/core/rules';
+import { konstitutionSchema, putschRollSchema } from '@staatslenker/core/rules';
 import {
   KONSTITUTION_WERTE,
+  PUTSCH_REGEL_M0,
   SETUP_FORMEN,
   SETUP_PFLICHT,
   STANDARD_SETUP,
@@ -156,5 +157,40 @@ describe('Konstitutions-Instanzen gegen das Kern-Schema (US-M1-04)', () => {
     expect(validiereBasisSetup('produktion', kaput).fehlerfrei).toBe(false);
     expect(validiereBasisSetup('produktion', kaput).grund).toContain('regierung');
     expect(() => validiereBasisSetup('dev', kaput)).toThrow(/regierung|wahl|machtverlust/);
+  });
+
+  describe('Putsch-Roll-Variante für die Diktatur (US-M1-09, FR-014)', () => {
+    it('die PUTSCH_REGEL_M0 validiert gegen das putschRollSchema mit Ralfs Schwellen', () => {
+      const ergebnis = putschRollSchema.safeParse(PUTSCH_REGEL_M0);
+      expect(ergebnis.success).toBe(true);
+      if (ergebnis.success) {
+        expect(ergebnis.data.typ).toBe('putsch_roll');
+        expect(ergebnis.data.regel_id).toBe('putsch_basis');
+        expect(ergebnis.data.elite_min).toBe(30);
+        expect(ergebnis.data.militaer_min).toBe(30);
+        expect(ergebnis.data.legitimitaet_min).toBe(40);
+        expect(ergebnis.data.wahrscheinlichkeit).toBe(0.1);
+      }
+    });
+
+    it('die Putsch-Schwellen liegen im erreichbaren Bereich (Start-Werte ~40-50)', () => {
+      expect(PUTSCH_REGEL_M0.elite_min).toBeGreaterThanOrEqual(0);
+      expect(PUTSCH_REGEL_M0.elite_min).toBeLessThanOrEqual(100);
+      expect(PUTSCH_REGEL_M0.militaer_min).toBeGreaterThanOrEqual(0);
+      expect(PUTSCH_REGEL_M0.militaer_min).toBeLessThanOrEqual(100);
+      expect(PUTSCH_REGEL_M0.legitimitaet_min).toBeGreaterThanOrEqual(0);
+      expect(PUTSCH_REGEL_M0.legitimitaet_min).toBeLessThanOrEqual(100);
+      expect(PUTSCH_REGEL_M0.wahrscheinlichkeit).toBeGreaterThanOrEqual(0);
+      expect(PUTSCH_REGEL_M0.wahrscheinlichkeit).toBeLessThanOrEqual(1);
+    });
+
+    it('ein kaputer Putsch-Schwellenwert wird im Dev mit Feldnamen abgelehnt', () => {
+      const kaput = { ...PUTSCH_REGEL_M0, elite_min: undefined };
+      const ergebnis = putschRollSchema.safeParse(kaput);
+      expect(ergebnis.success).toBe(false);
+      if (!ergebnis.success) {
+        expect(ergebnis.error.issues[0].path.join('.')).toContain('elite_min');
+      }
+    });
   });
 });

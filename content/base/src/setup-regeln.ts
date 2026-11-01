@@ -173,6 +173,23 @@ export const WAHLREGEL_VARIANT_M0 = Object.freeze({
   schwächste_min: 35,
 });
 
+/** Die Putsch-Roll-Variante für die Diktatur-Regierung (US-M1-09, FR-014). Die Schwellen
+ * sind funktionale Platzhalter (Ralf via DM); Finalwerte werden von Trix/Reto feinjustiert.
+ * Noch nicht an eine Regierung gebunden — die Diktatur-Form wartet auf ihre shipping-Regel.
+ */
+export const PUTSCH_REGEL_M0 = Object.freeze({
+  typ: 'putsch_roll' as const,
+  regel_id: 'putsch_basis',
+  /** FR-014: Elite-Zufriedenheit muss ≥ 30 sein, sonst Putsch-Risiko. */
+  elite_min: 30,
+  /** FR-014: Militär-Zufriedenheit muss ≥ 30 sein, sonst Putsch-Risiko. */
+  militaer_min: 30,
+  /** FR-014: Legitimität muss ≥ 40 sein, sonst Putsch-Risiko. */
+  legitimitaet_min: 40,
+  /** FR-014: 10% Grundwahrscheinlichkeit für Putsch-Ereignisse pro Jahr, sofern Schwellen unterschritten. */
+  wahrscheinlichkeit: 0.1,
+});
+
 export const basisSetupRegeln = [basisKonstitution, REGIERUNG_REGEL_M0, WAHLREGEL_VARIANT_M0];
 
 /** Validierung des Setup-Regelsatzes gegen das Kern-Register (zwei Stufen, Feldnamen im Grund). */
