@@ -18,6 +18,8 @@
 import type { SteuerfaktorTabelle } from '@staatslenker/core/budget';
 import type { IndikatorRegel, SchwierigkeitsPack } from '@staatslenker/core/indikatoren';
 import type { GruppenSnapshot } from '@staatslenker/core/state';
+import type { Entscheidungskarte } from '@staatslenker/core/entscheidung';
+import type { EreignisRegel } from '@staatslenker/core/ereignisse';
 import type { SteuerlastTabelle } from '@staatslenker/core/zufriedenheit';
 import { basisPackSchema, validierePack } from './schema.js';
 
@@ -269,6 +271,124 @@ export const BASIS_ENTSCHEIDUNGEN: readonly BasisEntscheidung[] = Object.freeze(
   }),
 ]);
 
+/** US-M2-04: Pandemie-Kette (Ausbruch → Ausbreitung → Gegenmaßnahmen).
+ * Konflikt zwischen Gesundheits- und Wirtschaftszufriedenheit (FR-025).
+ * Die Kette läuft über nachfolgeEreignisId der Optionen, garantiert Exit durch maxTiefe.
+ */
+export const PANDEMIE_EREIGNISSE = Object.freeze([
+  {
+    id: 'pandemie_ausbruch',
+    gewicht: 1,
+    bedingung: {
+      indikator: { tag: 'gesundheit', max: 25 },
+    },
+    effekte: [
+      { ziel: 'indikatoren' as const, tag: 'gesundheit', delta: -15 },
+      { ziel: 'indikatoren' as const, tag: 'wirtschaft', delta: -5 },
+      { ziel: 'radikalisierung' as const, delta: 5 },
+    ],
+  },
+]) as readonly EreignisRegel[];
+
+export const PANDEMIE_KARTEN = Object.freeze([
+  {
+    regel_id: 'pandemie_ausbruch',
+    label: 'Pandemie-Ausbruch',
+    optionen: [
+      {
+        id: 'pandemie_lockdown',
+        bedingung: {
+          typ: 'indikator_von' as const,
+          regel_id: 'pred_lockdown_bedingt',
+          tag: 'legitimitaet',
+          op: '>=',
+          wert: 40,
+        },
+        effekte: [
+          { ziel: 'indikatoren' as const, tag: 'gesundheit', delta: 10 },
+          { ziel: 'indikatoren' as const, tag: 'wirtschaft', delta: -20 },
+          { ziel: 'legitimitaet' as const, delta: -5 },
+        ],
+        nachfolgeEreignisId: 'pandemie_ausbreitung',
+      },
+      {
+        id: 'pandemie_wirtschaft_offen',
+        bedingung: {
+          typ: 'indikator_von' as const,
+          regel_id: 'pred_wirtschaft_offen_bedingt',
+          tag: 'wirtschaft',
+          op: '>=',
+          wert: 50,
+        },
+        effekte: [
+          { ziel: 'indikatoren' as const, tag: 'gesundheit', delta: -20 },
+          { ziel: 'indikatoren' as const, tag: 'wirtschaft', delta: 10 },
+        ],
+        nachfolgeEreignisId: 'pandemie_ausbreitung',
+      },
+    ],
+    maxTiefe: 5,
+  },
+  {
+    regel_id: 'pandemie_ausbreitung',
+    label: 'Pandemie-Ausbreitung',
+    optionen: [
+      {
+        id: 'pandemie_gesundheit_system',
+        bedingung: {
+          typ: 'indikator_von' as const,
+          regel_id: 'pred_gesundheit_system_bedingt',
+          tag: 'gesundheit',
+          op: '<',
+          wert: 40,
+        },
+        effekte: [
+          { ziel: 'indikatoren' as const, tag: 'gesundheit', delta: 15 },
+          { ziel: 'indikatoren' as const, tag: 'wirtschaft', delta: -10 },
+        ],
+        nachfolgeEreignisId: 'pandemie_gegenmaßnahmen',
+      },
+      {
+        id: 'pandemie_konjunktur',
+        bedingung: {
+          typ: 'indikator_von' as const,
+          regel_id: 'pred_konjunktur_bedingt',
+          tag: 'wirtschaft',
+          op: '<',
+          wert: 40,
+        },
+        effekte: [
+          { ziel: 'indikatoren' as const, tag: 'wirtschaft', delta: 15 },
+          { ziel: 'indikatoren' as const, tag: 'gesundheit', delta: -10 },
+        ],
+        nachfolgeEreignisId: 'pandemie_gegenmaßnahmen',
+      },
+    ],
+    maxTiefe: 5,
+  },
+  {
+    regel_id: 'pandemie_gegenmassnahmen',
+    label: 'Pandemie-Gegenmaßnahmen',
+    optionen: [
+      {
+        id: 'pandemie_gesundheit_staerken',
+        effekte: [
+          { ziel: 'indikatoren' as const, tag: 'gesundheit', delta: 15 },
+          { ziel: 'indikatoren' as const, tag: 'wirtschaft', delta: -10 },
+        ],
+      },
+      {
+        id: 'pandemie_konjunkturpaket',
+        effekte: [
+          { ziel: 'indikatoren' as const, tag: 'wirtschaft', delta: 15 },
+          { ziel: 'indikatoren' as const, tag: 'gesundheit', delta: -10 },
+        ],
+      },
+    ],
+    maxTiefe: 5,
+  },
+]) as readonly Entscheidungskarte[];
+
 /** Der Basis-Pack als ein Objekt — dieselbe Struktur, die ein YAML-Pack in M4 liefert (ADR-003). */
 export const BASIS_PACK = {
   indikator_regeln: INDIKATOR_REGELN,
@@ -279,6 +399,8 @@ export const BASIS_PACK = {
   schwierigkeit_packs: SCHWIERIGKEIT_PACKS,
   news_vorlagen: NEWS_VORLAGEN,
   entscheidungen: BASIS_ENTSCHEIDUNGEN,
+  ereignis_regeln: PANDEMIE_EREIGNISSE,
+  entscheidungskarten: PANDEMIE_KARTEN,
 } as const;
 
 /** Das Schema auf den Pack — ein Test ist die Abnahme (AC US-M0-13: alle Regeln validieren fehlerfrei). */

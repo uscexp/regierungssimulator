@@ -15,6 +15,8 @@
     "./kapital": "./dist/kapital.js",
     "./budget": "./dist/budget.js",
     "./ereignisse": "./dist/ereignisse.js",
+    "./events": "./dist/events.js",
+    "./eval": "./dist/eval.js",
     "./tick": "./dist/tick.js",
     "./wahl": "./dist/wahl.js",
     "./wahl-eval": "./dist/wahl-eval.js",

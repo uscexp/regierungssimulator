@@ -10,6 +10,7 @@
  * Struktur als TS-Typen, das Schema gehört zum Content.
  */
 import { z } from 'zod';
+import { praedikatSchema } from '@staatslenker/core/eval';
 
 /** Level-Grenzen sind Kern-Invarianten (core/invariant.ts, LEVEL_MIN/LEVEL_MAX) — das Schema spiegelt sie. */
 const LEVEL = z.number().finite().min(0).max(100);
@@ -119,6 +120,86 @@ export const basisEntscheidungSchema = z
   })
   .strict();
 
+/** Eine Event-Regel aus dem Content-Pack (US-M2-02, FR-025): Bedingung + Gewicht + Effekte.
+ * `gewicht` ist das relative Auswahlgewicht (keine Wahrscheinlichkeit 0-1). `bedingung` ist
+ * eine einfache EreignisBedingung (core/ereignisse), kein typisiertes Prädikat (US-M2-01
+ * Prädikate gelten für Entscheidungs-Karten, nicht für Event-Auswahl). */
+export const ereignisRegelSchema = z
+  .object({
+    id: z.string().min(1).regex(/^[a-z][a-z0-9_]*$/),
+    gewicht: z.number().finite().positive(),
+    bedingung: z
+      .object({
+        indikator: z
+          .object({
+            tag: TAG,
+            min: z.number().finite().nonnegative().optional(),
+            max: z.number().finite().nonnegative().optional(),
+          })
+          .strict()
+          .optional(),
+        gruppe: z
+          .object({
+            tag: TAG,
+            max_zufriedenheit: z.number().finite().nonnegative().optional(),
+            min_zufriedenheit: z.number().finite().nonnegative().optional(),
+          })
+          .strict()
+          .optional(),
+        schulden_min: z.number().finite().nonnegative().optional(),
+        radikalisierung_min: z.number().finite().nonnegative().optional(),
+        legitimitaet_max: z.number().finite().nonnegative().optional(),
+      })
+      .strict()
+      .optional(),
+    effekte: z.array(
+      z.object({
+        ziel: z.enum([
+          'indikatoren',
+          'gruppen',
+          'legitimitaet',
+          'radikalisierung',
+          'politisches_kapital',
+          'budget',
+        ]),
+        tag: z.string().optional(),
+        delta: z.number(),
+      }),
+    ),
+  })
+  .strict();
+
+/** Eine Entscheidungs-Karte aus dem Content-Pack (US-M2-03, FR-025/026): Optionen mit optionaler Nachfolge-Kette. */
+export const entscheidungskartePackSchema = z
+  .object({
+    regel_id: z.string().min(1).regex(/^[a-z][a-z0-9_]*$/),
+    label: z.string().min(1),
+    optionen: z
+      .array(
+        z.object({
+          id: z.string().min(1).regex(/^[a-z][a-z0-9_]*$/),
+          bedingung: praedikatSchema.optional(),
+          effekte: z.array(
+            z.object({
+              ziel: z.enum([
+                'indikatoren',
+                'gruppen',
+                'legitimitaet',
+                'radikalisierung',
+                'politisches_kapital',
+                'budget',
+              ]),
+              tag: z.string().optional(),
+              delta: z.number(),
+            }),
+          ),
+        }),
+      )
+      .min(1),
+    maxTiefe: z.number().int().min(1).max(50).default(5),
+  })
+  .strict();
+
 /** Der ganze Basis-Pack: alles, was der Tick als Daten braucht, plus die spielbaren Entscheidungen. */
 export const basisPackSchema = z
   .object({
@@ -131,6 +212,10 @@ export const basisPackSchema = z
     /** News-Vorlagen je Event-Id (G11); ohne Vorlage fällt der Text auf die Id zurück. */
     news_vorlagen: z.record(TAG, z.string().min(1)),
     entscheidungen: z.array(basisEntscheidungSchema).min(1),
+    /** Event-Regeln für M2-Krisen (optional — Packs ohne Events sind weiterhin gültig). */
+    ereignis_regeln: z.array(ereignisRegelSchema).optional(),
+    /** Entscheidungs-Karten für Event-Ketten (optional — Packs ohne Karten sind weiterhin gültig). */
+    entscheidungskarten: z.array(entscheidungskartePackSchema).optional(),
   })
   .strict()
   .refine(

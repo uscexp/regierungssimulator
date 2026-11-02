@@ -237,6 +237,8 @@ describe('Content liegt in content-base, der Adapter enthält keine Zahlen', () 
   it('ist ein vollständiger Pack: alle Teile sind vorhanden', () => {
     expect(Object.keys(BASIS_PACK).sort()).toEqual([
       'entscheidungen',
+      'entscheidungskarten',
+      'ereignis_regeln',
       'gruppen',
       'indikator_regeln',
       'news_vorlagen',
