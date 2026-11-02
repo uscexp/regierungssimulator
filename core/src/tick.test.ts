@@ -949,7 +949,7 @@ describe('tick — dauerhafte Regelsatz-Modifikatoren der Konstitution (US-M1-06
       expect(() => tick(
         mittelZustand,
         kartenAktion,
-        regelnMit({ regierung: regierungParlamentarisch, wahlregel: mehrheit07 as unknown as Wahlregel }),
+        regelnMit({ regierung: regierungParlamentarisch, wahlregel: mehrheit07 as unknown as WahlregelVariant }),
         'dev',
       )).toThrow(/Misstrauen-Votum verloren/);
     });
@@ -958,7 +958,7 @@ describe('tick — dauerhafte Regelsatz-Modifikatoren der Konstitution (US-M1-06
       const ergebnis = tick(
         mittelZustand,
         kartenAktion,
-        regelnMit({ regierung: regierungParlamentarisch, wahlregel: mehrheit05 as unknown as Wahlregel }),
+        regelnMit({ regierung: regierungParlamentarisch, wahlregel: mehrheit05 as unknown as WahlregelVariant }),
         'dev',
       );
       expect(ergebnis.state.legitimitaet).toBeGreaterThan(hochZustand.legitimitaet - 5);
@@ -970,7 +970,7 @@ describe('tick — dauerhafte Regelsatz-Modifikatoren der Konstitution (US-M1-06
       expect(() => tick(
         niedrigZustand,
         kartenAktion,
-        regelnMit({ regierung: regierungParlamentarisch, wahlregel: mehrheit05 as unknown as Wahlregel }),
+        regelnMit({ regierung: regierungParlamentarisch, wahlregel: mehrheit05 as unknown as WahlregelVariant }),
         'dev',
       )).toThrow(/Misstrauen-Votum verloren/);
     });
@@ -1018,7 +1018,7 @@ describe('tick — dauerhafte Regelsatz-Modifikatoren der Konstitution (US-M1-06
       const ergebnis = tick(
         staat,
         kartenAktion,
-        regelnMit({ regierung: regierungParlamentarisch, wahlregel: mehrheit05 as unknown as Wahlregel }),
+        regelnMit({ regierung: regierungParlamentarisch, wahlregel: mehrheit05 as unknown as WahlregelVariant }),
         'dev',
       );
       expect(ergebnis.state.legitimitaet).toBeGreaterThan(staat.legitimitaet);
