@@ -23,5 +23,6 @@ export * from './wahl.js';
 export * from './wahl-eval.js';
 export * from './eval.js';
 export * from './entscheidung.js';
+export * from './fraktion.js';
 export * from './rules.js';
 export * from './setup.js';

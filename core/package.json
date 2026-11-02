@@ -20,7 +20,8 @@
     "./wahl-eval": "./dist/wahl-eval.js",
     "./rules": "./dist/rules.js",
     "./setup": "./dist/setup.js",
-    "./entscheidung": "./dist/entscheidung.js"
+    "./entscheidung": "./dist/entscheidung.js",
+    "./fraktion": "./dist/fraktion.js"
   },
   "types": "./dist/index.d.ts",
   "dependencies": {
