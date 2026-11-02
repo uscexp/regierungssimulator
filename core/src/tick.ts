@@ -40,6 +40,7 @@ import { pruefeInvarianten, type Modus, clampLevel } from './invariant.js';
 import { berechneFraktionSupport, pruefeGesetzesMehrheit } from './fraktion.js';
 import {
   ZUFRIEDENHEIT_BASELINE,
+  gewichteteZufriedenheit,
   gruppenZufriedenheit,
   steuerlastFuer,
   steuermodellAusKonstitution,
@@ -49,6 +50,7 @@ import {
 import { setupAbweisung, type SetupPflicht } from './setup.js';
 import { wahlAuswerten, type WahlAuswertung } from './wahl-eval.js';
 import type { KonstitutionsEntscheidung, RegierungRegel, WahlregelVariant } from './rules.js';
+import type { Konstitution } from './state.js';
 import { ereignisKetteVerarbeiten, type Entscheidungskarte } from './entscheidung.js';
 import type {
   DeltaGrund,
@@ -297,6 +299,69 @@ function berechneRadikalisierung(E: number, opposition: number, legitimitaet: nu
   return clampLevel(E - 3);
 }
 
+/**
+ * Legitimität (US-M1-10, FR-019):
+ * Legitimität steigt mit Zufriedenheit + Konstitutionstreue, sinkt mit Skandalen/Zensur.
+ * Berechnet als gewichtete Ø-Zufriedenheit der Bevölkerung plus Konstitutions-Bonus,
+ * geklappt auf 0–100.
+ *
+ * @param state — Der aktuelle GameState (enthält politisches_kapital, radikalisierung etc.)
+ * @param gruppen — Die aktuellen Gruppenzufriedenheiten (nach Zufriedenheitsberechnung)
+ * @param konstitution — Die aktuelle Konstitution (enthält steuermodell und weitere Regeln)
+ * @returns Legitimität 0–100
+ */
+function berechneLegitimität(
+  state: GameState,
+  gruppen: readonly GruppenSnapshot[],
+  konstitution: Konstitution,
+): number {
+  // Basis: gewichtete Ø-Zufriedenheit der Bevölkerung
+  const gewichteteZufriedenheit = berechneGewichteteZufriedenheit(gruppen);
+
+  // Konstitutions-Bonus: basierend auf den gewählten Konstitutions-Entscheidungen
+  // Jede gewählte Entscheidung trägt zum Konstitutionstreue-Bonus bei (max. 10 Punkte)
+  const konstitutionsIds = state.setup?.konstitutions_ids ?? [];
+  const konstitutionsEntscheidungen = konstitutionEntscheidungenAusRegister(
+    konstitutionsIds,
+    konstitution,
+  );
+  const konstitutionsBonus = Math.min(
+    konstitutionsEntscheidungen.length * 2,
+    10,
+  );
+
+  const legitimität = gewichteteZufriedenheit + konstitutionsBonus;
+  return clampLevel(legitimität);
+}
+
+/**
+ * Berechnet die gewichtete Ø-Zufriedenheit der Bevölkerung.
+ */
+function berechneGewichteteZufriedenheit(
+  gruppen: readonly GruppenSnapshot[],
+): number {
+  let anteile = 0;
+  let summe = 0;
+  for (const gruppe of gruppen) {
+    anteile += gruppe.bevölkerungsanteil;
+    summe += gruppe.bevölkerungsanteil * gruppe.zufriedenheit;
+  }
+  if (anteile === 0) return 0;
+  return summe / anteile;
+}
+
+/**
+ * Gibt die gewählten Konstitutions-Entscheidungen aus dem Konstitutions-Objekt zurück.
+ * Die Konstitution im State enthält nur Regel-Ids als Keys (z. B. 'steuermodell': 'flat').
+ * Wir zählen die gesetzten (nicht-leeren) Entscheidungen.
+ */
+function konstitutionEntscheidungenAusRegister(
+  konstitutionsIds: readonly string[],
+  konstitution: Konstitution,
+): readonly string[] {
+  return konstitutionsIds.filter((id) => konstitution[id] !== undefined);
+}
+
 export function tick(
   state: GameState,
   action: TickAction,
@@ -398,7 +463,37 @@ export function tick(
     ereignisse.push(...kettenErgebnis.ereignisse);
   }
 
-  // 2c) Gesetzes-Mehrheit in parlamentarischer Form (US-M1-07, FR-016):
+  // 2c) Misstrauen-Votum in parlamentarischer Form (US-M1-08, FR-014):
+  // Bei niedriger Zustimmung verliert die Regierung bevor Gesetze beschlossen werden können.
+  // Reine Mehrheitprüfung ohne RNG. Nur bei parlamentarischer Form.
+  if (
+    regeln.regierung?.machtverlust === 'misstrauen' &&
+    regeln.regierung?.form === 'parlamentarisch' &&
+    regeln.wahlregel?.typ === 'parlamentmehrheit'
+  ) {
+    const zustimmung = gewichteteZufriedenheit(aktuell.gruppen) / 100;
+    const mehrheitSchwelle = (regeln.wahlregel as Extract<WahlregelVariant, { typ: 'parlamentmehrheit' }>).mehrheit;
+    if (zustimmung < mehrheitSchwelle) {
+      if (modus === 'dev') {
+        throw new TypeError(
+          `Misstrauen-Votum verloren: Zustimmung ${(zustimmung * 100).toFixed(0)}% < Schwelle ${(mehrheitSchwelle * 100).toFixed(0)}% (regel_id '${regeln.wahlregel.regel_id}')`,
+        );
+      }
+      const text = regeln.news_vorlagen?.['misstrauen_verloren'] ?? 'Misstrauen verloren';
+      return {
+        state: Object.freeze({
+          ...state,
+          wahl_niederlage: Object.freeze({ jahr: state.jahr, grund_id: 'misstrauen:verloren' }),
+        }),
+        ereignisse: [],
+        news: [{ id: 'misstrauen_verloren', text }],
+        unterhalt_be: 0,
+        gekuerzte_be: 0,
+      };
+    }
+  }
+
+  // 2d) Gesetzes-Mehrheit in parlamentarischer Form (US-M1-07, FR-016):
   // Ein Gesetz braucht eine Mehrheit im Parlament. Die Fraktionen sind eine
   // abgeleitete View aus Gruppenzufriedenheit — nicht im State gespeichert.
   // Wird die Mehrheit nicht erreicht, ist die Kartenwahl abgewiesen.
@@ -443,11 +538,22 @@ export function tick(
   }
   aktuell = mitKarten;
 
+  // 3b) Legitimität (US-M1-10, FR-019):
+  // Legitimität steigt mit Zufriedenheit + Konstitutionstreue, sinkt mit Skandalen/Zensur.
+  // Berechnet als gewichtete Ø-Zufriedenheit + Konstitutions-Bonus, geklappt auf 0–100.
+  // Wird vor den Beschluss-Effekten berechnet, damit Beschluss-Effekte (z. B. Legitimität-Änderungen
+  // durch Karten) darauf aufbauen können.
+  const legitimitatBasis = berechneLegitimität(aktuell, gruppen, konstitution);
+  aktuell = Object.freeze({
+    ...aktuell,
+    legitimitaet: legitimitatBasis,
+  }) as GameState;
+
   // Beschlüsse des Gedächtnisses (inklusive der gerade gespielten Karten) wirken in diesem Jahr.
   const beschlussEffekte = effekteAusBeschlüsse(aktuell);
   aktuell = effekteAnwenden(aktuell, skalarEffekte(beschlussEffekte), 'beschlüsse', modus);
 
-  // 3b) Radikalisierungskurve (US-M2-09, FR-021):
+  // 3c) Radikalisierungskurve (US-M2-09, FR-021):
   // Extremismus-Anteil E wächst bei Opposition > 40 UND Legitimität < 40,
   // sonst verfällt er um 3 pro Jahr.
   const opposition = berechneOpposition(aktuell.gruppen, aktuell.radikalisierung);
