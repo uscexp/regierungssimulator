@@ -389,6 +389,59 @@ export const PANDEMIE_KARTEN = Object.freeze([
   },
 ]) as readonly Entscheidungskarte[];
 
+/** US-M2-05: Finanzkrise (wirtschaft < 40 ODER schulden > 60).
+ * Zwei Auslöser-Regeln führen zur selben Entscheidungs-Karte (OR-Bedingung über zwei Regeln).
+ * Konflikt: Sparen (Schulden −, Wirtschaft −) vs. Stimulus (Schulden +, Wirtschaft +).
+ */
+export const FINANZKRISE_EREIGNISSE = Object.freeze([
+  {
+    id: 'finanzkrise_wirtschaft',
+    gewicht: 25,
+    bedingung: {
+      indikator: { tag: 'wirtschaft', max: 39 },
+    },
+    effekte: [
+      { ziel: 'legitimitaet' as const, delta: -5 },
+    ],
+  },
+  {
+    id: 'finanzkrise_schulden',
+    gewicht: 25,
+    bedingung: {
+      schulden_min: 61,
+    },
+    effekte: [
+      { ziel: 'legitimitaet' as const, delta: -5 },
+    ],
+  },
+]) as readonly EreignisRegel[];
+
+export const FINANZKRISE_KARTEN: readonly Entscheidungskarte[] = Object.freeze([
+  {
+    regel_id: 'finanzkrise',
+    label: 'Finanzkrise',
+    optionen: [
+      {
+        id: 'finanzkrise_sparen',
+        effekte: [
+          { ziel: 'schulden' as const, delta: -20 },
+          { ziel: 'indikatoren' as const, tag: 'wirtschaft', delta: -10 },
+          { ziel: 'legitimitaet' as const, delta: -5 },
+        ],
+      },
+      {
+        id: 'finanzkrise_stimulus',
+        effekte: [
+          { ziel: 'schulden' as const, delta: +20 },
+          { ziel: 'indikatoren' as const, tag: 'wirtschaft', delta: +15 },
+          { ziel: 'legitimitaet' as const, delta: -5 },
+        ],
+      },
+    ],
+    maxTiefe: 5,
+  },
+]) as readonly Entscheidungskarte[];
+
 /** Der Basis-Pack als ein Objekt — dieselbe Struktur, die ein YAML-Pack in M4 liefert (ADR-003). */
 export const BASIS_PACK = {
   indikator_regeln: INDIKATOR_REGELN,
@@ -399,8 +452,8 @@ export const BASIS_PACK = {
   schwierigkeit_packs: SCHWIERIGKEIT_PACKS,
   news_vorlagen: NEWS_VORLAGEN,
   entscheidungen: BASIS_ENTSCHEIDUNGEN,
-  ereignis_regeln: PANDEMIE_EREIGNISSE,
-  entscheidungskarten: PANDEMIE_KARTEN,
+  ereignis_regeln: [...PANDEMIE_EREIGNISSE, ...FINANZKRISE_EREIGNISSE],
+  entscheidungskarten: [...PANDEMIE_KARTEN, ...FINANZKRISE_KARTEN],
 } as const;
 
 /** Das Schema auf den Pack — ein Test ist die Abnahme (AC US-M0-13: alle Regeln validieren fehlerfrei). */
