@@ -188,6 +188,7 @@ export const entscheidungskartePackSchema = z
                 'radikalisierung',
                 'politisches_kapital',
                 'budget',
+                'schulden',
               ]),
               tag: z.string().optional(),
               delta: z.number(),
