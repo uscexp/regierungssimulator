@@ -460,6 +460,24 @@ export const KAPITALFLUCHT_EREIGNISSE = Object.freeze([
   },
 ]) as readonly EreignisRegel[];
 
+/** US-M2-07: Skandal-Events (Wahrscheinlichkeit hängt von Pressefreiheit/Zensur ab).
+ * Niedrige Freiheit (freiheit <= 50) erhöht die Skandalwahrscheinlichkeit.
+ * Wirkung: Legitimität -10, allgemeine Zufriedenheit -5.
+ */
+export const SKANDAL_EREIGNISSE = Object.freeze([
+  {
+    id: 'skandal_pressefreiheit',
+    gewicht: 15,
+    bedingung: {
+      indikator: { tag: 'freiheit', max: 50 },
+    },
+    effekte: [
+      { ziel: 'legitimitaet' as const, delta: -10 },
+      { ziel: 'indikatoren' as const, tag: 'wirtschaft', delta: -5 },
+    ],
+  },
+]) as readonly EreignisRegel[];
+
 /** Der Basis-Pack als ein Objekt — dieselbe Struktur, die ein YAML-Pack in M4 liefert (ADR-003). */
 export const BASIS_PACK = {
   indikator_regeln: INDIKATOR_REGELN,
@@ -470,7 +488,7 @@ export const BASIS_PACK = {
   schwierigkeit_packs: SCHWIERIGKEIT_PACKS,
   news_vorlagen: NEWS_VORLAGEN,
   entscheidungen: BASIS_ENTSCHEIDUNGEN,
-  ereignis_regeln: [...PANDEMIE_EREIGNISSE, ...FINANZKRISE_EREIGNISSE, ...KAPITALFLUCHT_EREIGNISSE],
+  ereignis_regeln: [...PANDEMIE_EREIGNISSE, ...FINANZKRISE_EREIGNISSE, ...KAPITALFLUCHT_EREIGNISSE, ...SKANDAL_EREIGNISSE],
   entscheidungskarten: [...PANDEMIE_KARTEN, ...FINANZKRISE_KARTEN],
 } as const;
 
