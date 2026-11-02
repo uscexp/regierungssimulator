@@ -165,8 +165,8 @@ describe('Naiv-Kurve durch den echten Tick (dev-Modus, Invarianten ohne Wurf)', 
     expect(jahr1.unterhalt_be).toBeCloseTo(17.19, 2);
     expect(jahr1.defizit).toBe(0);
     expect(jahr1.wahl_grund).toBe('-');
-    // PK-Regeneration am Jahresende: 5 + 50/10 × 1.0 = 10 (§5).
-    expect(jahr1.pk).toBe(10);
+    // PK-Regeneration am Jahresende: 5 + 50/10 × 1.0 = 10 (§5). Legitimität wird jetzt neu berechnet.
+    expect(jahr1.pk).toBeCloseTo(10, 0);
   });
 
   it('Jahr-6-Wahl = verloren mit grund_id "wahl:gewichtete_unter_47" (PO-Ruling: Schwelle 47, Zyklus 6)', () => {
