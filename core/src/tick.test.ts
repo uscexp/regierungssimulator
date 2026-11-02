@@ -873,13 +873,6 @@ describe('tick — dauerhafte Regelsatz-Modifikatoren der Konstitution (US-M1-06
       mehrheit: 0.7,
     });
 
-    const staatParlamentarisch = stateMit({
-      setup: {
-        regierungsform: 'parlamentarisch',
-        konstitutions_ids: [],
-      },
-    });
-
     const kartenAktion: TickAction = {
       zuteilung: {},
       karten: [
@@ -891,32 +884,48 @@ describe('tick — dauerhafte Regelsatz-Modifikatoren der Konstitution (US-M1-06
       ],
     };
 
+    const staatParlamentarisch = stateMit({
+      setup: {
+        regierungsform: 'parlamentarisch',
+        konstitutions_ids: [],
+      },
+    });
+
     it('parlamentarisch + parlementmehrheit + keine Mehrheit → dev wirft mit Regel-Id', () => {
-      // Alle Gruppen unzufrieden (< 50) → fraktionSupport = 0 < 0.5
-      // Niedrige Indikatoren → Zufriedenheit fällt unter 50
+      // Zustand: Zustimmung 0.76 (> 0.7 für Misstrauen), Fraktions-Support 0.6 (< 0.7 für Gesetzes-Mehrheit)
       const staat = stateMit({
         ...staatParlamentarisch,
-        indikatoren: { wirtschaft: 0, bildung: 0, gesundheit: 0, infrastruktur: 0, forschung: 0 },
+        indikatoren: {
+          wirtschaft: 90,
+          bildung: 20,
+          gesundheit: 80,
+          infrastruktur: 80,
+          forschung: 80,
+        },
         gruppen: [
           {
             tag: 'unternehmen',
-            zufriedenheit: 30,
-            bevölkerungsanteil: 40,
+            zufriedenheit: 96,
+            bevölkerungsanteil: 65,
             gewichte: { wirtschaft: 1 },
           },
           {
             tag: 'arbeitnehmer',
-            zufriedenheit: 30,
-            bevölkerungsanteil: 60,
-            gewichte: { wirtschaft: 1 },
+            zufriedenheit: 36,
+            bevölkerungsanteil: 35,
+            gewichte: { bildung: 1 },
           },
         ],
+        legitimitaet: 50,
       });
       expect(() =>
         tick(
           staat,
           kartenAktion,
-          regelnMit({ regierung: regierungParlamentarisch, wahlregel: mehrheit05 }),
+          regelnMit({
+            regierung: regierungParlamentarisch,
+            wahlregel: mehrheit07 as unknown as Wahlregel,
+          }),
           'dev',
         ),
       ).toThrow(/Gesetzes-Mehrheit nicht erreicht/);
@@ -924,97 +933,128 @@ describe('tick — dauerhafte Regelsatz-Modifikatoren der Konstitution (US-M1-06
         tick(
           staat,
           kartenAktion,
-          regelnMit({ regierung: regierungParlamentarisch, wahlregel: mehrheit05 }),
+          regelnMit({
+            regierung: regierungParlamentarisch,
+            wahlregel: mehrheit07 as unknown as Wahlregel,
+          }),
           'dev',
         ),
-      ).toThrow(/regel_mehrheit_05/);
+      ).toThrow(/regel_mehrheit_07/);
     });
 
     it('parlamentarisch + parlementmehrheit + keine Mehrheit → Produktion: unveränderter State + News', () => {
       const staat = stateMit({
         ...staatParlamentarisch,
-        indikatoren: { wirtschaft: 0, bildung: 0, gesundheit: 0, infrastruktur: 0, forschung: 0 },
+        indikatoren: {
+          wirtschaft: 90,
+          bildung: 20,
+          gesundheit: 80,
+          infrastruktur: 80,
+          forschung: 80,
+        },
         gruppen: [
           {
             tag: 'unternehmen',
-            zufriedenheit: 30,
-            bevölkerungsanteil: 40,
+            zufriedenheit: 96,
+            bevölkerungsanteil: 65,
             gewichte: { wirtschaft: 1 },
           },
           {
             tag: 'arbeitnehmer',
-            zufriedenheit: 30,
-            bevölkerungsanteil: 60,
-            gewichte: { wirtschaft: 1 },
+            zufriedenheit: 36,
+            bevölkerungsanteil: 35,
+            gewichte: { bildung: 1 },
           },
         ],
+        legitimitaet: 50,
       });
       const ergebnis = tick(
         staat,
         kartenAktion,
-        regelnMit({ regierung: regierungParlamentarisch, wahlregel: mehrheit05 }),
+        regelnMit({
+          regierung: regierungParlamentarisch,
+          wahlregel: mehrheit07 as unknown as Wahlregel,
+        }),
         'produktion',
       );
-      expect(ergebnis.state.legitimitaet).toBe(staat.legitimitaet); // Legitimität unverändert
+      expect(ergebnis.state.legitimitaet).toBe(staat.legitimitaet);
       expect(ergebnis.news).toHaveLength(1);
       expect(ergebnis.news[0]!.id).toBe('keine_mehrheit');
       expect(ergebnis.ereignisse).toHaveLength(0);
     });
 
     it('parlamentarisch + parlementmehrheit + Mehrheit erreicht → Karte wird gespielt', () => {
-      // Alle Gruppen zufrieden (≥ 50) → fraktionSupport = 1.0 >= 0.5
       const staat = stateMit({
         ...staatParlamentarisch,
+        indikatoren: {
+          wirtschaft: 80,
+          bildung: 80,
+          gesundheit: 80,
+          infrastruktur: 80,
+          forschung: 80,
+        },
         gruppen: [
           {
             tag: 'unternehmen',
-            zufriedenheit: 60,
-            bevölkerungsanteil: 40,
+            zufriedenheit: 100,
+            bevölkerungsanteil: 60,
             gewichte: { wirtschaft: 1 },
           },
           {
             tag: 'arbeitnehmer',
-            zufriedenheit: 70,
-            bevölkerungsanteil: 60,
+            zufriedenheit: 100,
+            bevölkerungsanteil: 40,
             gewichte: { wirtschaft: 1 },
           },
         ],
+        legitimitaet: 50,
       });
       const ergebnis = tick(
         staat,
         kartenAktion,
-        regelnMit({ regierung: regierungParlamentarisch, wahlregel: mehrheit05 }),
+        regelnMit({
+          regierung: regierungParlamentarisch,
+          wahlregel: mehrheit05 as unknown as Wahlregel,
+        }),
         'dev',
       );
-      // Karte wurde gespielt: Legitimität erhöht (Effekt angewendet)
       expect(ergebnis.state.legitimitaet).toBe(staat.legitimitaet + 5);
     });
 
     it('parlamentarisch + mehrheit 0.7 + Unterstützung 0.6 → abgelehnt', () => {
-      // Niedrige Indikatoren → keine Gruppe über 50 → Support = 0 < 0.7
       const staat = stateMit({
         ...staatParlamentarisch,
-        indikatoren: { wirtschaft: 0, bildung: 0, gesundheit: 0, infrastruktur: 0, forschung: 0 },
+        indikatoren: {
+          wirtschaft: 90,
+          bildung: 20,
+          gesundheit: 80,
+          infrastruktur: 80,
+          forschung: 80,
+        },
         gruppen: [
           {
             tag: 'unternehmen',
-            zufriedenheit: 60,
-            bevölkerungsanteil: 60,
+            zufriedenheit: 96,
+            bevölkerungsanteil: 65,
             gewichte: { wirtschaft: 1 },
           },
           {
             tag: 'arbeitnehmer',
-            zufriedenheit: 30,
-            bevölkerungsanteil: 40,
-            gewichte: { wirtschaft: 1 },
+            zufriedenheit: 36,
+            bevölkerungsanteil: 35,
+            gewichte: { bildung: 1 },
           },
         ],
+        legitimitaet: 50,
       });
       expect(() =>
         tick(
           staat,
           kartenAktion,
-          regelnMit({ regierung: regierungParlamentarisch, wahlregel: mehrheit07 }),
+          regelnMit({
+            regierung: regierungParlamentarisch,
+            wahlregel: mehrheit07 as unknown as Wahlregel,
+          }),
           'dev',
         ),
       ).toThrow(/Gesetzes-Mehrheit nicht erreicht/);
@@ -1022,7 +1062,10 @@ describe('tick — dauerhafte Regelsatz-Modifikatoren der Konstitution (US-M1-06
         tick(
           staat,
           kartenAktion,
-          regelnMit({ regierung: regierungParlamentarisch, wahlregel: mehrheit07 }),
+          regelnMit({
+            regierung: regierungParlamentarisch,
+            wahlregel: mehrheit07 as unknown as Wahlregel,
+          }),
           'dev',
         ),
       ).toThrow(/regel_mehrheit_07/);
@@ -1051,13 +1094,13 @@ describe('tick — dauerhafte Regelsatz-Modifikatoren der Konstitution (US-M1-06
           {
             tag: 'unternehmen',
             zufriedenheit: 30,
-            bevölkerungsanteil: 40,
+            bevölkerungsanteil: 50,
             gewichte: { wirtschaft: 1 },
           },
           {
             tag: 'arbeitnehmer',
             zufriedenheit: 30,
-            bevölkerungsanteil: 60,
+            bevölkerungsanteil: 50,
             gewichte: { wirtschaft: 1 },
           },
         ],
@@ -1086,7 +1129,10 @@ describe('tick — dauerhafte Regelsatz-Modifikatoren der Konstitution (US-M1-06
       const ergebnis = tick(
         staat,
         kartenAktion,
-        regelnMit({ regierung: regierungParlamentarisch, wahlregel: mehrheit05 }),
+        regelnMit({
+          regierung: regierungParlamentarisch,
+          wahlregel: mehrheit05 as unknown as Wahlregel,
+        }),
         'dev',
       );
       expect(ergebnis.state.legitimitaet).toBe(staat.legitimitaet + 5);

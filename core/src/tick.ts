@@ -195,9 +195,9 @@ function machtverlustAuswerten(
     return { regelset_fehlt: `machtverlust:kein_regelset_fuer_${setupForm}` };
   }
   if (form.machtverlust === 'misstrauen') {
-    // Das Misstrauens-Votum ist US-M1-08, die Gesetzes-Mehrheit US-M1-07: die Bindung steht im
-    // Register, der Check läuft in dieser Story noch nicht.
-    return {};
+    // Misstrauens-Votum in parlamentarischer Form (US-M1-08): die Bindung steht im
+    // Register, der Check läuft jetzt über die parlamentarische Mehrheit.
+    return { variante };
   }
   if (form.amt.modus === 'keins') {
     // Diktatur: kein Amts-Zyklus; die Mechanik ist die Putsch-Roll in jedem Jahr.
@@ -470,7 +470,8 @@ export function tick(
   let wahl: WahlAuswertung | undefined;
   const paar = machtverlustAuswerten(regeln, aktuell.setup?.regierungsform, modus);
   const machtverlust_regelset = paar.regelset_fehlt;
-  if (paar.variante !== undefined) {
+
+  if (paar.variante !== undefined && regeln.regierung?.machtverlust !== 'misstrauen') {
     const auswertung = wahlAuswerten(paar.variante, aktuell, modus);
     if (auswertung !== undefined) {
       wahl = auswertung;
