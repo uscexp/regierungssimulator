@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { tick, type TickRegeln } from '@staatslenker/core/tick';
+import { tick, type TickAction, type TickRegeln } from '@staatslenker/core/tick';
 import { SCHWIERIGKEIT_NORMAL, type IndikatorRegel } from '@staatslenker/core/indikatoren';
 import type { SteuerfaktorTabelle } from '@staatslenker/core/budget';
 import {
@@ -849,6 +849,247 @@ describe('tick — dauerhafte Regelsatz-Modifikatoren der Konstitution (US-M1-06
         'dev',
       );
       expect(links.state.radikalisierung).toBe(rechts.state.radikalisierung);
+    });
+  });
+
+  describe('Gesetzes-Mehrheit in parlamentarischer Form (US-M1-07, FR-016)', () => {
+    const regierungParlamentarisch: RegierungRegel = Object.freeze({
+      typ: 'regierung',
+      regel_id: 'regierung_test_parlament',
+      form: 'parlamentarisch' as const,
+      amt: { modus: 'fixed_term' as const, jahre: 6 },
+      machtverlust: 'misstrauen',
+    });
+
+    const mehrheit05: WahlregelVariant = Object.freeze({
+      typ: 'parlamentmehrheit',
+      regel_id: 'regel_mehrheit_05',
+      mehrheit: 0.5,
+    });
+
+    const mehrheit07: WahlregelVariant = Object.freeze({
+      typ: 'parlamentmehrheit',
+      regel_id: 'regel_mehrheit_07',
+      mehrheit: 0.7,
+    });
+
+    const staatParlamentarisch = stateMit({
+      setup: {
+        regierungsform: 'parlamentarisch',
+        konstitutions_ids: [],
+      },
+    });
+
+    const kartenAktion: TickAction = {
+      zuteilung: {},
+      karten: [
+        {
+          regel_id: 'karte_test',
+          pk_kosten: 1,
+          wirkung: [{ ziel: 'legitimitaet', delta: 5 }] as const,
+        },
+      ],
+    };
+
+    it('parlamentarisch + parlementmehrheit + keine Mehrheit → dev wirft mit Regel-Id', () => {
+      // Alle Gruppen unzufrieden (< 50) → fraktionSupport = 0 < 0.5
+      // Niedrige Indikatoren → Zufriedenheit fällt unter 50
+      const staat = stateMit({
+        ...staatParlamentarisch,
+        indikatoren: { wirtschaft: 0, bildung: 0, gesundheit: 0, infrastruktur: 0, forschung: 0 },
+        gruppen: [
+          {
+            tag: 'unternehmen',
+            zufriedenheit: 30,
+            bevölkerungsanteil: 40,
+            gewichte: { wirtschaft: 1 },
+          },
+          {
+            tag: 'arbeitnehmer',
+            zufriedenheit: 30,
+            bevölkerungsanteil: 60,
+            gewichte: { wirtschaft: 1 },
+          },
+        ],
+      });
+      expect(() =>
+        tick(
+          staat,
+          kartenAktion,
+          regelnMit({ regierung: regierungParlamentarisch, wahlregel: mehrheit05 }),
+          'dev',
+        ),
+      ).toThrow(/Gesetzes-Mehrheit nicht erreicht/);
+      expect(() =>
+        tick(
+          staat,
+          kartenAktion,
+          regelnMit({ regierung: regierungParlamentarisch, wahlregel: mehrheit05 }),
+          'dev',
+        ),
+      ).toThrow(/regel_mehrheit_05/);
+    });
+
+    it('parlamentarisch + parlementmehrheit + keine Mehrheit → Produktion: unveränderter State + News', () => {
+      const staat = stateMit({
+        ...staatParlamentarisch,
+        indikatoren: { wirtschaft: 0, bildung: 0, gesundheit: 0, infrastruktur: 0, forschung: 0 },
+        gruppen: [
+          {
+            tag: 'unternehmen',
+            zufriedenheit: 30,
+            bevölkerungsanteil: 40,
+            gewichte: { wirtschaft: 1 },
+          },
+          {
+            tag: 'arbeitnehmer',
+            zufriedenheit: 30,
+            bevölkerungsanteil: 60,
+            gewichte: { wirtschaft: 1 },
+          },
+        ],
+      });
+      const ergebnis = tick(
+        staat,
+        kartenAktion,
+        regelnMit({ regierung: regierungParlamentarisch, wahlregel: mehrheit05 }),
+        'produktion',
+      );
+      expect(ergebnis.state.legitimitaet).toBe(staat.legitimitaet); // Legitimität unverändert
+      expect(ergebnis.news).toHaveLength(1);
+      expect(ergebnis.news[0]!.id).toBe('keine_mehrheit');
+      expect(ergebnis.ereignisse).toHaveLength(0);
+    });
+
+    it('parlamentarisch + parlementmehrheit + Mehrheit erreicht → Karte wird gespielt', () => {
+      // Alle Gruppen zufrieden (≥ 50) → fraktionSupport = 1.0 >= 0.5
+      const staat = stateMit({
+        ...staatParlamentarisch,
+        gruppen: [
+          {
+            tag: 'unternehmen',
+            zufriedenheit: 60,
+            bevölkerungsanteil: 40,
+            gewichte: { wirtschaft: 1 },
+          },
+          {
+            tag: 'arbeitnehmer',
+            zufriedenheit: 70,
+            bevölkerungsanteil: 60,
+            gewichte: { wirtschaft: 1 },
+          },
+        ],
+      });
+      const ergebnis = tick(
+        staat,
+        kartenAktion,
+        regelnMit({ regierung: regierungParlamentarisch, wahlregel: mehrheit05 }),
+        'dev',
+      );
+      // Karte wurde gespielt: Legitimität erhöht (Effekt angewendet)
+      expect(ergebnis.state.legitimitaet).toBe(staat.legitimitaet + 5);
+    });
+
+    it('parlamentarisch + mehrheit 0.7 + Unterstützung 0.6 → abgelehnt', () => {
+      // Niedrige Indikatoren → keine Gruppe über 50 → Support = 0 < 0.7
+      const staat = stateMit({
+        ...staatParlamentarisch,
+        indikatoren: { wirtschaft: 0, bildung: 0, gesundheit: 0, infrastruktur: 0, forschung: 0 },
+        gruppen: [
+          {
+            tag: 'unternehmen',
+            zufriedenheit: 60,
+            bevölkerungsanteil: 60,
+            gewichte: { wirtschaft: 1 },
+          },
+          {
+            tag: 'arbeitnehmer',
+            zufriedenheit: 30,
+            bevölkerungsanteil: 40,
+            gewichte: { wirtschaft: 1 },
+          },
+        ],
+      });
+      expect(() =>
+        tick(
+          staat,
+          kartenAktion,
+          regelnMit({ regierung: regierungParlamentarisch, wahlregel: mehrheit07 }),
+          'dev',
+        ),
+      ).toThrow(/Gesetzes-Mehrheit nicht erreicht/);
+      expect(() =>
+        tick(
+          staat,
+          kartenAktion,
+          regelnMit({ regierung: regierungParlamentarisch, wahlregel: mehrheit07 }),
+          'dev',
+        ),
+      ).toThrow(/regel_mehrheit_07/);
+    });
+
+    it('nicht-parlamentarisch → keine Mehrheitprüfung, Karte wird gespielt', () => {
+      const staatPrasidential = stateMit({
+        setup: {
+          regierungsform: 'praesidential',
+          konstitutions_ids: [],
+        },
+      });
+      const ergebnis = tick(
+        staatPrasidential,
+        kartenAktion,
+        regelnMit({ regierung: { ...regierungParlamentarisch, form: 'praesidential' } }),
+        'dev',
+      );
+      expect(ergebnis.state.legitimitaet).toBe(staatPrasidential.legitimitaet + 5);
+    });
+
+    it('ohne parlementmehrheit Regel → keine Mehrheitprüfung, Karte wird gespielt', () => {
+      const staat = stateMit({
+        ...staatParlamentarisch,
+        gruppen: [
+          {
+            tag: 'unternehmen',
+            zufriedenheit: 30,
+            bevölkerungsanteil: 40,
+            gewichte: { wirtschaft: 1 },
+          },
+          {
+            tag: 'arbeitnehmer',
+            zufriedenheit: 30,
+            bevölkerungsanteil: 60,
+            gewichte: { wirtschaft: 1 },
+          },
+        ],
+      });
+      const ergebnis = tick(
+        staat,
+        kartenAktion,
+        regelnMit({ regierung: regierungParlamentarisch }), // keine wahlregel
+        'dev',
+      );
+      expect(ergebnis.state.legitimitaet).toBe(staat.legitimitaet + 5);
+    });
+
+    it('Zufriedenheit genau 50 → unterstützt (inklusiv)', () => {
+      const staat = stateMit({
+        ...staatParlamentarisch,
+        gruppen: [
+          {
+            tag: 'unternehmen',
+            zufriedenheit: 50,
+            bevölkerungsanteil: 100,
+            gewichte: { wirtschaft: 1 },
+          },
+        ],
+      });
+      const ergebnis = tick(
+        staat,
+        kartenAktion,
+        regelnMit({ regierung: regierungParlamentarisch, wahlregel: mehrheit05 }),
+        'dev',
+      );
+      expect(ergebnis.state.legitimitaet).toBe(staat.legitimitaet + 5);
     });
   });
 });

@@ -37,6 +37,7 @@ import {
 } from './indikatoren.js';
 import { karteWählbar, pkAusgeben, pkRegenerieren } from './kapital.js';
 import { pruefeInvarianten, type Modus, clampLevel } from './invariant.js';
+import { berechneFraktionSupport, pruefeGesetzesMehrheit } from './fraktion.js';
 import {
   ZUFRIEDENHEIT_BASELINE,
   gruppenZufriedenheit,
@@ -395,6 +396,34 @@ export function tick(
     );
     aktuell = Object.freeze({ ...aktuell, ...kettenErgebnis.state }) as GameState;
     ereignisse.push(...kettenErgebnis.ereignisse);
+  }
+
+  // 2c) Gesetzes-Mehrheit in parlamentarischer Form (US-M1-07, FR-016):
+  // Ein Gesetz braucht eine Mehrheit im Parlament. Die Fraktionen sind eine
+  // abgeleitete View aus Gruppenzufriedenheit — nicht im State gespeichert.
+  // Wird die Mehrheit nicht erreicht, ist die Kartenwahl abgewiesen.
+  const parlamentarischeMehrheit =
+    aktuell.setup?.regierungsform === 'parlamentarisch' &&
+    regeln.wahlregel?.typ === 'parlamentmehrheit'
+      ? regeln.wahlregel
+      : undefined;
+  if (parlamentarischeMehrheit !== undefined) {
+    const fraktionSupport = berechneFraktionSupport(aktuell.gruppen);
+    if (!pruefeGesetzesMehrheit(fraktionSupport, parlamentarischeMehrheit.mehrheit)) {
+      if (modus === 'dev') {
+        throw new TypeError(
+          `Gesetzes-Mehrheit nicht erreicht: Unterstützung ${(fraktionSupport * 100).toFixed(0)}% < Schwelle ${(parlamentarischeMehrheit.mehrheit * 100).toFixed(0)}% (regel_id '${parlamentarischeMehrheit.regel_id}')`,
+        );
+      }
+      const text = regeln.news_vorlagen?.['keine_mehrheit'] ?? 'keine Mehrheit in den Fraktionen';
+      return {
+        state,
+        ereignisse: [],
+        news: [{ id: 'keine_mehrheit', text }],
+        unterhalt_be: 0,
+        gekuerzte_be: 0,
+      };
+    }
   }
 
   // 3) Karten: PK zuerst prüfen und verbrauchen, dann ins Entscheidungsgedächtnis schreiben.
