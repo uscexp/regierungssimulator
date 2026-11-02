@@ -27,7 +27,7 @@ describe('Ein Turn führt den Kern-Loop', () => {
     // Das Gedächtnis bleibt leer: eine Allokation ist keine Karte und kein wirkungsloser Beschluss —
     // die Transparenz macht der Lagebericht ("Beschlüsse dieses Jahres: …"), nicht der State.
     expect(ergebnis.ergebnis.state.beschlüsse).toHaveLength(0);
-    expect(ergebnis.entscheidung.indikator).toBe('bildung');
+    expect(ergebnis.entscheidung.effects[0].tag).toBe('bildung');
     expect(ergebnis.lagebericht_nach).toContain('Beschlüsse dieses Jahres:');
     expect(ergebnis.spielende).toBe(false);
   });

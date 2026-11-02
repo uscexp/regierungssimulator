@@ -228,8 +228,24 @@ export interface BasisEntscheidung {
   readonly regel_id: string;
   readonly label: string;
   readonly beschreibung: string;
-  readonly indikator: string;
-  readonly pk_kosten: number;
+  readonly cost: {
+    readonly budget: number;
+    readonly politisches_kapital: number;
+  };
+  readonly effects: readonly {
+    readonly ziel: string;
+    readonly tag?: string;
+    readonly delta: number;
+  }[];
+  readonly constraints?: readonly {
+    readonly indikator: {
+      readonly tag: string;
+      readonly min?: number;
+      readonly max?: number;
+    };
+  }[];
+  readonly cooldown?: number;
+  readonly diminishing_at?: number;
 }
 
 export const BASIS_ENTSCHEIDUNGEN: readonly BasisEntscheidung[] = Object.freeze([
@@ -237,37 +253,38 @@ export const BASIS_ENTSCHEIDUNGEN: readonly BasisEntscheidung[] = Object.freeze(
     regel_id: 'entscheidung:infrastruktur',
     label: 'Infrastruktur ausbauen',
     beschreibung: 'Budget in Infrastruktur — +0.5 Level je BE, Verschleiß 3/Jahr (balance §2)',
-    indikator: 'infrastruktur',
-    pk_kosten: 0,
+    cost: { budget: 5, politisches_kapital: 0 },
+    effects: [{ ziel: 'indikatoren' as const, tag: 'infrastruktur', delta: 1 }],
   }),
   Object.freeze({
     regel_id: 'entscheidung:bildung',
     label: 'Bildung ausbauen',
     beschreibung: 'Budget in Bildung — +0.6 Level je BE, Verschleiß 2/Jahr (balance §2)',
-    indikator: 'bildung',
-    pk_kosten: 0,
+    cost: { budget: 5, politisches_kapital: 0 },
+    effects: [{ ziel: 'indikatoren' as const, tag: 'bildung', delta: 1 }],
   }),
   Object.freeze({
     regel_id: 'entscheidung:gesundheit',
     label: 'Gesundheit ausbauen',
     beschreibung: 'Budget in Gesundheit — +0.7 Level je BE, Verschleiß 2/Jahr (balance §2)',
-    indikator: 'gesundheit',
-    pk_kosten: 0,
+    cost: { budget: 5, politisches_kapital: 0 },
+    effects: [{ ziel: 'indikatoren' as const, tag: 'gesundheit', delta: 1 }],
   }),
   Object.freeze({
     regel_id: 'entscheidung:wirtschaft',
     label: 'Wirtschaft stärken',
     beschreibung: 'Budget in Wirtschaft — +0.4 Level je BE, Verschleiß 2/Jahr (balance §2)',
-    indikator: 'wirtschaft',
-    pk_kosten: 0,
+    cost: { budget: 5, politisches_kapital: 0 },
+    effects: [{ ziel: 'indikatoren' as const, tag: 'wirtschaft', delta: 1 }],
   }),
   Object.freeze({
     regel_id: 'entscheidung:forschung',
     label: 'Forschung fördern',
     beschreibung:
       'Budget in Forschung — +0.5 Level je BE (über 85: 0.20), Gate Bildung ≥ 50 (balance §2, PO D13)',
-    indikator: 'forschung',
-    pk_kosten: 0,
+    cost: { budget: 5, politisches_kapital: 0 },
+    effects: [{ ziel: 'indikatoren' as const, tag: 'forschung', delta: 1 }],
+    constraints: [{ indikator: { tag: 'bildung', min: 50 } }],
   }),
 ]);
 

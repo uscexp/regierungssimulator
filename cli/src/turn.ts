@@ -90,18 +90,27 @@ export function prüfeEingabe(
     }
   }
 
-  const beAufIndikator = eingabe.zuteilung[entscheidung.indikator] ?? 0;
+  const beAufIndikator =
+    eingabe.zuteilung[
+      entscheidung.effects.find(
+        (e) => e.ziel === 'indikatoren' && e.tag !== undefined,
+      )!.tag!
+    ] ?? 0;
   if (beAufIndikator < 1) {
+    const tag =
+      entscheidung.effects.find(
+        (e) => e.ziel === 'indikatoren' && e.tag !== undefined,
+      )?.tag ?? 'unbekannt';
     return {
       ok: false,
-      grund: `Entscheidung "${entscheidung.regel_id}" verlangt mindestens 1 BE auf "${entscheidung.indikator}" (ist ${String(beAufIndikator)})`,
+      grund: `Entscheidung "${entscheidung.regel_id}" verlangt mindestens 1 BE auf "${tag}" (ist ${String(beAufIndikator)})`,
     };
   }
 
-  if (state.politisches_kapital < entscheidung.pk_kosten) {
+  if (state.politisches_kapital < entscheidung.cost.politisches_kapital) {
     return {
       ok: false,
-      grund: `Entscheidung "${entscheidung.regel_id}" kostet ${entscheidung.pk_kosten} politisches Kapital — verfügbar sind ${state.politisches_kapital}`,
+      grund: `Entscheidung "${entscheidung.regel_id}" kostet ${entscheidung.cost.politisches_kapital} politisches Kapital — verfügbar sind ${state.politisches_kapital}`,
     };
   }
 
