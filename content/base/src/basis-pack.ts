@@ -442,6 +442,24 @@ export const FINANZKRISE_KARTEN: readonly Entscheidungskarte[] = Object.freeze([
   },
 ]) as readonly Entscheidungskarte[];
 
+/** US-M2-06: Kapitalflucht (Unternehmen Zufriedenheit < 50).
+ * Ein Event-Regel ohne Entscheidungs-Karte — die Wirkung tritt automatisch ein,
+ * sobald die Bedingung erfüllt ist (wie ein Passiv-Event).
+ */
+export const KAPITALFLUCHT_EREIGNISSE = Object.freeze([
+  {
+    id: 'kapitalflucht_unternehmen',
+    gewicht: 20,
+    bedingung: {
+      gruppe: { tag: 'unternehmen', max_zufriedenheit: 49 },
+    },
+    effekte: [
+      { ziel: 'indikatoren' as const, tag: 'wirtschaft', delta: -15 },
+      { ziel: 'radikalisierung' as const, delta: 5 },
+    ],
+  },
+]) as readonly EreignisRegel[];
+
 /** Der Basis-Pack als ein Objekt — dieselbe Struktur, die ein YAML-Pack in M4 liefert (ADR-003). */
 export const BASIS_PACK = {
   indikator_regeln: INDIKATOR_REGELN,
@@ -452,7 +470,7 @@ export const BASIS_PACK = {
   schwierigkeit_packs: SCHWIERIGKEIT_PACKS,
   news_vorlagen: NEWS_VORLAGEN,
   entscheidungen: BASIS_ENTSCHEIDUNGEN,
-  ereignis_regeln: [...PANDEMIE_EREIGNISSE, ...FINANZKRISE_EREIGNISSE],
+  ereignis_regeln: [...PANDEMIE_EREIGNISSE, ...FINANZKRISE_EREIGNISSE, ...KAPITALFLUCHT_EREIGNISSE],
   entscheidungskarten: [...PANDEMIE_KARTEN, ...FINANZKRISE_KARTEN],
 } as const;
 
