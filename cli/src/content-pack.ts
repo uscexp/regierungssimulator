@@ -13,6 +13,9 @@ import {
   INDIKATOR_REGELN,
   KONSTITUTION_WERTE,
   NEWS_VORLAGEN,
+  PANDEMIE_EREIGNISSE,
+  PANDEMIE_KARTEN,
+  REGIERUNG_REGEL_M0,
   SCHWIERIGKEIT_PACKS,
   SETUP_FORMEN,
   SETUP_PFLICHT,
@@ -20,7 +23,6 @@ import {
   START_INDICATOREN,
   STEUERFAKTOR,
   STEUERLAST,
-  REGIERUNG_REGEL_M0,
   WAHLREGEL_VARIANT_M0,
   basisKonstitution,
 } from '@staatslenker/content-base';
@@ -115,9 +117,10 @@ export function tickRegelnFür(schwierigkeitId: 'leicht' | 'normal' | 'schwer'):
     regierung: REGIERUNG_REGEL_M0,
     wahlregel: WAHLREGEL_VARIANT_M0,
     news_vorlagen: NEWS_VORLAGEN,
-    // Keine Event-Regeln: balance-werte.md definiert keine konkreten Events (das ist M2-Content).
-    // Ohne Kandidaten würfelt der Tick nicht — der AutoSim ist damit rein deterministisch.
-    ereignis_regeln: [],
+    // Event-Regeln und Entscheidungs-Karten aus dem Content-Pack (US-M2-02/03/04).
+    // Packs ohne Events/Karten liefern leere Arrays — der Tick würfelt dann nicht.
+    ereignis_regeln: PANDEMIE_EREIGNISSE,
+    entscheidungskarten: PANDEMIE_KARTEN,
   });
 }
 
