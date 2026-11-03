@@ -3,5 +3,22 @@
   "version": "0.0.0",
   "private": true,
   "type": "module",
-  "description": "Svelte 5 + Vite Dashboard (M5) — Adapter: sieht nur Snapshots, sendet Actions"
+  "description": "Web-UI für Staatslenker — Pack-Import per Drag & Drop (M4-10), Svelte 5 + Vite Dashboard (M5)",
+  "dependencies": {
+    "@staatslenker/loader": "0.0.0"
+  },
+  "exports": {
+    ".": "./dist/index.js"
+  },
+  "types": "./dist/index.d.ts",
+  "scripts": {
+    "build": "vite build && tsc -b .",
+    "dev": "vite",
+    "preview": "vite preview"
+  },
+  "devDependencies": {
+    "vite": "^8.3.5",
+    "@types/node": "^22.0.0",
+    "typescript": "^5.6.0"
+  }
 }

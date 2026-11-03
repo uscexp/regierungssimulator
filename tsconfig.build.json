@@ -4,6 +4,7 @@
     { "path": "core" },
     { "path": "content/base" },
     { "path": "loader" },
-    { "path": "cli" }
+    { "path": "cli" },
+    { "path": "app" }
   ]
 }
