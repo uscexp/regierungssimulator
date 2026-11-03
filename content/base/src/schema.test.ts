@@ -49,8 +49,8 @@ function einModPack() {
         regel_id: 'entscheidung:bildung',
         label: 'Bildung',
         beschreibung: 'Budget in Bildung',
-        indikator: 'bildung',
-        pk_kosten: 0,
+        cost: { budget: 5, politisches_kapital: 0 },
+        effects: [{ ziel: 'indikatoren', tag: 'bildung', delta: 1 }],
       },
     ],
   };

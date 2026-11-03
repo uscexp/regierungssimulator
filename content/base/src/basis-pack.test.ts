@@ -203,7 +203,11 @@ describe('G11 — News-Vorlagen sind Content', () => {
 
 describe('PO D10 — die fünf Basis-Entscheidungen', () => {
   it('sind genau die fünf budgetbaren Indikatoren, keine Karte, kein PK-Kosten', () => {
-    expect(BASIS_ENTSCHEIDUNGEN.map((e) => e.indikator)).toEqual([
+    expect(
+      BASIS_ENTSCHEIDUNGEN.map((e) =>
+        e.effects.find((eff) => eff.ziel === 'indikatoren')?.tag,
+      ),
+    ).toEqual([
       'infrastruktur',
       'bildung',
       'gesundheit',
@@ -211,9 +215,9 @@ describe('PO D10 — die fünf Basis-Entscheidungen', () => {
       'forschung',
     ]);
     for (const entscheidung of BASIS_ENTSCHEIDUNGEN) {
-      expect(entscheidung.pk_kosten).toBe(0);
-      expect(entscheidung.pk_kosten).toBeGreaterThanOrEqual(0);
-      expect(entscheidung.pk_kosten).toBeLessThanOrEqual(3); // FR-011-Grenze für Karten (M3)
+      expect(entscheidung.cost.politisches_kapital).toBe(0);
+      expect(entscheidung.cost.politisches_kapital).toBeGreaterThanOrEqual(0);
+      expect(entscheidung.cost.politisches_kapital).toBeLessThanOrEqual(3); // FR-011-Grenze für Karten (M3)
       expect(entscheidung.label).toBeTruthy();
       expect(entscheidung.beschreibung).toBeTruthy();
     }

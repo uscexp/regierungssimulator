@@ -109,14 +109,49 @@ export const schwierigkeitPacksSchema = z
   })
   .strict();
 
-/** Eine Basis-Entscheidung (M0: eine Budget-Allokation pro Indikator). PK-Kosten 0–3 (FR-011). */
+/** Eine Basis-Entscheidung (M0/M3: eine Budget-Allokation pro Indikator).
+ * cost {budget, politisches_kapital} ersetzt pk_kosten (US-M3-01, FR-030).
+ * effects (indikator/gruppe) ersetzt indikator (US-M3-01, FR-030).
+ * constraints, cooldown, diminishing_at sind neu (US-M3-01, FR-030/031/032).
+ */
 export const basisEntscheidungSchema = z
   .object({
     regel_id: z.string().min(1),
     label: z.string().min(1),
     beschreibung: z.string().min(1),
-    indikator: TAG,
-    pk_kosten: z.number().finite().min(0).max(3),
+    cost: z
+      .object({
+        budget: z.number().finite().nonnegative(),
+        politisches_kapital: z.number().finite().min(0).max(12),
+      })
+      .strict(),
+    effects: z.array(
+      z.object({
+        ziel: z.enum([
+          'indikatoren',
+          'gruppen',
+          'legitimitaet',
+          'radikalisierung',
+          'politisches_kapital',
+          'budget',
+        ]),
+        tag: z.string().optional(),
+        delta: z.number(),
+      }),
+    ),
+    constraints: z
+      .array(
+        z.object({
+          indikator: z.object({
+            tag: TAG,
+            min: z.number().finite().nonnegative().optional(),
+            max: z.number().finite().nonnegative().optional(),
+          }),
+        }),
+      )
+      .optional(),
+    cooldown: z.number().finite().int().nonnegative().optional(),
+    diminishing_at: z.number().finite().min(0).max(100).optional(),
   })
   .strict();
 
@@ -231,10 +266,17 @@ export const basisPackSchema = z
   )
   .refine(
     (pack) => {
-      const budgetbar = new Map(pack.indikator_regeln.map((r) => [r.tag, r.budget_wirkung]));
-      return pack.entscheidungen.every(
-        (entscheidung) => (budgetbar.get(entscheidung.indikator) ?? 0) > 0,
+      const budgetbar = new Map(
+        pack.indikator_regeln.map((r) => [r.tag, r.budget_wirkung]),
       );
+      return pack.entscheidungen.every((entscheidung) => {
+        return entscheidung.effects.some(
+          (e) =>
+            e.ziel === 'indikatoren' &&
+            e.tag !== undefined &&
+            (budgetbar.get(e.tag) ?? 0) > 0,
+        );
+      });
     },
     {
       message:
