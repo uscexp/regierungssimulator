@@ -9,6 +9,11 @@
  * Pack mit unterstützter Version wird geladen.
  * US-M4-03: Ungültiges Pack → Datei und Zeile werden gemeldet, Base-Pack bleibt
  * unverändert, Spiel läuft weiter.
+ * US-M4-04: Merge-Policy Override vs. Shadow — wenn ein Pack eine Base-Regel mit
+ * gleicher ID überschreibt, gilt die Merge-Policy:
+ *   - Override ersetzt die Base-Regel vollständig durch die Pack-Regel
+ *   - Shadow behält die Base-Regel bei, die Pack-Regel wird ignoriert (Konflikt im Report)
+ * Der Konflikt erscheint im Merge-Report.
  */
 
 import * as yaml from 'js-yaml';
@@ -228,4 +233,169 @@ export function loadPack(yamlInhalt: string, datei?: string): PackLoadOutcome {
       zeile: zeileAusYamlFehler(e),
     };
   }
+}
+
+/**
+ * US-M4-04: Merge-Policy für Pack-Überschreibungen.
+ *
+ * Wenn ein Override-Pack eine Base-Regel mit gleicher ID enthält, gilt die Merge-Policy:
+ *   - Override ersetzt die Base-Regel vollständig durch die Pack-Regel
+ *   - Shadow behält die Base-Regel bei, die Pack-Regel wird ignoriert (Konflikt im Report)
+ *
+ * Der Konflikt erscheint im Merge-Report, damit Modder sehen, welche Regeln überschrieben wurden.
+ */
+export type MergePolicy = 'override' | 'shadow';
+
+export interface MergeConflict {
+  /** Die ID der überschriebenen Regel (regel_id für Entscheidungen, tag für Indikator/Gruppe) */
+  regel_id: string;
+  /** Typ der Regel */
+  typ: 'indikator_regel' | 'gruppe' | 'entscheidung';
+  /** Angewendete Merge-Policy */
+  policy: MergePolicy;
+  /** Datei des Base-Packs (optional) */
+  base_datei?: string;
+  /** Datei des Override-Packs (optional) */
+  override_datei?: string;
+}
+
+export interface MergeReport {
+  /** Alle aufgetretenen Konflikte beim Mergen */
+  conflicts: MergeConflict[];
+  /** Das gemergte Pack (Base mit angewendeten Overrides) */
+  mergedPack: z.infer<typeof PackSchema>;
+}
+
+/**
+ * Führt ein Override-Pack in ein Base-Pack ein, gemäß der angegebenen Merge-Policy.
+ *
+ * @param basePack - Das Basis-Pack (aus dem Basis-Content)
+ * @param overridePack - Das Override-Pack (aus einem Mod-Pack)
+ * @param policy - 'override' (ersetzt vollständig) oder 'shadow' (Base gewinnt)
+ * @param baseDatei - Dateiname des Base-Packs (für Berichte)
+ * @param overrideDatei - Dateiname des Override-Packs (für Berichte)
+ * @returns MergeReport mit Konflikten und dem gemergten Pack
+ * @throws nie — wirft keine Ausnahme, das Spiel läuft weiter
+ */
+export function mergePacks(
+  basePack: z.infer<typeof PackSchema>,
+  overridePack: z.infer<typeof PackSchema>,
+  policy: MergePolicy,
+  baseDatei?: string,
+  overrideDatei?: string,
+): MergeReport {
+  const conflicts: MergeConflict[] = [];
+
+  // Hilfsfunktion: Konflikt eintragen
+  function fuegeKonfliktHinzu(regelId: string, typ: MergeConflict['typ']) {
+    conflicts.push({
+      regel_id: regelId,
+      typ,
+      policy,
+      base_datei: baseDatei,
+      override_datei: overrideDatei,
+    });
+  }
+
+  // --- Indikator-Regeln mergen (identifiziert durch Tag) ---
+  const baseRegelnMap = new Map(basePack.indikator_regeln.map((r) => [r.tag, r]));
+  const mergedRegeln = [...basePack.indikator_regeln];
+
+  for (const overrideRegel of overridePack.indikator_regeln) {
+    const baseRegel = baseRegelnMap.get(overrideRegel.tag);
+    if (baseRegel) {
+      // Konflikt: gleiche Tag existiert in beiden Packs
+      fuegeKonfliktHinzu(overrideRegel.tag, 'indikator_regel');
+      if (policy === 'override') {
+        // Base-Regel durch Pack-Regel ersetzen
+        const index = mergedRegeln.findIndex((r) => r.tag === overrideRegel.tag);
+        if (index !== -1) {
+          mergedRegeln[index] = overrideRegel;
+        }
+      }
+      // Bei 'shadow': Base-Regel bleibt, Pack-Regel wird ignoriert
+    } else {
+      // Kein Konflikt: neue Regel hinzufügen
+      mergedRegeln.push(overrideRegel);
+    }
+  }
+
+  // --- Gruppen mergen (identifiziert durch Tag) ---
+  const baseGruppenMap = new Map(basePack.gruppen.map((g) => [g.tag, g]));
+  const mergedGruppen = [...basePack.gruppen];
+
+  for (const overrideGruppe of overridePack.gruppen) {
+    const baseGruppe = baseGruppenMap.get(overrideGruppe.tag);
+    if (baseGruppe) {
+      fuegeKonfliktHinzu(overrideGruppe.tag, 'gruppe');
+      if (policy === 'override') {
+        const index = mergedGruppen.findIndex((g) => g.tag === overrideGruppe.tag);
+        if (index !== -1) {
+          mergedGruppen[index] = overrideGruppe;
+        }
+      }
+    } else {
+      mergedGruppen.push(overrideGruppe);
+    }
+  }
+
+  // --- Entscheidungen mergen (identifiziert durch regel_id) ---
+  const baseEntscheidungenMap = new Map(
+    basePack.entscheidungen.map((e) => [e.regel_id, e]),
+  );
+  const mergedEntscheidungen = [...basePack.entscheidungen];
+
+  for (const overrideEntscheidung of overridePack.entscheidungen) {
+    const baseEntscheidung = baseEntscheidungenMap.get(overrideEntscheidung.regel_id);
+    if (baseEntscheidung) {
+      fuegeKonfliktHinzu(overrideEntscheidung.regel_id, 'entscheidung');
+      if (policy === 'override') {
+        const index = mergedEntscheidungen.findIndex(
+          (e) => e.regel_id === overrideEntscheidung.regel_id,
+        );
+        if (index !== -1) {
+          mergedEntscheidungen[index] = overrideEntscheidung;
+        }
+      }
+    } else {
+      mergedEntscheidungen.push(overrideEntscheidung);
+    }
+  }
+
+  // --- Karten-Katalog mergen (identifiziert durch regel_id, optional) ---
+  let mergedKarten: z.infer<typeof karteKatalogSchema>[] | undefined;
+  if (overridePack.karten_katalog) {
+    const baseKarten = basePack.karten_katalog ?? [];
+    const baseKartenMap = new Map(baseKarten.map((k) => [k.regel_id, k]));
+    mergedKarten = [...baseKarten];
+
+    for (const overrideKarte of overridePack.karten_katalog) {
+      const baseKarte = baseKartenMap.get(overrideKarte.regel_id);
+      if (baseKarte) {
+        fuegeKonfliktHinzu(overrideKarte.regel_id, 'entscheidung');
+        if (policy === 'override') {
+          const index = mergedKarten.findIndex((k) => k.regel_id === overrideKarte.regel_id);
+          if (index !== -1) {
+            mergedKarten[index] = overrideKarte;
+          }
+        }
+      } else {
+        mergedKarten.push(overrideKarte);
+      }
+    }
+  }
+
+  // Das gemergte Pack zusammenbauen
+  const mergedPack: z.infer<typeof PackSchema> = {
+    ...basePack,
+    indikator_regeln: mergedRegeln,
+    gruppen: mergedGruppen,
+    entscheidungen: mergedEntscheidungen,
+    ...(mergedKarten !== undefined ? { karten_katalog: mergedKarten } : {}),
+    ...(overridePack.name ? { name: overridePack.name } : {}),
+    ...(overridePack.beschreibung ? { beschreibung: overridePack.beschreibung } : {}),
+    ...(overridePack.version ? { version: overridePack.version } : {}),
+  };
+
+  return { conflicts, mergedPack };
 }

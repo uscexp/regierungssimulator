@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { loadPack } from './index';
+import { loadPack, mergePacks, type MergePolicy } from './index';
 
 describe('US-M4-01: Pack-Validierung (schema_version)', () => {
   it('Pack ohne schema_version → "schema_version fehlt"', () => {
@@ -540,5 +540,236 @@ entscheidungen:
       throw new Error(`Unerwarteter Fehler: ${valideErgebnis.error}`);
     }
     expect(valideErgebnis.pack.name).toBe('Test-Pack');
+  });
+});
+
+describe('US-M4-04: Merge-Policy Override vs. Shadow (FR-034)', () => {
+  const basePack = {
+    schema_version: '1' as const,
+    name: 'Base-Pack',
+    indikator_regeln: [
+      { tag: 'infrastruktur', verschleiß: 3, budget_wirkung: 0.5 },
+      { tag: 'bildung', verschleiß: 2, budget_wirkung: 0.6 },
+    ],
+    gruppen: [
+      {
+        tag: 'arbeitnehmer',
+        zufriedenheit: 50,
+        bevölkerungsanteil: 60,
+        gewichte: { infrastruktur: 0.4, bildung: 0.6 },
+      },
+    ],
+    entscheidungen: [
+      {
+        regel_id: 'entscheidung:investition',
+        label: 'Investition',
+        beschreibung: 'Investiert in Infrastruktur',
+      },
+    ],
+  };
+
+  const overridePackOverride = {
+    schema_version: '1' as const,
+    name: 'Override-Pack',
+    indikator_regeln: [
+      { tag: 'infrastruktur', verschleiß: 5, budget_wirkung: 0.8 }, // ersetzt Base komplett
+      { tag: 'gesundheit', verschleiß: 2, budget_wirkung: 0.7 }, // neue Regel
+    ],
+    gruppen: [
+      {
+        tag: 'arbeitnehmer',
+        zufriedenheit: 30,
+        bevölkerungsanteil: 40,
+        gewichte: { infrastruktur: 0.7, bildung: 0.3 }, // ersetzt Base komplett
+      },
+      {
+        tag: 'landwirte',
+        zufriedenheit: 40,
+        bevölkerungsanteil: 40,
+        gewichte: { infrastruktur: 0.7, bildung: 0.3 }, // neue Gruppe
+      },
+    ],
+    entscheidungen: [
+      {
+        regel_id: 'entscheidung:investition', // ersetzt Base komplett
+        label: 'Infrastruktur-Investition',
+        beschreibung: 'Investiert stark in Infrastruktur',
+      },
+      {
+        regel_id: 'entscheidung:reform', // neue Entscheidung
+        label: 'Reform',
+        beschreibung: 'Eine neue Reform',
+      },
+    ],
+  };
+
+  const overridePackShadow = {
+    schema_version: '1' as const,
+    name: 'Shadow-Pack',
+    indikator_regeln: [
+      { tag: 'infrastruktur', verschleiß: 99, budget_wirkung: 0.99 }, // wird ignoriert (Shadow)
+      { tag: 'gesundheit', verschleiß: 2, budget_wirkung: 0.7 }, // neue Regel
+    ],
+    gruppen: [
+      {
+        tag: 'arbeitnehmer',
+        zufriedenheit: 99,
+        bevölkerungsanteil: 99,
+        gewichte: { infrastruktur: 0.99, bildung: 0.01 }, // wird ignoriert (Shadow)
+      },
+      {
+        tag: 'landwirte',
+        zufriedenheit: 40,
+        bevölkerungsanteil: 40,
+        gewichte: { infrastruktur: 0.7, bildung: 0.3 }, // neue Gruppe
+      },
+    ],
+    entscheidungen: [
+      {
+        regel_id: 'entscheidung:investition', // wird ignoriert (Shadow)
+        label: 'Ignoriert',
+        beschreibung: 'Wird nicht angewendet',
+      },
+      {
+        regel_id: 'entscheidung:reform', // neue Entscheidung
+        label: 'Reform',
+        beschreibung: 'Eine neue Reform',
+      },
+    ],
+  };
+
+  it('Override-Policy: Base-Regel wird vollständig ersetzt', () => {
+    const report = mergePacks(
+      basePack,
+      overridePackOverride,
+      'override',
+      'base.pack.yaml',
+      'override.pack.yaml',
+    );
+
+    // Konflikte werden erkannt
+    expect(report.conflicts).toHaveLength(3); // infrastruktur, arbeitnehmer, entscheidung:investition
+    expect(report.conflicts.map((c) => c.regel_id)).toContain('infrastruktur');
+    expect(report.conflicts.map((c) => c.regel_id)).toContain('arbeitnehmer');
+    expect(report.conflicts.map((c) => c.regel_id)).toContain('entscheidung:investition');
+    expect(report.conflicts.every((c) => c.policy === 'override')).toBe(true);
+    expect(report.conflicts.every((c) => c.typ === 'indikator_regel' || c.typ === 'gruppe' || c.typ === 'entscheidung')).toBe(true);
+
+    // Gemergtes Pack: Base-Regeln werden durch Override ersetzt
+    const infraRegel = report.mergedPack.indikator_regeln.find((r) => r.tag === 'infrastruktur');
+    expect(infraRegel).toBeDefined();
+    expect(infraRegel?.verschleiß).toBe(5); // aus Override
+    expect(infraRegel?.budget_wirkung).toBe(0.8); // aus Override
+
+    const arbeitnehmerGruppe = report.mergedPack.gruppen.find((g) => g.tag === 'arbeitnehmer');
+    expect(arbeitnehmerGruppe?.zufriedenheit).toBe(30); // aus Override
+    expect(arbeitnehmerGruppe?.bevölkerungsanteil).toBe(40); // aus Override
+
+    const investition = report.mergedPack.entscheidungen.find((e) => e.regel_id === 'entscheidung:investition');
+    expect(investition?.label).toBe('Infrastruktur-Investition'); // aus Override
+
+    // Neue Regeln aus Override sind hinzugefügt
+    expect(report.mergedPack.indikator_regeln.some((r) => r.tag === 'gesundheit')).toBe(true);
+    expect(report.mergedPack.gruppen.some((g) => g.tag === 'landwirte')).toBe(true);
+    expect(report.mergedPack.entscheidungen.some((e) => e.regel_id === 'entscheidung:reform')).toBe(true);
+  });
+
+  it('Shadow-Policy: Base-Regel bleibt, Pack-Regel wird ignoriert', () => {
+    const report = mergePacks(
+      basePack,
+      overridePackShadow,
+      'shadow',
+      'base.pack.yaml',
+      'shadow.pack.yaml',
+    );
+
+    // Konflikte werden erkannt
+    expect(report.conflicts).toHaveLength(3); // infrastruktur, arbeitnehmer, entscheidung:investition
+    expect(report.conflicts.every((c) => c.policy === 'shadow')).toBe(true);
+
+    // Gemergtes Pack: Base-Regeln bleiben erhalten
+    const infraRegel = report.mergedPack.indikator_regeln.find((r) => r.tag === 'infrastruktur');
+    expect(infraRegel?.verschleiß).toBe(3); // aus Base (nicht ersetzt)
+    expect(infraRegel?.budget_wirkung).toBe(0.5); // aus Base
+
+    const arbeitnehmerGruppe = report.mergedPack.gruppen.find((g) => g.tag === 'arbeitnehmer');
+    expect(arbeitnehmerGruppe?.zufriedenheit).toBe(50); // aus Base
+    expect(arbeitnehmerGruppe?.bevölkerungsanteil).toBe(60); // aus Base
+
+    const investition = report.mergedPack.entscheidungen.find((e) => e.regel_id === 'entscheidung:investition');
+    expect(investition?.label).toBe('Investition'); // aus Base
+
+    // Neue Regeln aus Override sind trotzdem hinzugefügt (kein Konflikt)
+    expect(report.mergedPack.indikator_regeln.some((r) => r.tag === 'gesundheit')).toBe(true);
+    expect(report.mergedPack.gruppen.some((g) => g.tag === 'landwirte')).toBe(true);
+    expect(report.mergedPack.entscheidungen.some((e) => e.regel_id === 'entscheidung:reform')).toBe(true);
+  });
+
+  it('Ohne Konflikte: Merge-Report ist leer', () => {
+    const keinKonfliktPack = {
+      schema_version: '1' as const,
+      name: 'Kein-Konflikt-Pack',
+      indikator_regeln: [
+        { tag: 'gesundheit', verschleiß: 2, budget_wirkung: 0.7 }, // neuer Tag
+      ],
+      gruppen: [],
+      entscheidungen: [],
+    };
+
+    const report = mergePacks(basePack, keinKonfliktPack, 'override');
+
+    expect(report.conflicts).toHaveLength(0);
+    expect(report.mergedPack.indikator_regeln).toHaveLength(3); // 2 Base + 1 neu
+  });
+
+  it('Merge-Report enthält Datei-Informationen', () => {
+    const report = mergePacks(
+      basePack,
+      overridePackOverride,
+      'override',
+      'base.pack.yaml',
+      'override.pack.yaml',
+    );
+
+    expect(report.conflicts.every((c) => c.base_datei === 'base.pack.yaml')).toBe(true);
+    expect(report.conflicts.every((c) => c.override_datei === 'override.pack.yaml')).toBe(true);
+  });
+
+  it('Merge-Report enthält korrekte Typen für jede Konfliktkategorie', () => {
+    const report = mergePacks(
+      basePack,
+      overridePackOverride,
+      'override',
+    );
+
+    const indikatorKonflikte = report.conflicts.filter((c) => c.typ === 'indikator_regel');
+    const gruppeKonflikte = report.conflicts.filter((c) => c.typ === 'gruppe');
+    const entscheidungKonflikte = report.conflicts.filter((c) => c.typ === 'entscheidung');
+
+    expect(indikatorKonflikte.length).toBe(1);
+    expect(indikatorKonflikte[0].regel_id).toBe('infrastruktur');
+
+    expect(gruppeKonflikte.length).toBe(1);
+    expect(gruppeKonflikte[0].regel_id).toBe('arbeitnehmer');
+
+    expect(entscheidungKonflikte.length).toBe(1);
+    expect(entscheidungKonflikte[0].regel_id).toBe('entscheidung:investition');
+  });
+
+  it('Merge mit leeren Override-Arrays: keine Konflikte, Base bleibt unverändert', () => {
+    const leererOverride = {
+      schema_version: '1' as const,
+      name: 'Leerer-Override',
+      indikator_regeln: [],
+      gruppen: [],
+      entscheidungen: [],
+    };
+
+    const report = mergePacks(basePack, leererOverride, 'override');
+
+    expect(report.conflicts).toHaveLength(0);
+    expect(report.mergedPack.indikator_regeln).toEqual(basePack.indikator_regeln);
+    expect(report.mergedPack.gruppen).toEqual(basePack.gruppen);
+    expect(report.mergedPack.entscheidungen).toEqual(basePack.entscheidungen);
   });
 });
