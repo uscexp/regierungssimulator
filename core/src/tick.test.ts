@@ -1833,6 +1833,7 @@ describe('tick — dauerhafte Regelsatz-Modifikatoren der Konstitution (US-M1-06
         ...staatGesundheitNiedrig,
         indikatoren: { ...START_INDICATOREN, gesundheit: 40, radikalisierung: 40 },
       });
+      const gesundheitVorher = staatGesundheit40.indikatoren.gesundheit;
       const ergebnis = tick(
         staatGesundheit40,
         {
@@ -1843,7 +1844,7 @@ describe('tick — dauerhafte Regelsatz-Modifikatoren der Konstitution (US-M1-06
         'dev',
       );
       expect(ergebnis.state.indikatoren.gesundheit).toBe(
-        staatGesundheit40.indikatoren.gesundheit + 1, // +3 Karte, −2 Verschleiß
+        gesundheitVorher + 1, // +3 Karte, −2 Verschleiß
       );
     });
   });
