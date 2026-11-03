@@ -291,7 +291,8 @@ export const BASIS_ENTSCHEIDUNGEN: readonly BasisEntscheidung[] = Object.freeze(
 
 /** US-M3-07: Themen-Pack Bildung/Forschung (~6 Karten für den Karten-Katalog, FR-033).
  * Karten wirken auf Indikatoren (bildung, forschung, wirtschaft) und kosten politisches Kapital.
- * Constraints und Cooldowns steuern die Verfügbarkeit im Slot-Sampling (US-M3-06, FR-029).
+ * Constraints steuern die Verfügbarkeit im Slot-Sampling (US-M3-06, FR-029).
+ * Keine Cooldowns gesetzt (Design-Entscheidung: Cooldowns sind für spätere M3-Karten vorgesehen).
  */
 export const BILDUNG_FORSCHUNG_KARTEN: readonly TickKarte[] = Object.freeze([
   Object.freeze({
