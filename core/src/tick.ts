@@ -38,6 +38,7 @@ import {
 import { karteWählbar, pkAusgeben, pkRegenerieren } from './kapital.js';
 import { pruefeInvarianten, type Modus, clampLevel } from './invariant.js';
 import { berechneFraktionSupport, pruefeGesetzesMehrheit } from './fraktion.js';
+import { karteErfuelltConstraints } from './eval.js';
 import {
   ZUFRIEDENHEIT_BASELINE,
   gewichteteZufriedenheit,
@@ -69,6 +70,11 @@ export interface TickKarte {
   readonly pk_kosten: number;
   readonly wirkung: readonly Effekt[];
   readonly wirkdauer_jahre?: number;
+  /** Constraints: Regierungsform und Indikator-Bedingungen müssen erfüllt sein (US-M3-03, FR-032). */
+  readonly constraints?: readonly {
+    indikator?: { tag: string; min?: number; max?: number };
+    regierungsform?: 'parlamentarisch' | 'praesidential' | 'diktatur';
+  }[];
 }
 
 /** Der Action des Spielers für ein Jahr: Budget verteilen, Karten spielen, Schulden aufnehmen. */
@@ -525,6 +531,12 @@ export function tick(
   // 3) Karten: PK zuerst prüfen und verbrauchen, dann ins Entscheidungsgedächtnis schreiben.
   let mitKarten = aktuell;
   for (const karte of action.karten ?? []) {
+    // Constraints prüfen (US-M3-03, FR-032): Regierungsform und Indikator-Bedingungen
+    if (!karteErfuelltConstraints(karte, aktuell)) {
+      throw new TypeError(
+        `Karte "${karte.regel_id}" verletzt Constraints — nicht spielbar unter aktuellen Bedingungen`,
+      );
+    }
     if (!karteWählbar(aktuell, karte.pk_kosten)) {
       throw new TypeError(
         `Karte "${karte.regel_id}" ist nicht wählbar — PK ${aktuell.politisches_kapital} < Kosten ${karte.pk_kosten}`,

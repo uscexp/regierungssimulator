@@ -1024,4 +1024,152 @@ describe('tick — dauerhafte Regelsatz-Modifikatoren der Konstitution (US-M1-06
       expect(ergebnis.state.legitimitaet).toBeGreaterThan(staat.legitimitaet);
     });
   });
+
+  describe('Constraints-Prüfung (US-M3-03, FR-032)', () => {
+    const regierungParlamentarisch: RegierungRegel = Object.freeze({
+      typ: 'regierung',
+      regel_id: 'regierung_test_parlament',
+      form: 'parlamentarisch' as const,
+      amt: { modus: 'fixed_term' as const, jahre: 6 },
+      machtverlust: 'misstrauen',
+    });
+
+    const regierungPraesidential: RegierungRegel = Object.freeze({
+      typ: 'regierung',
+      regel_id: 'regierung_test_praesid',
+      form: 'praesidential' as const,
+      amt: { modus: 'fixed_term' as const, jahre: 6 },
+      machtverlust: 'wahl',
+    });
+
+    const kartenAktionOhneConstraints: TickAction = {
+      zuteilung: {},
+      karten: [
+        {
+          regel_id: 'karte:ohne',
+          pk_kosten: 1,
+          wirkung: [{ ziel: 'legitimitaet', delta: 5 }] as const,
+        },
+      ],
+    };
+
+    const kartenAktionMitRegierungsformConstraint: TickAction = {
+      zuteilung: {},
+      karten: [
+        {
+          regel_id: 'karte:parlamentarisch',
+          pk_kosten: 1,
+          wirkung: [{ ziel: 'legitimitaet', delta: 5 }] as const,
+          constraints: [{ regierungsform: 'parlamentarisch' }],
+        },
+      ],
+    };
+
+    const kartenAktionMitIndikatorConstraint: TickAction = {
+      zuteilung: {},
+      karten: [
+        {
+          regel_id: 'karte:wirtschaft',
+          pk_kosten: 1,
+          wirkung: [{ ziel: 'legitimitaet', delta: 5 }] as const,
+          constraints: [{ indikator: { tag: 'wirtschaft', min: 50 } }],
+        },
+      ],
+    };
+
+    const staatParlamentarisch = stateMit({
+      setup: {
+        regierungsform: 'parlamentarisch',
+        konstitutions_ids: [],
+      },
+    });
+
+    const staatPraesidential = stateMit({
+      setup: {
+        regierungsform: 'praesidential',
+        konstitutions_ids: [],
+      },
+    });
+
+    const staatWirtschaftNiedrig = stateMit({
+      setup: {
+        regierungsform: 'parlamentarisch',
+        konstitutions_ids: [],
+      },
+      indikatoren: { wirtschaft: 30, bildung: 40, gesundheit: 40, infrastruktur: 40, forschung: 40 },
+    });
+
+    const staatWirtschaftHoch = stateMit({
+      setup: {
+        regierungsform: 'parlamentarisch',
+        konstitutions_ids: [],
+      },
+      indikatoren: { wirtschaft: 60, bildung: 40, gesundheit: 40, infrastruktur: 40, forschung: 40 },
+    });
+
+    it('ohne Constraints → Karte wird immer gespielt', () => {
+      const ergebnis = tick(
+        staatParlamentarisch,
+        kartenAktionOhneConstraints,
+        regelnMit({ regierung: regierungParlamentarisch }),
+        'dev',
+      );
+      expect(ergebnis.state.legitimitaet).toBeGreaterThan(50);
+    });
+
+    it('Regierungsform erfüllt → Karte wird gespielt', () => {
+      const ergebnis = tick(
+        staatParlamentarisch,
+        kartenAktionMitRegierungsformConstraint,
+        regelnMit({ regierung: regierungParlamentarisch }),
+        'dev',
+      );
+      expect(ergebnis.state.legitimitaet).toBeGreaterThan(50);
+    });
+
+    it('Regierungsform verletzt → TypeError', () => {
+      expect(() =>
+        tick(
+          staatPraesidential,
+          kartenAktionMitRegierungsformConstraint,
+          regelnMit({ regierung: regierungPraesidential }),
+          'dev',
+        ),
+      ).toThrow(/verletzt Constraints/);
+    });
+
+    it('Indikator min erfüllt → Karte wird gespielt', () => {
+      const ergebnis = tick(
+        staatWirtschaftHoch,
+        kartenAktionMitIndikatorConstraint,
+        regelnMit({ regierung: regierungParlamentarisch }),
+        'dev',
+      );
+      expect(ergebnis.state.legitimitaet).toBeGreaterThan(50);
+    });
+
+    it('Indikator min verletzt → TypeError', () => {
+      expect(() =>
+        tick(
+          staatWirtschaftNiedrig,
+          kartenAktionMitIndikatorConstraint,
+          regelnMit({ regierung: regierungParlamentarisch }),
+          'dev',
+        ),
+      ).toThrow(/verletzt Constraints/);
+    });
+
+    it('Constraints verletzt → Produktion: State unverändert + TypeError', () => {
+      const vorher = structuredClone(staatPraesidential);
+      expect(() =>
+        tick(
+          staatPraesidential,
+          kartenAktionMitRegierungsformConstraint,
+          regelnMit({ regierung: regierungPraesidential }),
+          'produktion',
+        ),
+      ).toThrow(/verletzt Constraints/);
+      expect(staatPraesidential).toEqual(vorher);
+    });
+  });
 });

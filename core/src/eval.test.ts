@@ -13,7 +13,7 @@
 
 import { describe, expect, it } from 'vitest';
 
-import { evalPrädikat, praedikatSchema } from './eval.js';
+import { evalPrädikat, praedikatSchema, karteErfuelltConstraints } from './eval.js';
 import { erzeugeGameState, type GameState } from './state.js';
 import { zufriedenheitBerechnen } from './zufriedenheit.js';
 
@@ -349,5 +349,162 @@ describe('eval — typisierte Prädikate (US-M2-01, FR-027, ADR-004)', () => {
         }),
       ).toThrow();
     });
+  });
+});
+
+describe('karteErfuelltConstraints (US-M3-03, FR-032)', () => {
+  interface TestEntscheidung {
+    regel_id: string;
+    label: string;
+    beschreibung: string;
+    cost: { budget: number; politisches_kapital: number };
+    effects: { ziel: string; tag?: string; delta: number }[];
+    constraints?: readonly {
+      indikator?: { tag: string; min?: number; max?: number };
+      regierungsform?: 'parlamentarisch' | 'praesidential' | 'diktatur';
+    }[];
+  }
+
+  const entscheidungOhneConstraints: TestEntscheidung = {
+    regel_id: 'entscheidung:ohne',
+    label: 'Ohne Constraints',
+    beschreibung: 'Keine Constraints',
+    cost: { budget: 5, politisches_kapital: 0 },
+    effects: [{ ziel: 'indikatoren', tag: 'wirtschaft', delta: 1 }],
+  };
+
+  const entscheidungMitRegierungsform: TestEntscheidung = {
+    regel_id: 'entscheidung:regierungsform',
+    label: 'Nur Parlamentarisch',
+    beschreibung: 'Nur für parlamentarische Form',
+    cost: { budget: 5, politisches_kapital: 0 },
+    effects: [{ ziel: 'indikatoren', tag: 'wirtschaft', delta: 1 }],
+    constraints: [{ regierungsform: 'parlamentarisch' }],
+  };
+
+  const entscheidungMitIndikatorMin: TestEntscheidung = {
+    regel_id: 'entscheidung:indikatorMin',
+    label: 'Wirtschaft >= 45',
+    beschreibung: 'Nur wenn Wirtschaft >= 45',
+    cost: { budget: 5, politisches_kapital: 0 },
+    effects: [{ ziel: 'indikatoren', tag: 'wirtschaft', delta: 1 }],
+    constraints: [{ indikator: { tag: 'wirtschaft', min: 45 } }],
+  };
+
+  const entscheidungMitIndikatorMax: TestEntscheidung = {
+    regel_id: 'entscheidung:indikatorMax',
+    label: 'Schulden < 50',
+    beschreibung: 'Nur wenn Schulden < 50',
+    cost: { budget: 5, politisches_kapital: 0 },
+    effects: [{ ziel: 'indikatoren', tag: 'wirtschaft', delta: 1 }],
+    constraints: [{ indikator: { tag: 'schulden', max: 50 } }],
+  };
+
+  const entscheidungMitBeiden: TestEntscheidung = {
+    regel_id: 'entscheidung:beide',
+    label: 'Beide Constraints',
+    beschreibung: 'Parlamentarisch UND Wirtschaft >= 45',
+    cost: { budget: 5, politisches_kapital: 0 },
+    effects: [{ ziel: 'indikatoren', tag: 'wirtschaft', delta: 1 }],
+    constraints: [
+      { regierungsform: 'parlamentarisch' },
+      { indikator: { tag: 'wirtschaft', min: 45 } },
+    ],
+  };
+
+  const staatParlamentarisch = erzeugeGameState({
+    ...basisState,
+    setup: { regierungsform: 'parlamentarisch' },
+  });
+
+  const staatPraesidential = erzeugeGameState({
+    ...basisState,
+    setup: { regierungsform: 'praesidential' },
+  });
+
+  const staatWirtschaftNiedrig = erzeugeGameState({
+    ...basisState,
+    indikatoren: { ...basisState.indikatoren, wirtschaft: 30 },
+  });
+
+  const staatWirtschaftHoch = erzeugeGameState({
+    ...basisState,
+    indikatoren: { ...basisState.indikatoren, wirtschaft: 60 },
+  });
+
+  const staatSchuldenHoch = erzeugeGameState({
+    ...basisState,
+    schulden: 60,
+  });
+
+  const staatSchuldenNiedrig = erzeugeGameState({
+    ...basisState,
+    schulden: 30,
+  });
+
+  it('ohne Constraints → immer wahr', () => {
+    expect(karteErfuelltConstraints(entscheidungOhneConstraints, staatParlamentarisch)).toBe(
+      true,
+    );
+    expect(karteErfuelltConstraints(entscheidungOhneConstraints, staatPraesidential)).toBe(
+      true,
+    );
+  });
+
+  it('Regierungsform erfüllt → wahr', () => {
+    expect(
+      karteErfuelltConstraints(entscheidungMitRegierungsform, staatParlamentarisch),
+    ).toBe(true);
+  });
+
+  it('Regierungsform verletzt → falsch', () => {
+    expect(
+      karteErfuelltConstraints(entscheidungMitRegierungsform, staatPraesidential),
+    ).toBe(false);
+  });
+
+  it('Indikator min erfüllt → wahr', () => {
+    expect(
+      karteErfuelltConstraints(entscheidungMitIndikatorMin, staatWirtschaftHoch),
+    ).toBe(true);
+  });
+
+  it('Indikator min verletzt → falsch', () => {
+    expect(
+      karteErfuelltConstraints(entscheidungMitIndikatorMin, staatWirtschaftNiedrig),
+    ).toBe(false);
+  });
+
+  it('Indikator max erfüllt → wahr', () => {
+    expect(
+      karteErfuelltConstraints(entscheidungMitIndikatorMax, staatSchuldenNiedrig),
+    ).toBe(true);
+  });
+
+  it('Indikator max verletzt → falsch', () => {
+    expect(
+      karteErfuelltConstraints(entscheidungMitIndikatorMax, staatSchuldenHoch),
+    ).toBe(false);
+  });
+
+  it('beide Constraints erfüllt → wahr', () => {
+    expect(
+      karteErfuelltConstraints(entscheidungMitBeiden, staatParlamentarisch),
+    ).toBe(true);
+    expect(
+      karteErfuelltConstraints(entscheidungMitBeiden, staatParlamentarisch),
+    ).toBe(true);
+    expect(
+      karteErfuelltConstraints(entscheidungMitBeiden, staatParlamentarisch),
+    ).toBe(true);
+  });
+
+  it('ein Constraint verletzt → falsch', () => {
+    expect(
+      karteErfuelltConstraints(entscheidungMitBeiden, staatPraesidential),
+    ).toBe(false);
+    expect(
+      karteErfuelltConstraints(entscheidungMitBeiden, staatWirtschaftNiedrig),
+    ).toBe(false);
   });
 });
