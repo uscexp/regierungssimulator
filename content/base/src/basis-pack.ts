@@ -490,6 +490,58 @@ export const SICHERHEIT_JUSTIZ_KARTEN: readonly TickKarte[] = Object.freeze([
   }),
 ]);
 
+/** US-M3-11: Themen-Pack Reformen/Verfassung (~6 Karten für den Karten-Katalog, FR-033).
+ * Karten wirken auf Indikatoren (legitimitaet, recht, sicherheit, radikalisierung) und kosten politisches Kapital.
+ * Constraints steuern die Verfügbarkeit im Slot-Sampling (US-M3-06, FR-029).
+ * Keine Cooldowns gesetzt (Design-Entscheidung: Cooldowns sind für spätere M3-Karten vorgesehen).
+ */
+export const REFORMEN_VERFASSUNG_KARTEN: readonly TickKarte[] = Object.freeze([
+  Object.freeze({
+    regel_id: 'karte:verfassung_buergerrechte',
+    pk_kosten: 2,
+    wirkung: [{ ziel: 'legitimitaet' as const, delta: 5 }] as readonly Effekt[],
+  }),
+  Object.freeze({
+    regel_id: 'karte:verfassung_justizreform',
+    pk_kosten: 2,
+    wirkung: [{ ziel: 'indikatoren' as const, tag: 'recht', delta: 5 }] as readonly Effekt[],
+    constraints: [{ indikator: { tag: 'recht', min: 50 } }],
+  }),
+  Object.freeze({
+    regel_id: 'karte:reform_bildung',
+    pk_kosten: 1,
+    wirkung: [{ ziel: 'indikatoren' as const, tag: 'bildung', delta: 4 }] as readonly Effekt[],
+    constraints: [{ indikator: { tag: 'bildung', min: 60 } }],
+  }),
+  Object.freeze({
+    regel_id: 'karte:reform_steuern',
+    pk_kosten: 3,
+    wirkung: [
+      { ziel: 'legitimitaet' as const, delta: -3 },
+      { ziel: 'indikatoren' as const, tag: 'wirtschaft', delta: 5 },
+    ] as readonly Effekt[],
+    constraints: [{ indikator: { tag: 'wirtschaft', min: 70 } }],
+  }),
+  Object.freeze({
+    regel_id: 'karte:reform_sicherheit',
+    pk_kosten: 2,
+    wirkung: [{ ziel: 'indikatoren' as const, tag: 'sicherheit', delta: 4 }] as readonly Effekt[],
+    constraints: [
+      { indikator: { tag: 'sicherheit', min: 30 } },
+      { indikator: { tag: 'radikalisierung', max: 40 } },
+    ] as const,
+  }),
+  Object.freeze({
+    regel_id: 'karte:verfassung_dezentralisierung',
+    pk_kosten: 2,
+    wirkung: [
+      { ziel: 'legitimitaet' as const, delta: 3 },
+      { ziel: 'indikatoren' as const, tag: 'bildung', delta: 2 },
+    ] as readonly Effekt[],
+    constraints: [{ indikator: { tag: 'legitimitaet', min: 40 } }],
+  }),
+]);
+
 /** US-M2-04: Pandemie-Kette (Ausbruch → Ausbreitung → Gegenmaßnahmen).
  * Konflikt zwischen Gesundheits- und Wirtschaftszufriedenheit (FR-025).
  * Die Kette läuft über nachfolgeEreignisId der Optionen, garantiert Exit durch maxTiefe.
@@ -708,6 +760,7 @@ export const BASIS_PACK = {
     ...WIRTSCHAFT_BUDGET_KARTEN,
     ...SOZIALES_GESUNDHEIT_KARTEN,
     ...SICHERHEIT_JUSTIZ_KARTEN,
+    ...REFORMEN_VERFASSUNG_KARTEN,
   ],
   ereignis_regeln: [
     ...PANDEMIE_EREIGNISSE,
