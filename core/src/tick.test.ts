@@ -17,6 +17,7 @@ import {
 } from '@staatslenker/core/state';
 import type { SteuerlastTabelle } from '@staatslenker/core/zufriedenheit';
 import type { EreignisRegel } from '@staatslenker/core/ereignisse';
+import { BILDUNG_FORSCHUNG_KARTEN, START_INDICATOREN } from '@staatslenker/content-base';
 import type {
   KonstitutionsEntscheidung,
   RegierungRegel,
@@ -1474,6 +1475,112 @@ describe('tick — dauerhafte Regelsatz-Modifikatoren der Konstitution (US-M1-06
       expect(() => tick(staatMitLegitimität69, zuVieleKarten, regelnMitKatalog, 'dev')).toThrow(
         /maximal 3 Slots verfügbar/,
       );
+    });
+  });
+
+  describe('Bildung/Forschung-Karten im Katalog (US-M3-07, FR-033)', () => {
+    const staatBildungNiedrig = stateMit({
+      setup: { regierungsform: 'parlamentarisch', konstitutions_ids: [] },
+      indikatoren: { ...START_INDICATOREN, bildung: 40, forschung: 40 },
+      politisches_kapital: 5,
+      legitimitaet: 50,
+    });
+
+    const staatBildungHoch = stateMit({
+      ...staatBildungNiedrig,
+      indikatoren: { ...START_INDICATOREN, bildung: 80, forschung: 70 },
+    });
+
+    const regelnMitBildungForschungKarten: TickRegeln = {
+      ...regelnMit({ regierung: regierungParlamentarisch }),
+      karten_katalog: BILDUNG_FORSCHUNG_KARTEN,
+    };
+
+    it('Alle 6 Karten sind gültige TickKarte', () => {
+      expect(BILDUNG_FORSCHUNG_KARTEN).toHaveLength(6);
+      for (const karte of BILDUNG_FORSCHUNG_KARTEN) {
+        expect(karte.regel_id).toMatch(/^karte:/);
+        expect(karte.pk_kosten).toBeGreaterThanOrEqual(1);
+        expect(karte.pk_kosten).toBeLessThanOrEqual(3);
+        expect(karte.wirkung).toBeDefined();
+        expect(karte.wirkung.length).toBeGreaterThan(0);
+      }
+    });
+
+    it('karte:bildung_grundschule → spielbar ohne Constraints', () => {
+      const ergebnis = tick(
+        staatBildungNiedrig,
+        {
+          zuteilung: {},
+          karten: [{ ...BILDUNG_FORSCHUNG_KARTEN[0] }],
+        },
+        regelnMitBildungForschungKarten,
+        'dev',
+      );
+      expect(ergebnis.state.indikatoren.bildung).toBe(
+        staatBildungNiedrig.indikatoren.bildung + 1, // +3 Karte, −2 Verschleiß
+      );
+    });
+
+    it('karte:bildung_uni → Constraint bildung ≥ 60 verletzt bei niedrigem Level', () => {
+      expect(() =>
+        tick(
+          staatBildungNiedrig,
+          {
+            zuteilung: {},
+            karten: [{ ...BILDUNG_FORSCHUNG_KARTEN[1] }],
+          },
+          regelnMitBildungForschungKarten,
+          'dev',
+        ),
+      ).toThrow(/verletzt Constraints/);
+    });
+
+    it('karte:bildung_uni → spielbar bei bildung ≥ 60', () => {
+      const ergebnis = tick(
+        staatBildungHoch,
+        {
+          zuteilung: {},
+          karten: [{ ...BILDUNG_FORSCHUNG_KARTEN[1] }],
+        },
+        regelnMitBildungForschungKarten,
+        'dev',
+      );
+      expect(ergebnis.state.indikatoren.bildung).toBe(
+        staatBildungHoch.indikatoren.bildung + 3, // +5 Karte, −2 Verschleiß
+      );
+    });
+
+    it('karte:forschung_grundlagen → Constraint bildung ≥ 50 verletzt', () => {
+      const staatOhneBildungGate = stateMit({
+        ...staatBildungNiedrig,
+        indikatoren: { ...START_INDICATOREN, bildung: 40, forschung: 40 },
+      });
+      expect(() =>
+        tick(
+          staatOhneBildungGate,
+          {
+            zuteilung: {},
+            karten: [{ ...BILDUNG_FORSCHUNG_KARTEN[3] }],
+          },
+          regelnMitBildungForschungKarten,
+          'dev',
+        ),
+      ).toThrow(/verletzt Constraints/);
+    });
+
+    it('karte:forschung_transfer → Constraint forschung ≥ 80 verletzt', () => {
+      expect(() =>
+        tick(
+          staatBildungHoch,
+          {
+            zuteilung: {},
+            karten: [{ ...BILDUNG_FORSCHUNG_KARTEN[5] }],
+          },
+          regelnMitBildungForschungKarten,
+          'dev',
+        ),
+      ).toThrow(/verletzt Constraints/);
     });
   });
 });

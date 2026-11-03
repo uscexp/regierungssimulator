@@ -162,7 +162,10 @@ export const basisEntscheidungSchema = z
  * Prädikate gelten für Entscheidungs-Karten, nicht für Event-Auswahl). */
 export const ereignisRegelSchema = z
   .object({
-    id: z.string().min(1).regex(/^[a-z][a-z0-9_]*$/),
+    id: z
+      .string()
+      .min(1)
+      .regex(/^[a-z][a-z0-9_]*$/),
     gewicht: z.number().finite().positive(),
     bedingung: z
       .object({
@@ -208,12 +211,18 @@ export const ereignisRegelSchema = z
 /** Eine Entscheidungs-Karte aus dem Content-Pack (US-M2-03, FR-025/026): Optionen mit optionaler Nachfolge-Kette. */
 export const entscheidungskartePackSchema = z
   .object({
-    regel_id: z.string().min(1).regex(/^[a-z][a-z0-9_]*$/),
+    regel_id: z
+      .string()
+      .min(1)
+      .regex(/^[a-z][a-z0-9_]*$/),
     label: z.string().min(1),
     optionen: z
       .array(
         z.object({
-          id: z.string().min(1).regex(/^[a-z][a-z0-9_]*$/),
+          id: z
+            .string()
+            .min(1)
+            .regex(/^[a-z][a-z0-9_]*$/),
           bedingung: praedikatSchema.optional(),
           effekte: z.array(
             z.object({
@@ -237,6 +246,50 @@ export const entscheidungskartePackSchema = z
   })
   .strict();
 
+/** Eine Katalog-Karte für die Slot-Auswahl (US-M3-06, FR-029): wie TickKarte, validiert gegen Zod. */
+export const karteKatalogSchema = z
+  .object({
+    regel_id: z
+      .string()
+      .min(1)
+      .regex(/^[a-z][a-z0-9_:]*$/),
+    pk_kosten: z.number().int().min(1).max(3),
+    wirkung: z.array(
+      z.object({
+        ziel: z.enum([
+          'indikatoren',
+          'gruppen',
+          'legitimitaet',
+          'radikalisierung',
+          'politisches_kapital',
+          'budget',
+          'schulden',
+        ]),
+        tag: z.string().optional(),
+        delta: z.number(),
+      }),
+    ),
+    wirkdauer_jahre: z.number().int().positive().optional(),
+    cooldown: z.number().int().positive().optional(),
+    constraints: z
+      .array(
+        z
+          .object({
+            indikator: z
+              .object({
+                tag: TAG,
+                min: LEVEL.optional(),
+                max: LEVEL.optional(),
+              })
+              .optional(),
+            regierungsform: z.enum(['parlamentarisch', 'praesidential', 'diktatur']).optional(),
+          })
+          .strict(),
+      )
+      .optional(),
+  })
+  .strict();
+
 /** Der ganze Basis-Pack: alles, was der Tick als Daten braucht, plus die spielbaren Entscheidungen. */
 export const basisPackSchema = z
   .object({
@@ -253,6 +306,8 @@ export const basisPackSchema = z
     ereignis_regeln: z.array(ereignisRegelSchema).optional(),
     /** Entscheidungs-Karten für Event-Ketten (optional — Packs ohne Karten sind weiterhin gültig). */
     entscheidungskarten: z.array(entscheidungskartePackSchema).optional(),
+    /** Karten-Katalog für Slot-Auswahl pro Jahr (optional — Packs ohne Katalog sind weiterhin gültig). */
+    karten_katalog: z.array(karteKatalogSchema).optional(),
   })
   .strict()
   .refine(
@@ -267,15 +322,10 @@ export const basisPackSchema = z
   )
   .refine(
     (pack) => {
-      const budgetbar = new Map(
-        pack.indikator_regeln.map((r) => [r.tag, r.budget_wirkung]),
-      );
+      const budgetbar = new Map(pack.indikator_regeln.map((r) => [r.tag, r.budget_wirkung]));
       return pack.entscheidungen.every((entscheidung) => {
         return entscheidung.effects.some(
-          (e) =>
-            e.ziel === 'indikatoren' &&
-            e.tag !== undefined &&
-            (budgetbar.get(e.tag) ?? 0) > 0,
+          (e) => e.ziel === 'indikatoren' && e.tag !== undefined && (budgetbar.get(e.tag) ?? 0) > 0,
         );
       });
     },
