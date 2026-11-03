@@ -1172,4 +1172,93 @@ describe('tick — dauerhafte Regelsatz-Modifikatoren der Konstitution (US-M1-06
       expect(staatPraesidential).toEqual(vorher);
     });
   });
+
+  describe('Cooldowns (US-M3-04, FR-030)', () => {
+    const kartenAktionMitCooldown: TickAction = {
+      zuteilung: {},
+      karten: [
+        {
+          regel_id: 'karte:mitcooldown',
+          pk_kosten: 1,
+          cooldown: 2,
+          wirkung: [{ ziel: 'legitimitaet', delta: 5 }] as const,
+        },
+      ],
+    };
+
+    const kartenAktionOhneCooldown: TickAction = {
+      zuteilung: {},
+      karten: [
+        {
+          regel_id: 'karte:ohnecooldown',
+          pk_kosten: 1,
+          wirkung: [{ ziel: 'legitimitaet', delta: 5 }] as const,
+        },
+      ],
+    };
+
+    const staatOhneCooldowns = stateMit({
+      setup: {
+        regierungsform: 'parlamentarisch',
+        konstitutions_ids: [],
+      },
+    });
+
+    const staatMitCooldowns = stateMit({
+      setup: {
+        regierungsform: 'parlamentarisch',
+        konstitutions_ids: [],
+      },
+      cooldowns: { 'karte:mitcooldown': 5 },
+    });
+
+    it('ohne Cooldowns → Karte wird gespielt und Cooldown gesetzt', () => {
+      const ergebnis = tick(
+        staatOhneCooldowns,
+        kartenAktionMitCooldown,
+        regelnMit({ regierung: regierungParlamentarisch }),
+        'dev',
+      );
+      expect(ergebnis.state.cooldowns['karte:mitcooldown']).toBe(
+        staatOhneCooldowns.jahr + 2,
+      );
+    });
+
+    it('im Cooldown → TypeError', () => {
+      expect(() =>
+        tick(
+          staatMitCooldowns,
+          kartenAktionMitCooldown,
+          regelnMit({ regierung: regierungParlamentarisch }),
+          'dev',
+        ),
+      ).toThrow(/verletzt Constraints/);
+    });
+
+    it('außerhalb Cooldown → Karte wird gespielt', () => {
+      const staatJahr10 = stateMit({
+        ...staatMitCooldowns,
+        jahr: 6,
+      });
+      const ergebnis = tick(
+        staatJahr10,
+        kartenAktionMitCooldown,
+        regelnMit({ regierung: regierungParlamentarisch }),
+        'dev',
+      );
+      expect(ergebnis.state.cooldowns['karte:mitcooldown']).toBe(
+        staatJahr10.jahr + 2,
+      );
+    });
+
+    it('Karte ohne Cooldown → immer spielbar (auch mit aktiven Cooldowns anderer Karten)', () => {
+      const ergebnis = tick(
+        staatMitCooldowns,
+        kartenAktionOhneCooldown,
+        regelnMit({ regierung: regierungParlamentarisch }),
+        'dev',
+      );
+      expect(ergebnis.state.cooldowns['karte:ohnecooldown']).toBeUndefined();
+    });
+  });
 });

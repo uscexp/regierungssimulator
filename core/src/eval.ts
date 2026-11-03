@@ -226,10 +226,21 @@ export function evalBedingung(
  * @returns true wenn alle Constraints erfüllt sind, false sonst
  */
 export function karteErfuelltConstraints(
-  entscheidung: { constraints?: readonly { indikator?: { tag: string; min?: number; max?: number }; regierungsform?: 'parlamentarisch' | 'praesidential' | 'diktatur' }[] },
+  entscheidung: {
+    regel_id: string;
+    constraints?: readonly { indikator?: { tag: string; min?: number; max?: number }; regierungsform?: 'parlamentarisch' | 'praesidential' | 'diktatur' }[];
+    cooldown?: number;
+  },
   state: GameState,
+  cooldowns?: Readonly<Record<string, number>>,
 ): boolean {
-  if (!entscheidung.constraints || entscheidung.constraints.length === 0) return true;
+  if (!entscheidung.constraints || entscheidung.constraints.length === 0) {
+    // Auch ohne Constraints: Cooldown prüfen
+    if (entscheidung.cooldown !== undefined && cooldowns !== undefined) {
+      return !karteImCooldown(entscheidung.regel_id, cooldowns, state.jahr);
+    }
+    return true;
+  }
 
   return entscheidung.constraints.every((c) => {
     // Regierungsform prüfen
@@ -255,7 +266,21 @@ export function karteErfuelltConstraints(
       if (c.indikator.max !== undefined && wert > c.indikator.max) return false;
     }
     return true;
-  });
+  }) && (entscheidung.cooldown === undefined || cooldowns === undefined || !karteImCooldown(entscheidung.regel_id, cooldowns, state.jahr));
+}
+
+/**
+ * Prüft, ob eine Karte im Cooldown ist (US-M3-04, FR-030).
+ * Eine Karte ist im Cooldown, wenn das aktuelle Jahr <= cooldowns[regel_id] ist.
+ */
+export function karteImCooldown(
+  regelId: string,
+  cooldowns: Readonly<Record<string, number>>,
+  aktuellesJahr: number,
+): boolean {
+  const bisJahr = cooldowns[regelId];
+  if (bisJahr === undefined) return false;
+  return aktuellesJahr <= bisJahr;
 }
 
 /**

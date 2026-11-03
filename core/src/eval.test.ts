@@ -13,7 +13,7 @@
 
 import { describe, expect, it } from 'vitest';
 
-import { evalPrädikat, praedikatSchema, karteErfuelltConstraints } from './eval.js';
+import { evalPrädikat, praedikatSchema, karteErfuelltConstraints, karteImCooldown } from './eval.js';
 import { erzeugeGameState, type GameState } from './state.js';
 import { zufriedenheitBerechnen } from './zufriedenheit.js';
 
@@ -506,5 +506,89 @@ describe('karteErfuelltConstraints (US-M3-03, FR-032)', () => {
     expect(
       karteErfuelltConstraints(entscheidungMitBeiden, staatWirtschaftNiedrig),
     ).toBe(false);
+  });
+});
+
+describe('karteImCooldown (US-M3-04, FR-030)', () => {
+  const cooldowns: Record<string, number> = { 'karte:a': 5, 'karte:b': 3 };
+
+  it('im Cooldown (aktuelles Jahr <= bisJahr) → true', () => {
+    expect(karteImCooldown('karte:a', cooldowns, 5)).toBe(true);
+    expect(karteImCooldown('karte:a', cooldowns, 3)).toBe(true);
+    expect(karteImCooldown('karte:b', cooldowns, 3)).toBe(true);
+  });
+
+  it('außerhalb Cooldown (aktuelles Jahr > bisJahr) → false', () => {
+    expect(karteImCooldown('karte:a', cooldowns, 6)).toBe(false);
+    expect(karteImCooldown('karte:b', cooldowns, 4)).toBe(false);
+    expect(karteImCooldown('karte:c', cooldowns, 1)).toBe(false); // nicht im Register
+  });
+});
+
+describe('karteErfuelltConstraints mit Cooldown (US-M3-03/04, FR-032/030)', () => {
+  const entscheidungMitCooldown = {
+    regel_id: 'entscheidung:mitcooldown',
+    label: 'Mit Cooldown',
+    beschreibung: 'Nur wenn nicht im Cooldown',
+    cost: { budget: 5, politisches_kapital: 0 },
+    effects: [{ ziel: 'indikatoren', tag: 'wirtschaft', delta: 1 }],
+    cooldown: 2,
+  };
+
+  const entscheidungOhneCooldown = {
+    regel_id: 'entscheidung:ohnecooldown',
+    label: 'Ohne Cooldown',
+    beschreibung: 'Immer spielbar',
+    cost: { budget: 5, politisches_kapital: 0 },
+    effects: [{ ziel: 'indikatoren', tag: 'wirtschaft', delta: 1 }],
+  };
+
+  const cooldownsAktiv: Record<string, number> = { 'entscheidung:mitcooldown': 5 };
+  const cooldownsAbgelaufen: Record<string, number> = { 'entscheidung:mitcooldown': 0 };
+
+  const staatParlamentarisch = erzeugeGameState({
+    ...basisState,
+    setup: {
+      regierungsform: 'parlamentarisch',
+      konstitutions_ids: [],
+    },
+  });
+
+  const staatPraesidential = erzeugeGameState({
+    ...basisState,
+    setup: {
+      regierungsform: 'praesidential',
+      konstitutions_ids: [],
+    },
+  });
+
+  it('keine Cooldowns → Karte spielbar', () => {
+    expect(
+      karteErfuelltConstraints(entscheidungMitCooldown, staatParlamentarisch),
+    ).toBe(true);
+    expect(
+      karteErfuelltConstraints(entscheidungMitCooldown, staatPraesidential),
+    ).toBe(true); // keine Constraints auf der Entscheidung → spielbar
+  });
+
+  it('im Cooldown → Karte nicht spielbar', () => {
+    expect(
+      karteErfuelltConstraints(entscheidungMitCooldown, staatParlamentarisch, cooldownsAktiv),
+    ).toBe(false);
+  });
+
+  it('außerhalb Cooldown → Karte spielbar', () => {
+    expect(
+      karteErfuelltConstraints(entscheidungMitCooldown, staatParlamentarisch, cooldownsAbgelaufen),
+    ).toBe(true);
+  });
+
+  it('ohne Cooldown auf Karte → immer spielbar (außer andere Constraints)', () => {
+    expect(
+      karteErfuelltConstraints(entscheidungOhneCooldown, staatParlamentarisch, cooldownsAktiv),
+    ).toBe(true);
+    expect(
+      karteErfuelltConstraints(entscheidungOhneCooldown, staatPraesidential, cooldownsAktiv),
+    ).toBe(true); // keine Constraints auf der Entscheidung → spielbar
   });
 });
