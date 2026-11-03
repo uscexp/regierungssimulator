@@ -940,7 +940,7 @@ export function prognose(
   if (state.wahl_niederlage !== undefined) return null;
 
   // RNG-Fork: klone den RNG-Zustand, damit der echte RNG-Stream unverbraucht bleibt (ADR-009)
-  let prognoseRng: RngState = { ...state.rng };
+  const prognoseRng: RngState = { ...state.rng };
   let aktuell = Object.freeze({ ...state, rng: prognoseRng }) as GameState;
 
   for (let schritt = 0; schritt < capJahre; schritt++) {

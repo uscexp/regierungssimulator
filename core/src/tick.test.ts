@@ -190,11 +190,6 @@ const putschMitRisiko: WahlregelVariant = Object.freeze({
   legitimitaet_min: 40,
   wahrscheinlichkeit: 0.5,
 });
-const parlamentmehrheit: WahlregelVariant = Object.freeze({
-  typ: 'parlamentmehrheit',
-  regel_id: 'mehrheit_test',
-  mehrheit: 0.5,
-});
 
 /** Gruppen, die die Putsch-Bedingung erfüllen (elite und militaer über der Schwelle). */
 const gruppenMitElite = [
@@ -778,40 +773,6 @@ describe('tick — dauerhafte Regelsatz-Modifikatoren der Konstitution (US-M1-06
       legitimitaet: 30, // < 40 → Radikalisierung kann wachsen
       radikalisierung: 50, // hoher Startwert für Opposition > 40
     });
-    const staatParlamentarisch = stateMit({
-      setup: {
-        regierungsform: 'parlamentarisch',
-        konstitutions_ids: [],
-      },
-    });
-
-    // Zustand: Zustimmung ~0.4 (< 0.5 für Misstrauen)
-    const niedrigZustand = stateMit({
-      ...staatParlamentarisch,
-      indikatoren: {
-        wirtschaft: 10,
-        bildung: 10,
-        gesundheit: 80,
-        infrastruktur: 80,
-        forschung: 80,
-      },
-      gruppen: [
-        {
-          tag: 'unternehmen',
-          zufriedenheit: 16,
-          bevölkerungsanteil: 60,
-          gewichte: { wirtschaft: 1 },
-        },
-        {
-          tag: 'arbeitnehmer',
-          zufriedenheit: 16,
-          bevölkerungsanteil: 40,
-          gewichte: { bildung: 1 },
-        },
-      ],
-      legitimitaet: 50,
-    });
-
     it('Radikalisierung wächst wenn Opposition > 40 UND Legitimität < 40', () => {
       const ergebnis = tick(
         stateRadikalisierung,
@@ -991,7 +952,7 @@ describe('tick — dauerhafte Regelsatz-Modifikatoren der Konstitution (US-M1-06
     });
 
     // Zustand: Zustimmung ~0.4 (< 0.5 für Misstrauen)
-    const niedrigZustand = stateMit({
+    const _niedrigZustandUnused = stateMit({
       ...staatParlamentarisch,
       indikatoren: {
         wirtschaft: 10,
@@ -1047,7 +1008,7 @@ describe('tick — dauerhafte Regelsatz-Modifikatoren der Konstitution (US-M1-06
     it('parlamentarisch + mehrheit05 + Zustimmung 0.4 → Misstrauen feuert statt Gesetzes-Mehrheit', () => {
       expect(() =>
         tick(
-          niedrigZustand,
+          _niedrigZustandUnused,
           kartenAktion,
           regelnMit({
             regierung: regierungParlamentarisch,
