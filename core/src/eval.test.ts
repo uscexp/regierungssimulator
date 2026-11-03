@@ -13,7 +13,12 @@
 
 import { describe, expect, it } from 'vitest';
 
-import { evalPrädikat, praedikatSchema, karteErfuelltConstraints, karteImCooldown } from './eval.js';
+import {
+  evalPrädikat,
+  praedikatSchema,
+  karteErfuelltConstraints,
+  karteImCooldown,
+} from './eval.js';
 import { erzeugeGameState, type GameState } from './state.js';
 import { zufriedenheitBerechnen } from './zufriedenheit.js';
 
@@ -443,69 +448,47 @@ describe('karteErfuelltConstraints (US-M3-03, FR-032)', () => {
   });
 
   it('ohne Constraints → immer wahr', () => {
-    expect(karteErfuelltConstraints(entscheidungOhneConstraints, staatParlamentarisch)).toBe(
-      true,
-    );
-    expect(karteErfuelltConstraints(entscheidungOhneConstraints, staatPraesidential)).toBe(
-      true,
-    );
+    expect(karteErfuelltConstraints(entscheidungOhneConstraints, staatParlamentarisch)).toBe(true);
+    expect(karteErfuelltConstraints(entscheidungOhneConstraints, staatPraesidential)).toBe(true);
   });
 
   it('Regierungsform erfüllt → wahr', () => {
-    expect(
-      karteErfuelltConstraints(entscheidungMitRegierungsform, staatParlamentarisch),
-    ).toBe(true);
+    expect(karteErfuelltConstraints(entscheidungMitRegierungsform, staatParlamentarisch)).toBe(
+      true,
+    );
   });
 
   it('Regierungsform verletzt → falsch', () => {
-    expect(
-      karteErfuelltConstraints(entscheidungMitRegierungsform, staatPraesidential),
-    ).toBe(false);
+    expect(karteErfuelltConstraints(entscheidungMitRegierungsform, staatPraesidential)).toBe(false);
   });
 
   it('Indikator min erfüllt → wahr', () => {
-    expect(
-      karteErfuelltConstraints(entscheidungMitIndikatorMin, staatWirtschaftHoch),
-    ).toBe(true);
+    expect(karteErfuelltConstraints(entscheidungMitIndikatorMin, staatWirtschaftHoch)).toBe(true);
   });
 
   it('Indikator min verletzt → falsch', () => {
-    expect(
-      karteErfuelltConstraints(entscheidungMitIndikatorMin, staatWirtschaftNiedrig),
-    ).toBe(false);
+    expect(karteErfuelltConstraints(entscheidungMitIndikatorMin, staatWirtschaftNiedrig)).toBe(
+      false,
+    );
   });
 
   it('Indikator max erfüllt → wahr', () => {
-    expect(
-      karteErfuelltConstraints(entscheidungMitIndikatorMax, staatSchuldenNiedrig),
-    ).toBe(true);
+    expect(karteErfuelltConstraints(entscheidungMitIndikatorMax, staatSchuldenNiedrig)).toBe(true);
   });
 
   it('Indikator max verletzt → falsch', () => {
-    expect(
-      karteErfuelltConstraints(entscheidungMitIndikatorMax, staatSchuldenHoch),
-    ).toBe(false);
+    expect(karteErfuelltConstraints(entscheidungMitIndikatorMax, staatSchuldenHoch)).toBe(false);
   });
 
   it('beide Constraints erfüllt → wahr', () => {
-    expect(
-      karteErfuelltConstraints(entscheidungMitBeiden, staatParlamentarisch),
-    ).toBe(true);
-    expect(
-      karteErfuelltConstraints(entscheidungMitBeiden, staatParlamentarisch),
-    ).toBe(true);
-    expect(
-      karteErfuelltConstraints(entscheidungMitBeiden, staatParlamentarisch),
-    ).toBe(true);
+    expect(karteErfuelltConstraints(entscheidungMitBeiden, staatParlamentarisch)).toBe(true);
+    expect(karteErfuelltConstraints(entscheidungMitBeiden, staatParlamentarisch)).toBe(true);
+    expect(karteErfuelltConstraints(entscheidungMitBeiden, staatParlamentarisch)).toBe(true);
   });
 
   it('ein Constraint verletzt → falsch', () => {
-    expect(
-      karteErfuelltConstraints(entscheidungMitBeiden, staatPraesidential),
-    ).toBe(false);
-    expect(
-      karteErfuelltConstraints(entscheidungMitBeiden, staatWirtschaftNiedrig),
-    ).toBe(false);
+    expect(karteErfuelltConstraints(entscheidungMitBeiden, staatPraesidential)).toBe(false);
+    expect(karteErfuelltConstraints(entscheidungMitBeiden, staatWirtschaftNiedrig)).toBe(false);
   });
 });
 
@@ -563,12 +546,8 @@ describe('karteErfuelltConstraints mit Cooldown (US-M3-03/04, FR-032/030)', () =
   });
 
   it('keine Cooldowns → Karte spielbar', () => {
-    expect(
-      karteErfuelltConstraints(entscheidungMitCooldown, staatParlamentarisch),
-    ).toBe(true);
-    expect(
-      karteErfuelltConstraints(entscheidungMitCooldown, staatPraesidential),
-    ).toBe(true); // keine Constraints auf der Entscheidung → spielbar
+    expect(karteErfuelltConstraints(entscheidungMitCooldown, staatParlamentarisch)).toBe(true);
+    expect(karteErfuelltConstraints(entscheidungMitCooldown, staatPraesidential)).toBe(true); // keine Constraints auf der Entscheidung → spielbar
   });
 
   it('im Cooldown → Karte nicht spielbar', () => {
