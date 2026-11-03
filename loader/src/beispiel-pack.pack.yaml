@@ -1,0 +1,35 @@
+schema_version: "1"
+name: Beispiel-Pack
+version: 1.0.0
+beschreibung: Beispiel-Modpack mit neuer Gruppe (Rentner) und Entscheidung (Rentenerhöhung)
+indikator_regeln:
+  - tag: gesundheit
+    verschleiß: 2
+    budget_wirkung: 0.7
+    diminishing_at: 75
+    diminishing_wirkung: 0.2
+  - tag: sicherheit
+    verschleiß: 2
+    budget_wirkung: 0
+    diminishing_at: 100
+    diminishing_wirkung: 0
+gruppen:
+  - tag: rentner
+    zufriedenheit: 40
+    bevölkerungsanteil: 15.0
+    gewichte:
+      gesundheit: 0.6
+      sicherheit: 0.4
+entscheidungen:
+  - regel_id: entscheidung:rentner_rente
+    label: Rentenerhöhung
+    beschreibung: Erhöht die Rente und steigert die Zufriedenheit der Rentner
+    cost:
+      budget: 8
+      politisches_kapital: 2
+    effects:
+      - ziel: gruppen
+        tag: rentner
+        delta: 5
+      - ziel: legitimitaet
+        delta: 1

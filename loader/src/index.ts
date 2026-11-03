@@ -107,6 +107,25 @@ export const PackSchema = z
         regel_id: z.string().min(1),
         label: z.string().min(1),
         beschreibung: z.string().min(1),
+        cost: z.object({
+          budget: z.number().finite().nonnegative(),
+          politisches_kapital: z.number().finite().nonnegative(),
+        }),
+        effects: z.array(
+          z.object({
+            ziel: z.enum([
+              'indikatoren',
+              'gruppen',
+              'legitimitaet',
+              'radikalisierung',
+              'politisches_kapital',
+              'budget',
+              'schulden',
+            ]),
+            tag: z.string().optional(),
+            delta: z.number(),
+          }),
+        ),
       }),
     ),
     karten_katalog: z.array(karteKatalogSchema).optional(),
