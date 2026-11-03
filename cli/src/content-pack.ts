@@ -9,6 +9,7 @@
  */
 import {
   BASIS_ENTSCHEIDUNGEN,
+  BILDUNG_FORSCHUNG_KARTEN,
   GRUPPEN_START,
   INDIKATOR_REGELN,
   KONSTITUTION_WERTE,
@@ -121,6 +122,8 @@ export function tickRegelnFür(schwierigkeitId: 'leicht' | 'normal' | 'schwer'):
     // Packs ohne Events/Karten liefern leere Arrays — der Tick würfelt dann nicht.
     ereignis_regeln: PANDEMIE_EREIGNISSE,
     entscheidungskarten: PANDEMIE_KARTEN,
+    // Karten-Katalog für Slot-Auswahl pro Jahr (US-M3-06, FR-029).
+    karten_katalog: BILDUNG_FORSCHUNG_KARTEN,
   });
 }
 

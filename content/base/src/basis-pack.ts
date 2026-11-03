@@ -17,9 +17,10 @@
  */
 import type { SteuerfaktorTabelle } from '@staatslenker/core/budget';
 import type { IndikatorRegel, SchwierigkeitsPack } from '@staatslenker/core/indikatoren';
-import type { GruppenSnapshot } from '@staatslenker/core/state';
+import type { Effekt, GruppenSnapshot } from '@staatslenker/core/state';
 import type { Entscheidungskarte } from '@staatslenker/core/entscheidung';
 import type { EreignisRegel } from '@staatslenker/core/ereignisse';
+import type { TickKarte } from '@staatslenker/core/tick';
 import type { SteuerlastTabelle } from '@staatslenker/core/zufriedenheit';
 import { basisPackSchema, validierePack } from './schema.js';
 
@@ -288,6 +289,60 @@ export const BASIS_ENTSCHEIDUNGEN: readonly BasisEntscheidung[] = Object.freeze(
   }),
 ]);
 
+/** US-M3-07: Themen-Pack Bildung/Forschung (~6 Karten für den Karten-Katalog, FR-033).
+ * Karten wirken auf Indikatoren (bildung, forschung, wirtschaft) und kosten politisches Kapital.
+ * Constraints steuern die Verfügbarkeit im Slot-Sampling (US-M3-06, FR-029).
+ * Keine Cooldowns gesetzt (Design-Entscheidung: Cooldowns sind für spätere M3-Karten vorgesehen).
+ */
+export const BILDUNG_FORSCHUNG_KARTEN: readonly TickKarte[] = Object.freeze([
+  Object.freeze({
+    regel_id: 'karte:bildung_grundschule',
+    pk_kosten: 1,
+    wirkung: [{ ziel: 'indikatoren' as const, tag: 'bildung', delta: 3 }] as readonly Effekt[],
+  }),
+  Object.freeze({
+    regel_id: 'karte:bildung_uni',
+    pk_kosten: 2,
+    wirkung: [{ ziel: 'indikatoren' as const, tag: 'bildung', delta: 5 }] as readonly Effekt[],
+    constraints: [{ indikator: { tag: 'bildung', min: 60 } }],
+  }),
+  Object.freeze({
+    regel_id: 'karte:bildung_digital',
+    pk_kosten: 2,
+    wirkung: [
+      { ziel: 'indikatoren' as const, tag: 'bildung', delta: 2 },
+      { ziel: 'indikatoren' as const, tag: 'forschung', delta: 1 },
+    ] as readonly Effekt[],
+  }),
+  Object.freeze({
+    regel_id: 'karte:forschung_grundlagen',
+    pk_kosten: 1,
+    wirkung: [{ ziel: 'indikatoren' as const, tag: 'forschung', delta: 3 }] as readonly Effekt[],
+    constraints: [{ indikator: { tag: 'bildung', min: 50 } }],
+  }),
+  Object.freeze({
+    regel_id: 'karte:forschung_angewandt',
+    pk_kosten: 2,
+    wirkung: [
+      { ziel: 'indikatoren' as const, tag: 'forschung', delta: 5 },
+      { ziel: 'indikatoren' as const, tag: 'wirtschaft', delta: 2 },
+    ] as readonly Effekt[],
+    constraints: [
+      { indikator: { tag: 'bildung', min: 70 } },
+      { indikator: { tag: 'forschung', min: 60 } },
+    ],
+  }),
+  Object.freeze({
+    regel_id: 'karte:forschung_transfer',
+    pk_kosten: 3,
+    wirkung: [
+      { ziel: 'indikatoren' as const, tag: 'wirtschaft', delta: 5 },
+      { ziel: 'indikatoren' as const, tag: 'forschung', delta: 3 },
+    ] as readonly Effekt[],
+    constraints: [{ indikator: { tag: 'forschung', min: 80 } }],
+  }),
+]);
+
 /** US-M2-04: Pandemie-Kette (Ausbruch → Ausbreitung → Gegenmaßnahmen).
  * Konflikt zwischen Gesundheits- und Wirtschaftszufriedenheit (FR-025).
  * Die Kette läuft über nachfolgeEreignisId der Optionen, garantiert Exit durch maxTiefe.
@@ -417,9 +472,7 @@ export const FINANZKRISE_EREIGNISSE = Object.freeze([
     bedingung: {
       indikator: { tag: 'wirtschaft', max: 39 },
     },
-    effekte: [
-      { ziel: 'legitimitaet' as const, delta: -5 },
-    ],
+    effekte: [{ ziel: 'legitimitaet' as const, delta: -5 }],
   },
   {
     id: 'finanzkrise_schulden',
@@ -427,9 +480,7 @@ export const FINANZKRISE_EREIGNISSE = Object.freeze([
     bedingung: {
       schulden_min: 61,
     },
-    effekte: [
-      { ziel: 'legitimitaet' as const, delta: -5 },
-    ],
+    effekte: [{ ziel: 'legitimitaet' as const, delta: -5 }],
   },
 ]) as readonly EreignisRegel[];
 
@@ -505,7 +556,13 @@ export const BASIS_PACK = {
   schwierigkeit_packs: SCHWIERIGKEIT_PACKS,
   news_vorlagen: NEWS_VORLAGEN,
   entscheidungen: BASIS_ENTSCHEIDUNGEN,
-  ereignis_regeln: [...PANDEMIE_EREIGNISSE, ...FINANZKRISE_EREIGNISSE, ...KAPITALFLUCHT_EREIGNISSE, ...SKANDAL_EREIGNISSE],
+  karten_katalog: BILDUNG_FORSCHUNG_KARTEN,
+  ereignis_regeln: [
+    ...PANDEMIE_EREIGNISSE,
+    ...FINANZKRISE_EREIGNISSE,
+    ...KAPITALFLUCHT_EREIGNISSE,
+    ...SKANDAL_EREIGNISSE,
+  ],
   entscheidungskarten: [...PANDEMIE_KARTEN, ...FINANZKRISE_KARTEN],
 } as const;
 

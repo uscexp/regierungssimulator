@@ -204,16 +204,8 @@ describe('G11 — News-Vorlagen sind Content', () => {
 describe('PO D10 — die fünf Basis-Entscheidungen', () => {
   it('sind genau die fünf budgetbaren Indikatoren, keine Karte, kein PK-Kosten', () => {
     expect(
-      BASIS_ENTSCHEIDUNGEN.map((e) =>
-        e.effects.find((eff) => eff.ziel === 'indikatoren')?.tag,
-      ),
-    ).toEqual([
-      'infrastruktur',
-      'bildung',
-      'gesundheit',
-      'wirtschaft',
-      'forschung',
-    ]);
+      BASIS_ENTSCHEIDUNGEN.map((e) => e.effects.find((eff) => eff.ziel === 'indikatoren')?.tag),
+    ).toEqual(['infrastruktur', 'bildung', 'gesundheit', 'wirtschaft', 'forschung']);
     for (const entscheidung of BASIS_ENTSCHEIDUNGEN) {
       expect(entscheidung.cost.politisches_kapital).toBe(0);
       expect(entscheidung.cost.politisches_kapital).toBeGreaterThanOrEqual(0);
@@ -245,6 +237,7 @@ describe('Content liegt in content-base, der Adapter enthält keine Zahlen', () 
       'ereignis_regeln',
       'gruppen',
       'indikator_regeln',
+      'karten_katalog',
       'news_vorlagen',
       'schwierigkeit_packs',
       'start_indikatoren',
