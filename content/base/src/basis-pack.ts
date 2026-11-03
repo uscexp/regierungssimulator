@@ -391,6 +391,57 @@ export const WIRTSCHAFT_BUDGET_KARTEN: readonly TickKarte[] = Object.freeze([
   }),
 ]);
 
+/** US-M3-09: Themen-Pack Soziales/Gesundheit (~6 Karten für den Karten-Katalog, FR-033).
+ * Karten wirken auf Indikatoren (gesundheit, legitimitaet, radikalisierung, wirtschaft) und kosten politisches Kapital.
+ * Constraints steuern die Verfügbarkeit im Slot-Sampling (US-M3-06, FR-029).
+ * Keine Cooldowns gesetzt (Design-Entscheidung: Cooldowns sind für spätere M3-Karten vorgesehen).
+ */
+export const SOZIALES_GESUNDHEIT_KARTEN: readonly TickKarte[] = Object.freeze([
+  Object.freeze({
+    regel_id: 'karte:gesundheit_praevention',
+    pk_kosten: 1,
+    wirkung: [{ ziel: 'indikatoren' as const, tag: 'gesundheit', delta: 3 }] as readonly Effekt[],
+  }),
+  Object.freeze({
+    regel_id: 'karte:gesundheit_krankenhaus',
+    pk_kosten: 2,
+    wirkung: [{ ziel: 'indikatoren' as const, tag: 'gesundheit', delta: 5 }] as readonly Effekt[],
+    constraints: [{ indikator: { tag: 'gesundheit', max: 70 } }],
+  }),
+  Object.freeze({
+    regel_id: 'karte:gesundheit_pflege',
+    pk_kosten: 2,
+    wirkung: [
+      { ziel: 'indikatoren' as const, tag: 'gesundheit', delta: 2 },
+      { ziel: 'radikalisierung' as const, delta: -1 },
+    ] as readonly Effekt[],
+    constraints: [{ indikator: { tag: 'gesundheit', max: 50 } }],
+  }),
+  Object.freeze({
+    regel_id: 'karte:soziales_wohnen',
+    pk_kosten: 1,
+    wirkung: [
+      { ziel: 'indikatoren' as const, tag: 'gesundheit', delta: 2 },
+      { ziel: 'legitimitaet' as const, delta: 1 },
+    ] as readonly Effekt[],
+  }),
+  Object.freeze({
+    regel_id: 'karte:soziales_armseligkeit',
+    pk_kosten: 1,
+    wirkung: [{ ziel: 'legitimitaet' as const, delta: 3 }] as readonly Effekt[],
+    constraints: [{ indikator: { tag: 'radikalisierung', min: 60 } }],
+  }),
+  Object.freeze({
+    regel_id: 'karte:soziales_gerechtigkeit',
+    pk_kosten: 2,
+    wirkung: [
+      { ziel: 'indikatoren' as const, tag: 'gesundheit', delta: 3 },
+      { ziel: 'indikatoren' as const, tag: 'wirtschaft', delta: 1 },
+    ] as readonly Effekt[],
+    constraints: [{ indikator: { tag: 'gesundheit', min: 40 } }],
+  }),
+]);
+
 /** US-M2-04: Pandemie-Kette (Ausbruch → Ausbreitung → Gegenmaßnahmen).
  * Konflikt zwischen Gesundheits- und Wirtschaftszufriedenheit (FR-025).
  * Die Kette läuft über nachfolgeEreignisId der Optionen, garantiert Exit durch maxTiefe.
@@ -604,7 +655,11 @@ export const BASIS_PACK = {
   schwierigkeit_packs: SCHWIERIGKEIT_PACKS,
   news_vorlagen: NEWS_VORLAGEN,
   entscheidungen: BASIS_ENTSCHEIDUNGEN,
-  karten_katalog: [...BILDUNG_FORSCHUNG_KARTEN, ...WIRTSCHAFT_BUDGET_KARTEN],
+  karten_katalog: [
+    ...BILDUNG_FORSCHUNG_KARTEN,
+    ...WIRTSCHAFT_BUDGET_KARTEN,
+    ...SOZIALES_GESUNDHEIT_KARTEN,
+  ],
   ereignis_regeln: [
     ...PANDEMIE_EREIGNISSE,
     ...FINANZKRISE_EREIGNISSE,

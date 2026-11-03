@@ -19,6 +19,7 @@ import type { SteuerlastTabelle } from '@staatslenker/core/zufriedenheit';
 import type { EreignisRegel } from '@staatslenker/core/ereignisse';
 import {
   BILDUNG_FORSCHUNG_KARTEN,
+  SOZIALES_GESUNDHEIT_KARTEN,
   START_INDICATOREN,
   WIRTSCHAFT_BUDGET_KARTEN,
 } from '@staatslenker/content-base';
@@ -1691,6 +1692,159 @@ describe('tick — dauerhafte Regelsatz-Modifikatoren der Konstitution (US-M1-06
           'dev',
         ),
       ).toThrow(/verletzt Constraints/);
+    });
+  });
+
+  describe('Soziales/Gesundheit-Karten im Katalog (US-M3-09, FR-033)', () => {
+    const staatGesundheitNiedrig = stateMit({
+      setup: { regierungsform: 'parlamentarisch', konstitutions_ids: [] },
+      indikatoren: { ...START_INDICATOREN, gesundheit: 30, radikalisierung: 40 },
+      politisches_kapital: 5,
+      legitimitaet: 50,
+    });
+
+    const staatGesundheitHoch = stateMit({
+      ...staatGesundheitNiedrig,
+      indikatoren: { ...START_INDICATOREN, gesundheit: 80, radikalisierung: 40 },
+    });
+
+    const regelnMitSozialesGesundheitKarten: TickRegeln = {
+      ...regelnMit({ regierung: regierungParlamentarisch }),
+      karten_katalog: SOZIALES_GESUNDHEIT_KARTEN,
+    };
+
+    it('Alle 6 Karten sind gültige TickKarte', () => {
+      expect(SOZIALES_GESUNDHEIT_KARTEN).toHaveLength(6);
+      for (const karte of SOZIALES_GESUNDHEIT_KARTEN) {
+        expect(karte.regel_id).toMatch(/^karte:/);
+        expect(karte.pk_kosten).toBeGreaterThanOrEqual(1);
+        expect(karte.pk_kosten).toBeLessThanOrEqual(3);
+        expect(karte.wirkung).toBeDefined();
+        expect(karte.wirkung.length).toBeGreaterThan(0);
+      }
+    });
+
+    it('karte:gesundheit_praevention → spielbar ohne Constraints', () => {
+      const ergebnis = tick(
+        staatGesundheitNiedrig,
+        {
+          zuteilung: {},
+          karten: [{ ...SOZIALES_GESUNDHEIT_KARTEN[0] }],
+        },
+        regelnMitSozialesGesundheitKarten,
+        'dev',
+      );
+      expect(ergebnis.state.indikatoren.gesundheit).toBe(
+        staatGesundheitNiedrig.indikatoren.gesundheit + 1, // +3 Karte, −2 Verschleiß
+      );
+    });
+
+    it('karte:gesundheit_krankenhaus → Constraint gesundheit ≤ 70 verletzt bei 80', () => {
+      expect(() =>
+        tick(
+          staatGesundheitHoch,
+          {
+            zuteilung: {},
+            karten: [{ ...SOZIALES_GESUNDHEIT_KARTEN[1] }],
+          },
+          regelnMitSozialesGesundheitKarten,
+          'dev',
+        ),
+      ).toThrow(/verletzt Constraints/);
+    });
+
+    it('karte:gesundheit_krankenhaus → spielbar bei gesundheit ≤ 70', () => {
+      const ergebnis = tick(
+        staatGesundheitNiedrig,
+        {
+          zuteilung: {},
+          karten: [{ ...SOZIALES_GESUNDHEIT_KARTEN[1] }],
+        },
+        regelnMitSozialesGesundheitKarten,
+        'dev',
+      );
+      expect(ergebnis.state.indikatoren.gesundheit).toBe(
+        staatGesundheitNiedrig.indikatoren.gesundheit + 3, // +5 Karte, −2 Verschleiß
+      );
+    });
+
+    it('karte:gesundheit_pflege → Constraint gesundheit ≤ 50 verletzt bei 80', () => {
+      expect(() =>
+        tick(
+          staatGesundheitHoch,
+          {
+            zuteilung: {},
+            karten: [{ ...SOZIALES_GESUNDHEIT_KARTEN[2] }],
+          },
+          regelnMitSozialesGesundheitKarten,
+          'dev',
+        ),
+      ).toThrow(/verletzt Constraints/);
+    });
+
+    it('karte:gesundheit_pflege → spielbar bei gesundheit ≤ 50', () => {
+      const ergebnis = tick(
+        staatGesundheitNiedrig,
+        {
+          zuteilung: {},
+          karten: [{ ...SOZIALES_GESUNDHEIT_KARTEN[2] }],
+        },
+        regelnMitSozialesGesundheitKarten,
+        'dev',
+      );
+      expect(ergebnis.state.indikatoren.gesundheit).toBe(
+        staatGesundheitNiedrig.indikatoren.gesundheit + 0, // +2 Karte, −2 Verschleiß
+      );
+      expect(ergebnis.state.radikalisierung).toBeLessThanOrEqual(
+        staatGesundheitNiedrig.radikalisierung,
+      );
+    });
+
+    it('karte:soziales_armseligkeit → Constraint radikalisierung ≥ 60 verletzt bei 40', () => {
+      expect(() =>
+        tick(
+          staatGesundheitNiedrig,
+          {
+            zuteilung: {},
+            karten: [{ ...SOZIALES_GESUNDHEIT_KARTEN[4] }],
+          },
+          regelnMitSozialesGesundheitKarten,
+          'dev',
+        ),
+      ).toThrow(/verletzt Constraints/);
+    });
+
+    it('karte:soziales_gerechtigkeit → Constraint gesundheit ≥ 40 verletzt bei 30', () => {
+      expect(() =>
+        tick(
+          staatGesundheitNiedrig,
+          {
+            zuteilung: {},
+            karten: [{ ...SOZIALES_GESUNDHEIT_KARTEN[5] }],
+          },
+          regelnMitSozialesGesundheitKarten,
+          'dev',
+        ),
+      ).toThrow(/verletzt Constraints/);
+    });
+
+    it('karte:soziales_gerechtigkeit → spielbar bei gesundheit ≥ 40', () => {
+      const staatGesundheit40 = stateMit({
+        ...staatGesundheitNiedrig,
+        indikatoren: { ...START_INDICATOREN, gesundheit: 40, radikalisierung: 40 },
+      });
+      const ergebnis = tick(
+        staatGesundheit40,
+        {
+          zuteilung: {},
+          karten: [{ ...SOZIALES_GESUNDHEIT_KARTEN[5] }],
+        },
+        regelnMitSozialesGesundheitKarten,
+        'dev',
+      );
+      expect(ergebnis.state.indikatoren.gesundheit).toBe(
+        staatGesundheit40.indikatoren.gesundheit + 1, // +3 Karte, −2 Verschleiß
+      );
     });
   });
 });
