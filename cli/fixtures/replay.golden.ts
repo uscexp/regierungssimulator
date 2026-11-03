@@ -11,19 +11,19 @@ export const GOLDEN_REPLAY_CHECKINTERVAL = 10;
 
 /** Hash alle 10 Jahre — eine Regression lokalisiert sich über diesen Track. */
 export const GOLDEN_REPLAY_CHECKPOINTS: readonly { readonly jahr: number; readonly hash: string }[] = [
-  { jahr: 10, hash: "b08d0e80a09c1afa2e0c65ecb35308d82c7993dff3bec468955e8739f1326a1d" },
-  { jahr: 20, hash: "e9a3c2d1907ee2bfe15d9aa2859680ae442ec7d4cbcfac8a3782edbe36dbe1a2" },
-  { jahr: 30, hash: "a29eef296ce09011c49449954bea1fc2acf1543ba4ce77db8cd1f31c0d34c1e3" },
-  { jahr: 40, hash: "6e73203d457163c7582e2cb8cfb378a9d3f98bfe2e715f1e3e05429d178732d9" },
-  { jahr: 50, hash: "41f2e03520a5044e70801da1e9bdad583b6824dc9c1ec88683e91004d2b9581c" },
-  { jahr: 60, hash: "123fa08514e8abbb06fbd87f4d10a08e86165c5647c61e2b2620574772f80a04" },
-  { jahr: 70, hash: "3a1150c116abcb6d6ff3e27d5e8f80ce3c03f62c94250571e44ca6f6c1435048" },
-  { jahr: 80, hash: "1c279cda603b61d649ddb97029519dd91079b67d7f54e6a52117f6517ac5fe7f" },
-  { jahr: 90, hash: "92b34dc50bd1776d3ad4bebba2a159e3ca7d5cd7547c884ce78bebd1884a91e8" },
-  { jahr: 100, hash: "fa1958d106e6bb4c38b69705a9ac501c1bc630c52aae4bf8950c907d4b74b45d" },
+  { jahr: 10, hash: "abbc7a8d11822542f877304e9121015ff57bb0fd4471e85f6eb28c9c0ff8e264" },
+  { jahr: 20, hash: "8db48e967695fe3c9aeecfadbd092a01d4c6ea3a5aefe940e8fa5bd070827b84" },
+  { jahr: 30, hash: "8f32ecac7c1a5fd99ae041b2880499d970252e3d54d23e0dfb007ddf6296da5c" },
+  { jahr: 40, hash: "235ad0af9698c9ac86007bcc255e5c441dbbe987ccb1c49638f2253e02e6925e" },
+  { jahr: 50, hash: "6bbaba67648e3cb019037894a94cee6d426fad97f9e7c45a0949bb2ad59ad843" },
+  { jahr: 60, hash: "5028937db63223fffa372ee6e03ef88eb0d00237a14d32a4ebc850113734aa54" },
+  { jahr: 70, hash: "f9e080e56c7dc374e4c4049a7930cc5750404190199ec6d18a5551dfe0155ff9" },
+  { jahr: 80, hash: "68e32d29af439d109eb3ecb028b4bc48eddf00eb67703ac3b0c4eb1febac6a1a" },
+  { jahr: 90, hash: "242779b39ef7905385741a536dff633f5e39bcb5046741ef3fe3d54487ceea56" },
+  { jahr: 100, hash: "1189408cec1393c3408257f30f3c4a0f7a8f4786b60755b058d7f8abe78d0d23" },
 ];
 
-export const GOLDEN_REPLAY_FINAL_HASH = "fa1958d106e6bb4c38b69705a9ac501c1bc630c52aae4bf8950c907d4b74b45d";
+export const GOLDEN_REPLAY_FINAL_HASH = "1189408cec1393c3408257f30f3c4a0f7a8f4786b60755b058d7f8abe78d0d23";
 
 /** Jahre mit gekuerzte_be > 0 (FR-041): die überallokierten Muster. */
 export const GOLDEN_REPLAY_GEKUERZTE_JAHRE: readonly number[] = [11, 15, 19, 23, 27, 31, 35, 39, 43, 47, 51, 55, 59, 63, 67, 71, 75, 79, 83, 87, 91, 95, 99];

@@ -128,6 +128,20 @@ describe('Indikatorbewegung pro Jahr (FR-005/FR-006, US-M0-05)', () => {
     expect(unterSchwelle).toBe(68 + 0.5 * 10 - 3);
   });
 
+  it('diminishing_at wirkt genau an der Schwelle (Level == diminishing_at → reduzierte Wirkung)', () => {
+    // Infrastruktur hat diminishing_at: 70. Genau bei 70 gilt bereits die reduzierte Wirkung.
+    const genauSchwelle: Record<string, number> = { ...start, infrastruktur: 70 };
+    const neu = indikatorSchritt(
+      regeln[0]!,
+      70,
+      10,
+      0,
+      SCHWIERIGKEIT_NORMAL,
+      (tag) => genauSchwelle[tag] ?? 0,
+    );
+    expect(neu).toBe(70 + 0.2 * 10 - 3);
+  });
+
   it('der Schwierigkeits-Multiplikator skaliert den Verschleiß (G6)', () => {
     const schwer = Object.freeze({ ...SCHWIERIGKEIT_NORMAL, verschleiß_multiplikator: 1.3 });
     const neu = indikatorenSchritt(regeln, start, {}, {}, schwer);
