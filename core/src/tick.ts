@@ -121,17 +121,17 @@ export interface TickRegeln {
    * zwischen Optionen, jede Option kann zu einem Folge-Event führen. Tiefen-Limit garantiert Exit.
    */
   readonly entscheidungskarten?: readonly Entscheidungskarte[];
-    /**
-     * Karten-Katalog für die Slot-Auswahl pro Jahr (US-M3-06, FR-029): Pool aller verfügbaren Karten.
-     */
-    readonly karten_katalog?: readonly TickKarte[];
-    /**
-     * Die Setup-Pflicht des geladenen Regelsatzes (US-M1-02, Verdikt D22): ein Turn ohne vollständigen
-     * Setup wird abgewiesen. Der Wert kommt aus dem Register des Packs, **nicht** aus einem Adapter —
-     * zwei Adapter bei identischen Regeln müssen identisch gate'en (ADR-002). Ein Pack ohne Setup-
-     * Register lässt das Feld `undefined` und gate't nie (der M0-Harness spielt ohne Setup).
-     */
-    readonly setup_pflicht?: SetupPflicht;
+  /**
+   * Karten-Katalog für die Slot-Auswahl pro Jahr (US-M3-06, FR-029): Pool aller verfügbaren Karten.
+   */
+  readonly karten_katalog?: readonly TickKarte[];
+  /**
+   * Die Setup-Pflicht des geladenen Regelsatzes (US-M1-02, Verdikt D22): ein Turn ohne vollständigen
+   * Setup wird abgewiesen. Der Wert kommt aus dem Register des Packs, **nicht** aus einem Adapter —
+   * zwei Adapter bei identischen Regeln müssen identisch gate'en (ADR-002). Ein Pack ohne Setup-
+   * Register lässt das Feld `undefined` und gate't nie (der M0-Harness spielt ohne Setup).
+   */
+  readonly setup_pflicht?: SetupPflicht;
 }
 
 export type WahlErgebnis = Wahlprüfung;
@@ -343,10 +343,7 @@ function berechneLegitimität(
     konstitutionsIds,
     konstitution,
   );
-  const konstitutionsBonus = Math.min(
-    konstitutionsEntscheidungen.length * 2,
-    10,
-  );
+  const konstitutionsBonus = Math.min(konstitutionsEntscheidungen.length * 2, 10);
 
   const legitimität = gewichteteZufriedenheit + konstitutionsBonus;
   return clampLevel(legitimität);
@@ -355,9 +352,7 @@ function berechneLegitimität(
 /**
  * Berechnet die gewichtete Ø-Zufriedenheit der Bevölkerung.
  */
-function berechneGewichteteZufriedenheit(
-  gruppen: readonly GruppenSnapshot[],
-): number {
+function berechneGewichteteZufriedenheit(gruppen: readonly GruppenSnapshot[]): number {
   let anteile = 0;
   let summe = 0;
   for (const gruppe of gruppen) {
@@ -416,15 +411,11 @@ function primärerIndikatorDerKarte(karte: TickKarte): IndikatorTag | undefined 
  * Gewicht = Σ Gewicht unzufriedener adressierter Gruppen + (100 − Indikatorlevel) − Cooldown-Nähe.
  * Karten im Cooldown oder mit verletztem Constraint haben Gewicht 0 (nicht verfügbar).
  */
-function kartenGewicht(
-  karte: TickKarte,
-  state: GameState,
-  jahr: number,
-): number {
+function kartenGewicht(karte: TickKarte, state: GameState, jahr: number): number {
   if (!karteImKatalogVerfügbar(karte, state)) return 0;
 
   const tag = primärerIndikatorDerKarte(karte);
-  const indikatorLevel = tag !== undefined ? state.indikatoren[tag] ?? 0 : 0;
+  const indikatorLevel = tag !== undefined ? (state.indikatoren[tag] ?? 0) : 0;
 
   // Gewicht unzufriedener Gruppen, die diesen Indikator hoch gewichten (zufriedenheit < 50)
   let unzufriedeneGruppenGewicht = 0;
@@ -636,7 +627,9 @@ export function tick(
     regeln.wahlregel?.typ === 'parlamentmehrheit'
   ) {
     const zustimmung = gewichteteZufriedenheit(aktuell.gruppen) / 100;
-    const mehrheitSchwelle = (regeln.wahlregel as Extract<WahlregelVariant, { typ: 'parlamentmehrheit' }>).mehrheit;
+    const mehrheitSchwelle = (
+      regeln.wahlregel as Extract<WahlregelVariant, { typ: 'parlamentmehrheit' }>
+    ).mehrheit;
     if (zustimmung < mehrheitSchwelle) {
       if (modus === 'dev') {
         throw new TypeError(
@@ -701,9 +694,7 @@ export function tick(
   for (const karte of action.karten ?? []) {
     // Slot-Anzahl prüfen (US-M3-06, FR-029): nicht mehr Karten als Slots verfügbar
     if (slotZahl !== undefined && kartenGespielt >= slotZahl) {
-      throw new TypeError(
-        `Zu viele Karten für dieses Jahr — maximal ${slotZahl} Slots verfügbar`,
-      );
+      throw new TypeError(`Zu viele Karten für dieses Jahr — maximal ${slotZahl} Slots verfügbar`);
     }
     // Constraints prüfen (US-M3-03, FR-032): Regierungsform, Indikator-Bedingungen, Cooldown
     if (!karteErfuelltConstraints(karte, aktuell, mitKarten.cooldowns)) {

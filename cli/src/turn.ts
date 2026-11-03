@@ -92,15 +92,12 @@ export function prüfeEingabe(
 
   const beAufIndikator =
     eingabe.zuteilung[
-      entscheidung.effects.find(
-        (e) => e.ziel === 'indikatoren' && e.tag !== undefined,
-      )!.tag!
+      entscheidung.effects.find((e) => e.ziel === 'indikatoren' && e.tag !== undefined)!.tag!
     ] ?? 0;
   if (beAufIndikator < 1) {
     const tag =
-      entscheidung.effects.find(
-        (e) => e.ziel === 'indikatoren' && e.tag !== undefined,
-      )?.tag ?? 'unbekannt';
+      entscheidung.effects.find((e) => e.ziel === 'indikatoren' && e.tag !== undefined)?.tag ??
+      'unbekannt';
     return {
       ok: false,
       grund: `Entscheidung "${entscheidung.regel_id}" verlangt mindestens 1 BE auf "${tag}" (ist ${String(beAufIndikator)})`,
