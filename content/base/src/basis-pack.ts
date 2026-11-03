@@ -69,13 +69,15 @@ export const INDIKATOR_REGELN: readonly IndikatorRegel[] = Object.freeze([
   }),
   // §2: Recht & Freiheit und Sicherheit sind nicht per Budget unterhaltbar ("nur Gesetze") —
   // budget_wirkung 0 wirkt im Unterhalt als übersprungen (wirkung ≤ 0), der Verschleiß wirkt.
-  Object.freeze({ regel_id: 'regel:recht', tag: 'recht', verschleiß: 1, budget_wirkung: 0 }),
-  Object.freeze({ regel_id: 'regel:freiheit', tag: 'freiheit', verschleiß: 1, budget_wirkung: 0 }),
+  Object.freeze({ regel_id: 'regel:recht', tag: 'recht', verschleiß: 1, budget_wirkung: 0, diminishing_at: 100, diminishing_wirkung: 0 }),
+  Object.freeze({ regel_id: 'regel:freiheit', tag: 'freiheit', verschleiß: 1, budget_wirkung: 0, diminishing_at: 100, diminishing_wirkung: 0 }),
   Object.freeze({
     regel_id: 'regel:sicherheit',
     tag: 'sicherheit',
     verschleiß: 2,
     budget_wirkung: 0,
+    diminishing_at: 100,
+    diminishing_wirkung: 0,
   }),
 ]);
 

@@ -27,6 +27,8 @@ indikator_regeln:
   - tag: infrastruktur
     verschleiß: 3
     budget_wirkung: 0.5
+    diminishing_at: 70
+    diminishing_wirkung: 0.2
 gruppen:
   - tag: arbeitnehmer
     zufriedenheit: 50
@@ -90,9 +92,13 @@ indikator_regeln:
   - tag: infrastruktur
     verschleiß: 3
     budget_wirkung: 0.5
+    diminishing_at: 70
+    diminishing_wirkung: 0.2
   - tag: bildung
     verschleiß: 2
     budget_wirkung: 0.6
+    diminishing_at: 65
+    diminishing_wirkung: 0.25
 gruppen:
   - tag: arbeitnehmer
     zufriedenheit: 50
@@ -118,12 +124,14 @@ entscheidungen:
     expect(ergebnis.pack.entscheidungen).toHaveLength(1);
   });
 
-  it('Pack mit ungültiger Regel (fehlendes verschleiß) → gesamtes Pack abgelehnt', () => {
+  it('Pack mit fehlendem verschleiß → gesamtes Pack abgelehnt', () => {
     const yamlInhalt = `
 schema_version: "1"
 name: Ungültiges-Pack
 indikator_regeln:
   - tag: infrastruktur
+    diminishing_at: 70
+    diminishing_wirkung: 0.2
     budget_wirkung: 0.5
 gruppen:
   - tag: arbeitnehmer
@@ -152,6 +160,8 @@ name: Ungültiges-Pack
 indikator_regeln:
   - tag: infrastruktur
     verschleiß: -1
+    diminishing_at: 70
+    diminishing_wirkung: 0.2
     budget_wirkung: 0.5
 gruppen:
   - tag: arbeitnehmer
@@ -205,6 +215,8 @@ indikator_regeln:
   - tag: infrastruktur
     verschleiß: 3
     budget_wirkung: 0.5
+    diminishing_at: 70
+    diminishing_wirkung: 0.2
 gruppen:
   - tag: arbeitnehmer
     zufriedenheit: 50
@@ -240,6 +252,8 @@ indikator_regeln:
   - tag: infrastruktur
     verschleiß: 3
     budget_wirkung: 0.5
+    diminishing_at: 70
+    diminishing_wirkung: 0.2
 gruppen:
   - tag: arbeitnehmer
     zufriedenheit: 50
@@ -275,9 +289,13 @@ indikator_regeln:
   - tag: infrastruktur
     verschleiß: 3
     budget_wirkung: 0.5
+    diminishing_at: 70
+    diminishing_wirkung: 0.2
   - tag: bildung
     verschleiß: 2
     budget_wirkung: 0.6
+    diminishing_at: 65
+    diminishing_wirkung: 0.25
 gruppen:
   - tag: arbeitnehmer
     zufriedenheit: 50
@@ -325,9 +343,13 @@ indikator_regeln:
   - tag: infrastruktur
     verschleiß: 3
     budget_wirkung: 0.5
+    diminishing_at: 70
+    diminishing_wirkung: 0.2
   - tag: infrastruktur
     verschleiß: 2
     budget_wirkung: 0.4
+    diminishing_at: 60
+    diminishing_wirkung: 0.3
 gruppen:
   - tag: arbeitnehmer
     zufriedenheit: 50
@@ -356,6 +378,8 @@ indikator_regeln:
   - tag: infrastruktur
     verschleiß: 3
     budget_wirkung: 0.5
+    diminishing_at: 70
+    diminishing_wirkung: 0.2
 gruppen:
   - tag: arbeitnehmer
     zufriedenheit: 50
@@ -390,9 +414,13 @@ indikator_regeln:
   - tag: infrastruktur
     verschleiß: 3
     budget_wirkung: 0.5
+    diminishing_at: 70
+    diminishing_wirkung: 0.2
   - tag: bildung
     verschleiß: 2
     budget_wirkung: 0.6
+    diminishing_at: 65
+    diminishing_wirkung: 0.25
 gruppen:
   - tag: arbeitnehmer
     zufriedenheit: 50
@@ -436,6 +464,8 @@ name: Ungültiges-Pack
 indikator_regeln:
   - tag: infrastruktur
     verschleiß: -1
+    diminishing_at: 70
+    diminishing_wirkung: 0.2
     budget_wirkung: 0.5
 gruppen:
   - tag: arbeitnehmer
@@ -511,6 +541,8 @@ name: Böse-Pack
 indikator_regeln:
   - tag: infrastruktur
     verschleiß: -999
+    diminishing_at: 70
+    diminishing_wirkung: 0.2
     budget_wirkung: 0.5
 gruppen:
   - tag: arbeitnehmer
@@ -548,8 +580,8 @@ describe('US-M4-04: Merge-Policy Override vs. Shadow (FR-034)', () => {
     schema_version: '1' as const,
     name: 'Base-Pack',
     indikator_regeln: [
-      { tag: 'infrastruktur', verschleiß: 3, budget_wirkung: 0.5 },
-      { tag: 'bildung', verschleiß: 2, budget_wirkung: 0.6 },
+      { tag: 'infrastruktur', verschleiß: 3, budget_wirkung: 0.5, diminishing_at: 70, diminishing_wirkung: 0.2 },
+      { tag: 'bildung', verschleiß: 2, budget_wirkung: 0.6, diminishing_at: 65, diminishing_wirkung: 0.25 },
     ],
     gruppen: [
       {
@@ -572,8 +604,8 @@ describe('US-M4-04: Merge-Policy Override vs. Shadow (FR-034)', () => {
     schema_version: '1' as const,
     name: 'Override-Pack',
     indikator_regeln: [
-      { tag: 'infrastruktur', verschleiß: 5, budget_wirkung: 0.8 }, // ersetzt Base komplett
-      { tag: 'gesundheit', verschleiß: 2, budget_wirkung: 0.7 }, // neue Regel
+      { tag: 'infrastruktur', verschleiß: 5, budget_wirkung: 0.8, diminishing_at: 80, diminishing_wirkung: 0.15 },
+      { tag: 'gesundheit', verschleiß: 2, budget_wirkung: 0.7, diminishing_at: 75, diminishing_wirkung: 0.2 },
     ],
     gruppen: [
       {
@@ -607,8 +639,8 @@ describe('US-M4-04: Merge-Policy Override vs. Shadow (FR-034)', () => {
     schema_version: '1' as const,
     name: 'Shadow-Pack',
     indikator_regeln: [
-      { tag: 'infrastruktur', verschleiß: 99, budget_wirkung: 0.99 }, // wird ignoriert (Shadow)
-      { tag: 'gesundheit', verschleiß: 2, budget_wirkung: 0.7 }, // neue Regel
+      { tag: 'infrastruktur', verschleiß: 99, budget_wirkung: 0.99, diminishing_at: 99, diminishing_wirkung: 0.99 },
+      { tag: 'gesundheit', verschleiß: 2, budget_wirkung: 0.7, diminishing_at: 75, diminishing_wirkung: 0.2 },
     ],
     gruppen: [
       {
@@ -710,7 +742,7 @@ describe('US-M4-04: Merge-Policy Override vs. Shadow (FR-034)', () => {
       schema_version: '1' as const,
       name: 'Kein-Konflikt-Pack',
       indikator_regeln: [
-        { tag: 'gesundheit', verschleiß: 2, budget_wirkung: 0.7 }, // neuer Tag
+        { tag: 'gesundheit', verschleiß: 2, budget_wirkung: 0.7, diminishing_at: 75, diminishing_wirkung: 0.2 },
       ],
       gruppen: [],
       entscheidungen: [],
@@ -771,5 +803,127 @@ describe('US-M4-04: Merge-Policy Override vs. Shadow (FR-034)', () => {
     expect(report.mergedPack.indikator_regeln).toEqual(basePack.indikator_regeln);
     expect(report.mergedPack.gruppen).toEqual(basePack.gruppen);
     expect(report.mergedPack.entscheidungen).toEqual(basePack.entscheidungen);
+  });
+});
+
+describe('US-M4-05: diminishing_at als Pflichtfeld im Schema (FR-034)', () => {
+  const basisPackOhneDiminishing = `
+schema_version: "1"
+name: Test-Pack
+indikator_regeln:
+  - tag: infrastruktur
+    verschleiß: 3
+    budget_wirkung: 0.5
+gruppen:
+  - tag: arbeitnehmer
+    zufriedenheit: 50
+    bevölkerungsanteil: 100
+    gewichte:
+      infrastruktur: 1.0
+entscheidungen:
+  - regel_id: entscheidung:test
+    label: Test
+    beschreibung: Test
+`;
+
+  const basisPackMitDiminishing = `
+schema_version: "1"
+name: Test-Pack
+indikator_regeln:
+  - tag: infrastruktur
+    verschleiß: 3
+    budget_wirkung: 0.5
+    diminishing_at: 70
+    diminishing_wirkung: 0.2
+gruppen:
+  - tag: arbeitnehmer
+    zufriedenheit: 50
+    bevölkerungsanteil: 100
+    gewichte:
+      infrastruktur: 1.0
+entscheidungen:
+  - regel_id: entscheidung:test
+    label: Test
+    beschreibung: Test
+`;
+
+  it('Pack ohne diminishing_at → Pack abgelehnt', () => {
+    const ergebnis = loadPack(basisPackOhneDiminishing, 'ohne-diminishing.pack.yaml');
+
+    if ('pack' in ergebnis) {
+      throw new Error('Erwarteter Fehler wurde nicht zurückgegeben');
+    }
+    expect(ergebnis.error).toContain('diminishing_at');
+    expect(ergebnis.datei).toBe('ohne-diminishing.pack.yaml');
+  });
+
+  it('Pack mit diminishing_at aber ohne diminishing_wirkung → Pack abgelehnt', () => {
+    const yamlInhalt = `
+schema_version: "1"
+name: Test-Pack
+indikator_regeln:
+  - tag: infrastruktur
+    verschleiß: 3
+    budget_wirkung: 0.5
+    diminishing_at: 70
+gruppen:
+  - tag: arbeitnehmer
+    zufriedenheit: 50
+    bevölkerungsanteil: 100
+    gewichte:
+      infrastruktur: 1.0
+entscheidungen:
+  - regel_id: entscheidung:test
+    label: Test
+    beschreibung: Test
+`;
+
+    const ergebnis = loadPack(yamlInhalt, 'ohne-diminishing-wirkung.pack.yaml');
+
+    if ('pack' in ergebnis) {
+      throw new Error('Erwarteter Fehler wurde nicht zurückgegeben');
+    }
+    expect(ergebnis.error).toContain('diminishing_wirkung');
+  });
+
+  it('Pack mit diminishing_at und diminishing_wirkung → geladen', () => {
+    const ergebnis = loadPack(basisPackMitDiminishing, 'mit-diminishing.pack.yaml');
+
+    if ('error' in ergebnis) {
+      throw new Error(`Unerwarteter Fehler: ${ergebnis.error}`);
+    }
+    expect(ergebnis.pack.name).toBe('Test-Pack');
+    expect(ergebnis.pack.indikator_regeln[0].diminishing_at).toBe(70);
+    expect(ergebnis.pack.indikator_regeln[0].diminishing_wirkung).toBe(0.2);
+  });
+
+  it('Pack mit diminishing_at=0 und diminishing_wirkung=0 → geladen (valide Grenzwerte)', () => {
+    const yamlInhalt = `
+schema_version: "1"
+name: Test-Pack
+indikator_regeln:
+  - tag: infrastruktur
+    verschleiß: 3
+    budget_wirkung: 0.5
+    diminishing_at: 0
+    diminishing_wirkung: 0
+gruppen:
+  - tag: arbeitnehmer
+    zufriedenheit: 50
+    bevölkerungsanteil: 100
+    gewichte:
+      infrastruktur: 1.0
+entscheidungen:
+  - regel_id: entscheidung:test
+    label: Test
+    beschreibung: Test
+`;
+
+    const ergebnis = loadPack(yamlInhalt, 'grenzwerte.pack.yaml');
+
+    if ('error' in ergebnis) {
+      throw new Error(`Unerwarteter Fehler: ${ergebnis.error}`);
+    }
+    expect(ergebnis.pack.name).toBe('Test-Pack');
   });
 });

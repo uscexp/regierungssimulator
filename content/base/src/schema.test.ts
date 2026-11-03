@@ -34,7 +34,7 @@ function einModPack() {
   const last = { niedrig: 2, flat: 4, progressiv: 3, hoch: 8 };
   return {
     indikator_regeln: [
-      { regel_id: 'regel:bildung', tag: 'bildung', verschleiß: 2, budget_wirkung: 0.6 },
+      { regel_id: 'regel:bildung', tag: 'bildung', verschleiß: 2, budget_wirkung: 0.6, diminishing_at: 65, diminishing_wirkung: 0.25 },
     ],
     gruppen: [
       { tag: 'arbeitnehmer', zufriedenheit: 40, bevölkerungsanteil: 100, gewichte: { bildung: 1 } },
@@ -66,7 +66,7 @@ describe('Basis-Pack validiert gegen das Schema', () => {
   it('lehnt ein kaputes Pack mit dem Grund ab, nicht mit "invalid"', () => {
     const ergebnis = validierePack(kaputesPack, 'produktion');
     expect(ergebnis.fehlerfrei).toBe(false);
-    expect(ergebnis.grund).toContain('diminishing_at und diminishing_wirkung sind ein Paar');
+    expect(ergebnis.grund).toContain('diminishing_wirkung');
   });
 
   it('wirft im Dev-Modus mit dem Grund, läuft im Produktionsmodus weiter (FR-002-Konvention)', () => {
