@@ -29,44 +29,56 @@ import type {
   WahlregelVariant,
 } from '@staatslenker/core/rules';
 
-const indikator_regeln: readonly IndikatorRegel[] = [
-  {
+const indikator_regeln: readonly IndikatorRegel[] = Object.freeze([
+  Object.freeze({
     tag: 'infrastruktur',
     verschleiß: 3,
     budget_wirkung: 0.5,
     diminishing_at: 70,
     diminishing_wirkung: 0.2,
-  },
-  {
+  }),
+  Object.freeze({
     tag: 'bildung',
     verschleiß: 2,
     budget_wirkung: 0.6,
     diminishing_at: 65,
     diminishing_wirkung: 0.25,
-  },
-  {
+  }),
+  Object.freeze({
     tag: 'gesundheit',
     verschleiß: 2,
     budget_wirkung: 0.7,
     diminishing_at: 75,
     diminishing_wirkung: 0.2,
-  },
-  {
+  }),
+  Object.freeze({
     tag: 'wirtschaft',
     verschleiß: 2,
     budget_wirkung: 0.4,
     diminishing_at: 80,
     diminishing_wirkung: 0.15,
-  },
-  {
+  }),
+  Object.freeze({
     tag: 'forschung',
     verschleiß: 2,
     budget_wirkung: 0.5,
     diminishing_at: 85,
     diminishing_wirkung: 0.2,
     gate: { indikator: 'bildung', min: 50 },
-  },
-];
+  }),
+  Object.freeze({
+    regel_id: 'regel:sicherheit',
+    tag: 'sicherheit',
+    verschleiß: 2,
+    budget_wirkung: 0,
+  }),
+  Object.freeze({
+    regel_id: 'regel:recht',
+    tag: 'recht',
+    verschleiß: 1,
+    budget_wirkung: 0,
+  }),
+]);
 
 const steuerfaktor: SteuerfaktorTabelle = { niedrig: 0.6, flat: 0.8, progressiv: 1.0, hoch: 1.2 };
 const steuerlast: SteuerlastTabelle = {
