@@ -147,6 +147,7 @@ export const basisEntscheidungSchema = z
             min: z.number().finite().nonnegative().optional(),
             max: z.number().finite().nonnegative().optional(),
           }),
+          regierungsform: z.enum(['parlamentarisch', 'praesidential', 'diktatur']).optional(),
         }),
       )
       .optional(),

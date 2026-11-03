@@ -216,6 +216,49 @@ export function evalBedingung(
 }
 
 /**
+ * Prüft, ob eine Entscheidungskarte unter den aktuellen Bedingungen spielbar ist (US-M3-03, FR-032).
+ * Ein Constraint ist erfüllt, wenn alle angegebenen Bedingungen zutreffen.
+ * - regierungsform: Die aktuelle Regierungsform muss dem geforderten entsprechen.
+ * - indikator: Der Indikator-Wert muss min/max erfüllen (fehlende Indikatoren zählen als 0).
+ *
+ * @param entscheidung — Die Entscheidungskarte mit optionalen Constraints
+ * @param state — Der aktuelle GameState
+ * @returns true wenn alle Constraints erfüllt sind, false sonst
+ */
+export function karteErfuelltConstraints(
+  entscheidung: { constraints?: readonly { indikator?: { tag: string; min?: number; max?: number }; regierungsform?: 'parlamentarisch' | 'praesidential' | 'diktatur' }[] },
+  state: GameState,
+): boolean {
+  if (!entscheidung.constraints || entscheidung.constraints.length === 0) return true;
+
+  return entscheidung.constraints.every((c) => {
+    // Regierungsform prüfen
+    if (c.regierungsform !== undefined && state.setup?.regierungsform !== c.regierungsform) {
+      return false;
+    }
+    // Indikator/Schulden/Legitimität/Radikalisierung prüfen
+    if (c.indikator !== undefined) {
+      const tag = c.indikator.tag;
+      let wert: number;
+      if (tag === 'schulden') {
+        wert = state.schulden;
+      } else if (tag === 'legitimitaet') {
+        wert = state.legitimitaet;
+      } else if (tag === 'radikalisierung') {
+        wert = state.radikalisierung;
+      } else if (tag === 'politisches_kapital') {
+        wert = state.politisches_kapital;
+      } else {
+        wert = state.indikatoren[tag] ?? 0;
+      }
+      if (c.indikator.min !== undefined && wert < c.indikator.min) return false;
+      if (c.indikator.max !== undefined && wert > c.indikator.max) return false;
+    }
+    return true;
+  });
+}
+
+/**
  * Prüft, ob alle Bedingungen einer Liste erfüllt sind (UND-Semantik über die Liste).
  * Eine leere Liste ist immer wahr (keine Constraint).
  */
