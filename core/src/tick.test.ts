@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { tick, type TickAction, type TickRegeln } from '@staatslenker/core/tick';
+import { tick, berechneSlotZahl, type TickAction, type TickKarte, type TickRegeln } from '@staatslenker/core/tick';
 import { SCHWIERIGKEIT_NORMAL, type IndikatorRegel } from '@staatslenker/core/indikatoren';
 import type { SteuerfaktorTabelle } from '@staatslenker/core/budget';
 import {
@@ -1259,6 +1259,122 @@ describe('tick — dauerhafte Regelsatz-Modifikatoren der Konstitution (US-M1-06
         'dev',
       );
       expect(ergebnis.state.cooldowns['karte:ohnecooldown']).toBeUndefined();
+    });
+  });
+
+  describe('Karten-Auswahl-Slots (US-M3-06, FR-029)', () => {
+    const staatMitPK2 = stateMit({
+      setup: { regierungsform: 'parlamentarisch', konstitutions_ids: [] },
+      politisches_kapital: 2,
+      legitimitaet: 50,
+    });
+
+    const staatMitPK1 = stateMit({
+      ...staatMitPK2,
+      politisches_kapital: 1,
+    });
+
+    const staatMitLegitimität70 = stateMit({
+      setup: { regierungsform: 'parlamentarisch', konstitutions_ids: [] },
+      politisches_kapital: 5,
+      legitimitaet: 70,
+    });
+
+    const staatMitLegitimität69 = stateMit({
+      ...staatMitLegitimität70,
+      legitimitaet: 69,
+    });
+
+    const regelnMitKatalog: TickRegeln = {
+      ...regelnMit({ regierung: regierungParlamentarisch }),
+      karten_katalog: [
+        {
+          regel_id: 'karte:a',
+          pk_kosten: 1,
+          wirkung: [{ ziel: 'legitimitaet' as Effekt['ziel'], delta: 5 } as Effekt],
+        } as TickKarte,
+        {
+          regel_id: 'karte:b',
+          pk_kosten: 1,
+          wirkung: [{ ziel: 'wirtschaft' as Effekt['ziel'], delta: 5 } as Effekt],
+        } as TickKarte,
+        {
+          regel_id: 'karte:c',
+          pk_kosten: 1,
+          wirkung: [{ ziel: 'bildung' as Effekt['ziel'], delta: 5 } as Effekt],
+        } as TickKarte,
+      ],
+    };
+
+    it('PK ≤ 2 → 2 Slots', () => {
+      expect(berechneSlotZahl(staatMitPK1)).toBe(2);
+      expect(berechneSlotZahl(staatMitPK2)).toBe(2);
+    });
+
+    it('Legitimität ≥ 70 → 4 Slots', () => {
+      expect(berechneSlotZahl(staatMitLegitimität70)).toBe(4);
+    });
+
+    it('Sonst → 3 Slots', () => {
+      expect(berechneSlotZahl(staatMitLegitimität69)).toBe(3);
+      expect(berechneSlotZahl(staatMitPK2)).toBe(2); // PK hat Vorrang vor Legitimität
+    });
+
+    it('Tick mit Katalog → slots im Ergebnis zurückgegeben', () => {
+      const ergebnis = tick(
+        staatMitLegitimität69,
+        { zuteilung: {}, karten: [] },
+        regelnMitKatalog,
+        'dev',
+      );
+      expect(ergebnis.slots).toBeDefined();
+      expect(ergebnis.slots!.length).toBeLessThanOrEqual(3);
+    });
+
+    it('Tick ohne Katalog → slots undefined', () => {
+      const ergebnis = tick(
+        staatMitLegitimität69,
+        { zuteilung: {}, karten: [] },
+        regelnMit({ regierung: regierungParlamentarisch }),
+        'dev',
+      );
+      expect(ergebnis.slots).toBeUndefined();
+    });
+
+    it('Mehr Karten als Slots → TypeError', () => {
+      const zuVieleKarten: TickAction = {
+        zuteilung: {},
+        karten: [
+          {
+            regel_id: 'karte:a',
+            pk_kosten: 1,
+            wirkung: [{ ziel: 'legitimitaet' as Effekt['ziel'], delta: 5 } as Effekt],
+          } as TickKarte,
+          {
+            regel_id: 'karte:b',
+            pk_kosten: 1,
+            wirkung: [{ ziel: 'wirtschaft' as Effekt['ziel'], delta: 5 } as Effekt],
+          } as TickKarte,
+          {
+            regel_id: 'karte:c',
+            pk_kosten: 1,
+            wirkung: [{ ziel: 'bildung' as Effekt['ziel'], delta: 5 } as Effekt],
+          } as TickKarte,
+          {
+            regel_id: 'karte:d',
+            pk_kosten: 1,
+            wirkung: [{ ziel: 'legitimitaet' as Effekt['ziel'], delta: 5 } as Effekt],
+          } as TickKarte,
+        ],
+      };
+      expect(() =>
+        tick(
+          staatMitLegitimität69,
+          zuVieleKarten,
+          regelnMitKatalog,
+          'dev',
+        ),
+      ).toThrow(/maximal 3 Slots verfügbar/);
     });
   });
 });

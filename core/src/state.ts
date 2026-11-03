@@ -125,6 +125,8 @@ export interface GameState {
   readonly beschlüsse: readonly AktiverBeschluss[];
   /** Cooldowns pro Entscheidungskarte (US-M3-04, FR-030): Regel-ID → Jahr bis (inklusive) gesperrt. */
   readonly cooldowns: Readonly<Record<string, number>>;
+  /** Session-Seed für deterministisches Karten-Slot-Sampling (US-M3-06, FR-029). */
+  readonly session_seed?: number;
   /** Verlorener Machtcheck (US-M0-12) — gesetzt, wenn eine Wahl verloren wurde; der CLI zeigt das Spielende. */
   readonly wahl_niederlage?: WahlNiederlage;
 }

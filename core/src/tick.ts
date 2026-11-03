@@ -121,13 +121,17 @@ export interface TickRegeln {
    * zwischen Optionen, jede Option kann zu einem Folge-Event führen. Tiefen-Limit garantiert Exit.
    */
   readonly entscheidungskarten?: readonly Entscheidungskarte[];
-  /**
-   * Die Setup-Pflicht des geladenen Regelsatzes (US-M1-02, Verdikt D22): ein Turn ohne vollständigen
-   * Setup wird abgewiesen. Der Wert kommt aus dem Register des Packs, **nicht** aus einem Adapter —
-   * zwei Adapter bei identischen Regeln müssen identisch gate'en (ADR-002). Ein Pack ohne Setup-
-   * Register lässt das Feld `undefined` und gate't nie (der M0-Harness spielt ohne Setup).
-   */
-  readonly setup_pflicht?: SetupPflicht;
+    /**
+     * Karten-Katalog für die Slot-Auswahl pro Jahr (US-M3-06, FR-029): Pool aller verfügbaren Karten.
+     */
+    readonly karten_katalog?: readonly TickKarte[];
+    /**
+     * Die Setup-Pflicht des geladenen Regelsatzes (US-M1-02, Verdikt D22): ein Turn ohne vollständigen
+     * Setup wird abgewiesen. Der Wert kommt aus dem Register des Packs, **nicht** aus einem Adapter —
+     * zwei Adapter bei identischen Regeln müssen identisch gate'en (ADR-002). Ein Pack ohne Setup-
+     * Register lässt das Feld `undefined` und gate't nie (der M0-Harness spielt ohne Setup).
+     */
+    readonly setup_pflicht?: SetupPflicht;
 }
 
 export type WahlErgebnis = Wahlprüfung;
@@ -149,6 +153,11 @@ export interface TickErgebnis {
    * Inhalte von `parlamentarisch` und `diktatur` warten auf ihre Balance-Werte (Ralf/FR-015).
    */
   readonly machtverlust_regelset?: string;
+  /**
+   * Verfügbare Karten-Slots für dieses Jahr (US-M3-06, FR-029): seedgesteuerte Auswahl aus dem
+   * Katalog. Der Spieler kann nur Karten aus diesen Slots spielen; die UI rendert sie als Angebot.
+   */
+  readonly slots?: readonly TickKarte[];
   readonly unterhalt_be: number;
   /**
    * Der Grund, warum dieser Turn abgewiesen wurde (US-M1-02/D22, Produktionsmodus): der State ist
@@ -371,6 +380,152 @@ function konstitutionEntscheidungenAusRegister(
   return konstitutionsIds.filter((id) => konstitution[id] !== undefined);
 }
 
+/**
+ * Slot-Zahl pro Jahr (US-M3-06, FR-029): 2–5. Standard 3; 4 bei Legitimität ≥ 70; 2 bei PK ≤ 2.
+ */
+export function berechneSlotZahl(state: GameState): number {
+  if (state.politisches_kapital <= 2) return 2;
+  if (state.legitimitaet >= 70) return 4;
+  return 3;
+}
+
+/**
+ * Prüft, ob eine Karte im Katalog die Constraints und Cooldowns des aktuellen Zustands erfüllt.
+ * Nutzt dieselbe Prüfung wie der Karten-Loop im Tick (karteErfuelltConstraints).
+ */
+function karteImKatalogVerfügbar(karte: TickKarte, state: GameState): boolean {
+  try {
+    return karteErfuelltConstraints(karte, state, state.cooldowns);
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Primären Indikator-Tag einer Karte aus ihren Effekten bestimmen (erster indikatoren-Effekt).
+ */
+function primärerIndikatorDerKarte(karte: TickKarte): IndikatorTag | undefined {
+  for (const effekt of karte.wirkung) {
+    if (effekt.ziel === 'indikatoren' && effekt.tag !== undefined) return effekt.tag;
+  }
+  return undefined;
+}
+
+/**
+ * Gewicht einer Karte für das Slot-Sampling berechnen (US-M3-06, FR-029):
+ * Gewicht = Σ Gewicht unzufriedener adressierter Gruppen + (100 − Indikatorlevel) − Cooldown-Nähe.
+ * Karten im Cooldown oder mit verletztem Constraint haben Gewicht 0 (nicht verfügbar).
+ */
+function kartenGewicht(
+  karte: TickKarte,
+  state: GameState,
+  jahr: number,
+): number {
+  if (!karteImKatalogVerfügbar(karte, state)) return 0;
+
+  const tag = primärerIndikatorDerKarte(karte);
+  const indikatorLevel = tag !== undefined ? state.indikatoren[tag] ?? 0 : 0;
+
+  // Gewicht unzufriedener Gruppen, die diesen Indikator hoch gewichten (zufriedenheit < 50)
+  let unzufriedeneGruppenGewicht = 0;
+  for (const gruppe of state.gruppen) {
+    const gewicht = gruppe.gewichte[tag ?? ''];
+    if (gewicht !== undefined && gewicht > 0 && gruppe.zufriedenheit < 50) {
+      unzufriedeneGruppenGewicht += gewicht * (50 - gruppe.zufriedenheit);
+    }
+  }
+
+  // Cooldown-Nähe: je näher der Cooldown am Ablauf, desto höher das Gewicht
+  const cooldownBis = state.cooldowns[karte.regel_id];
+  const cooldownNähe =
+    cooldownBis !== undefined && cooldownBis >= jahr ? cooldownBis - jahr + 1 : 0;
+
+  return unzufriedeneGruppenGewicht + (100 - indikatorLevel) - cooldownNähe;
+}
+
+/**
+ * Gewichtetes seedgesteuertes Sampling ohne Zurücklegen (US-M3-06, FR-029).
+ * Seed = sessionSeed + jahr. Wählt bis zu `anzahl` Karten aus dem Pool nach Gewicht.
+ */
+function weightedSampleOhneZurücklegen(
+  pool: readonly TickKarte[],
+  gewichte: readonly number[],
+  anzahl: number,
+  sessionSeed: number,
+  jahr: number,
+): readonly TickKarte[] {
+  const ergebnis: TickKarte[] = [];
+  const verbleibend = [...pool];
+  const verbleibendeGewichte = [...gewichte];
+  const seed = sessionSeed + jahr;
+  let counter = 0;
+
+  const nextInt = (grenze: number): number => {
+    // Einfacher LCG basierend auf Seed + Counter, deterministisch
+    counter += 1;
+    const a = (seed + counter * 0x6d2b79f5) | 0;
+    let t = a;
+    t = Math.imul(t ^ (t >>> 15), 29 | t);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    const wert = ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    return Math.floor(wert * grenze);
+  };
+
+  const ziehe = (): number => {
+    const gesamtGewicht = verbleibendeGewichte.reduce((s, g) => s + g, 0);
+    if (gesamtGewicht <= 0) return -1;
+    const r = nextInt(gesamtGewicht) + 1; // 1-basiert
+    let laufend = 0;
+    for (let i = 0; i < verbleibendeGewichte.length; i++) {
+      laufend += verbleibendeGewichte[i]!;
+      if (laufend >= r) return i;
+    }
+    return verbleibendeGewichte.length - 1;
+  };
+
+  for (let i = 0; i < anzahl && verbleibend.length > 0; i++) {
+    const idx = ziehe();
+    if (idx < 0) break;
+    const karte = verbleibend[idx];
+    if (karte === undefined) break;
+    ergebnis.push(karte);
+    verbleibend.splice(idx, 1);
+    verbleibendeGewichte.splice(idx, 1);
+  }
+
+  return ergebnis;
+}
+
+/**
+ * Karten-Slots für dieses Jahr bestimmen (US-M3-06, FR-029):
+ * Slot-Zahl berechnen, Pool filtern, gewichtetes Sampling ohne Zurücklegen.
+ * Gibt zurück: { slots, slotZahl } oder undefined wenn kein Katalog konfiguriert.
+ */
+function wähleSlots(
+  regeln: TickRegeln,
+  state: GameState,
+): { readonly slots: readonly TickKarte[]; readonly slotZahl: number } | undefined {
+  const katalog = regeln.karten_katalog;
+  if (katalog === undefined || katalog.length === 0) return undefined;
+
+  const slotZahl = berechneSlotZahl(state);
+  const sessionSeed = state.session_seed ?? state.rng.seed;
+
+  // Pool: constraint- und cooldown-erfüllende Karten mit positivem Gewicht
+  const pool: TickKarte[] = [];
+  const gewichte: number[] = [];
+  for (const karte of katalog) {
+    const gewicht = kartenGewicht(karte, state, state.jahr);
+    if (gewicht > 0) {
+      pool.push(karte);
+      gewichte.push(gewicht);
+    }
+  }
+
+  const slots = weightedSampleOhneZurücklegen(pool, gewichte, slotZahl, sessionSeed, state.jahr);
+  return { slots, slotZahl };
+}
+
 export function tick(
   state: GameState,
   action: TickAction,
@@ -530,10 +685,26 @@ export function tick(
     }
   }
 
+  // 3a) Karten-Slots bestimmen (US-M3-06, FR-029): seedgesteuerte Auswahl aus dem Katalog.
+  let slots: readonly TickKarte[] | undefined;
+  let slotZahl: number | undefined;
+  const slotsErgebnis = wähleSlots(regeln, aktuell);
+  if (slotsErgebnis !== undefined) {
+    slots = slotsErgebnis.slots;
+    slotZahl = slotsErgebnis.slotZahl;
+  }
+
   // 3) Karten: PK zuerst prüfen und verbrauchen, dann ins Entscheidungsgedächtnis schreiben.
   let mitKarten = aktuell;
   let neueCooldowns = { ...aktuell.cooldowns };
+  let kartenGespielt = 0;
   for (const karte of action.karten ?? []) {
+    // Slot-Anzahl prüfen (US-M3-06, FR-029): nicht mehr Karten als Slots verfügbar
+    if (slotZahl !== undefined && kartenGespielt >= slotZahl) {
+      throw new TypeError(
+        `Zu viele Karten für dieses Jahr — maximal ${slotZahl} Slots verfügbar`,
+      );
+    }
     // Constraints prüfen (US-M3-03, FR-032): Regierungsform, Indikator-Bedingungen, Cooldown
     if (!karteErfuelltConstraints(karte, aktuell, mitKarten.cooldowns)) {
       throw new TypeError(
@@ -555,6 +726,7 @@ export function tick(
     if (karte.cooldown !== undefined) {
       neueCooldowns = { ...neueCooldowns, [karte.regel_id]: aktuell.jahr + karte.cooldown };
     }
+    kartenGespielt++;
   }
   aktuell = Object.freeze({ ...mitKarten, cooldowns: neueCooldowns });
 
@@ -657,6 +829,7 @@ export function tick(
     news: Object.freeze(newsAus(ereignisse, regeln.news_vorlagen)),
     wahl,
     machtverlust_regelset,
+    slots,
     unterhalt_be: unterhaltOhneEvents(
       regeln.indikator_regeln,
       (tag) => indikatoren[tag] ?? 0,
