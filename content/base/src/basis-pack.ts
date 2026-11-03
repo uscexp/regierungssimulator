@@ -343,6 +343,54 @@ export const BILDUNG_FORSCHUNG_KARTEN: readonly TickKarte[] = Object.freeze([
   }),
 ]);
 
+/** US-M3-08: Themen-Pack Wirtschaft/Budget (~6 Karten für den Karten-Katalog, FR-033).
+ * Karten wirken auf Indikatoren (wirtschaft, schulden, forschung) und kosten politisches Kapital.
+ * Constraints steuern die Verfügbarkeit im Slot-Sampling (US-M3-06, FR-029).
+ * Keine Cooldowns gesetzt (Design-Entscheidung: Cooldowns sind für spätere M3-Karten vorgesehen).
+ */
+export const WIRTSCHAFT_BUDGET_KARTEN: readonly TickKarte[] = Object.freeze([
+  Object.freeze({
+    regel_id: 'karte:wirtschaft_investition',
+    pk_kosten: 1,
+    wirkung: [{ ziel: 'indikatoren' as const, tag: 'wirtschaft', delta: 3 }] as readonly Effekt[],
+  }),
+  Object.freeze({
+    regel_id: 'karte:wirtschaft_stimulus',
+    pk_kosten: 2,
+    wirkung: [{ ziel: 'indikatoren' as const, tag: 'wirtschaft', delta: 5 }] as readonly Effekt[],
+    constraints: [{ indikator: { tag: 'wirtschaft', max: 60 } }],
+  }),
+  Object.freeze({
+    regel_id: 'karte:wirtschaft_sparen',
+    pk_kosten: 1,
+    wirkung: [{ ziel: 'budget' as const, delta: 5 }] as readonly Effekt[],
+  }),
+  Object.freeze({
+    regel_id: 'karte:budget_steuer_reform',
+    pk_kosten: 2,
+    wirkung: [
+      { ziel: 'indikatoren' as const, tag: 'wirtschaft', delta: 3 },
+      { ziel: 'legitimitaet' as const, delta: -2 },
+    ] as readonly Effekt[],
+    constraints: [{ indikator: { tag: 'wirtschaft', min: 50 } }],
+  }),
+  Object.freeze({
+    regel_id: 'karte:budget_subventionen',
+    pk_kosten: 3,
+    wirkung: [{ ziel: 'indikatoren' as const, tag: 'wirtschaft', delta: 4 }] as readonly Effekt[],
+    constraints: [{ indikator: { tag: 'wirtschaft', max: 40 } }],
+  }),
+  Object.freeze({
+    regel_id: 'karte:wirtschaft_innovation',
+    pk_kosten: 2,
+    wirkung: [
+      { ziel: 'indikatoren' as const, tag: 'wirtschaft', delta: 2 },
+      { ziel: 'indikatoren' as const, tag: 'forschung', delta: 1 },
+    ] as readonly Effekt[],
+    constraints: [{ indikator: { tag: 'forschung', min: 60 } }],
+  }),
+]);
+
 /** US-M2-04: Pandemie-Kette (Ausbruch → Ausbreitung → Gegenmaßnahmen).
  * Konflikt zwischen Gesundheits- und Wirtschaftszufriedenheit (FR-025).
  * Die Kette läuft über nachfolgeEreignisId der Optionen, garantiert Exit durch maxTiefe.
@@ -556,7 +604,7 @@ export const BASIS_PACK = {
   schwierigkeit_packs: SCHWIERIGKEIT_PACKS,
   news_vorlagen: NEWS_VORLAGEN,
   entscheidungen: BASIS_ENTSCHEIDUNGEN,
-  karten_katalog: BILDUNG_FORSCHUNG_KARTEN,
+  karten_katalog: [...BILDUNG_FORSCHUNG_KARTEN, ...WIRTSCHAFT_BUDGET_KARTEN],
   ereignis_regeln: [
     ...PANDEMIE_EREIGNISSE,
     ...FINANZKRISE_EREIGNISSE,
