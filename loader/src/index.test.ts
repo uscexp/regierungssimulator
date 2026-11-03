@@ -39,6 +39,13 @@ entscheidungen:
   - regel_id: entscheidung:test
     label: Test
     beschreibung: Test
+    cost:
+      budget: 1
+      politisches_kapital: 1
+    effects:
+      - ziel: indikatoren
+        tag: infrastruktur
+        delta: 1
 `;
 
     const ergebnis = loadPack(yamlInhalt, 'beispiel.pack.yaml');
@@ -110,6 +117,13 @@ entscheidungen:
   - regel_id: entscheidung:investition
     label: Investition
     beschreibung: Investiert in Infrastruktur
+    cost:
+      budget: 5
+      politisches_kapital: 2
+    effects:
+      - ziel: indikatoren
+        tag: infrastruktur
+        delta: 3
 `;
 
   it('gültiges Pack mit Regeln, Gruppen und Entscheidungen → geladen', () => {
@@ -143,6 +157,13 @@ entscheidungen:
   - regel_id: entscheidung:test
     label: Test
     beschreibung: Test
+    cost:
+      budget: 1
+      politisches_kapital: 1
+    effects:
+      - ziel: indikatoren
+        tag: infrastruktur
+        delta: 1
 `;
 
     const ergebnis = loadPack(yamlInhalt, 'ungueltig.pack.yaml');
@@ -173,6 +194,13 @@ entscheidungen:
   - regel_id: entscheidung:test
     label: Test
     beschreibung: Test
+    cost:
+      budget: 1
+      politisches_kapital: 1
+    effects:
+      - ziel: indikatoren
+        tag: infrastruktur
+        delta: 1
 `;
 
     const ergebnis = loadPack(yamlInhalt, 'ungueltig.pack.yaml');
@@ -197,6 +225,13 @@ entscheidungen:
   - regel_id: entscheidung:test
     label: Test
     beschreibung: Test
+    cost:
+      budget: 1
+      politisches_kapital: 1
+    effects:
+      - ziel: indikatoren
+        tag: infrastruktur
+        delta: 1
 `;
 
     const ergebnis = loadPack(yamlInhalt, 'ungueltig.pack.yaml');
@@ -227,6 +262,13 @@ entscheidungen:
   - regel_id: entscheidung:test
     label: Test
     beschreibung: Test
+    cost:
+      budget: 1
+      politisches_kapital: 1
+    effects:
+      - ziel: indikatoren
+        tag: infrastruktur
+        delta: 1
 karten_katalog:
   - regel_id: karte:unbekannt
     pk_kosten: 2
@@ -264,6 +306,13 @@ entscheidungen:
   - regel_id: entscheidung:test
     label: Test
     beschreibung: Test
+    cost:
+      budget: 1
+      politisches_kapital: 1
+    effects:
+      - ziel: indikatoren
+        tag: infrastruktur
+        delta: 1
 karten_katalog:
   - regel_id: karte:unbekannt
     pk_kosten: 2
@@ -313,6 +362,13 @@ entscheidungen:
   - regel_id: entscheidung:investition
     label: Investition
     beschreibung: Investiert in Infrastruktur
+    cost:
+      budget: 5
+      politisches_kapital: 2
+    effects:
+      - ziel: indikatoren
+        tag: infrastruktur
+        delta: 3
 karten_katalog:
   - regel_id: karte:landwirte_forderung
     pk_kosten: 2
@@ -360,6 +416,13 @@ entscheidungen:
   - regel_id: entscheidung:test
     label: Test
     beschreibung: Test
+    cost:
+      budget: 1
+      politisches_kapital: 1
+    effects:
+      - ziel: indikatoren
+        tag: infrastruktur
+        delta: 1
 `;
 
     const ergebnis = loadPack(yamlInhalt, 'duplikat.pack.yaml');
@@ -395,6 +458,13 @@ entscheidungen:
   - regel_id: entscheidung:test
     label: Test
     beschreibung: Test
+    cost:
+      budget: 1
+      politisches_kapital: 1
+    effects:
+      - ziel: indikatoren
+        tag: infrastruktur
+        delta: 1
 `;
 
     const ergebnis = loadPack(yamlInhalt, 'duplikat.pack.yaml');
@@ -432,6 +502,13 @@ entscheidungen:
   - regel_id: entscheidung:investition
     label: Investition
     beschreibung: Investiert in Infrastruktur
+    cost:
+      budget: 5
+      politisches_kapital: 2
+    effects:
+      - ziel: indikatoren
+        tag: infrastruktur
+        delta: 3
 `;
 
   it('YAML-Parsefehler meldet Zeilennummer', () => {
@@ -477,6 +554,13 @@ entscheidungen:
   - regel_id: entscheidung:test
     label: Test
     beschreibung: Test
+    cost:
+      budget: 1
+      politisches_kapital: 1
+    effects:
+      - ziel: indikatoren
+        tag: infrastruktur
+        delta: 1
 `;
 
     const ergebnis = loadPack(yamlInhalt, 'ungueltig.pack.yaml');
@@ -502,6 +586,13 @@ entscheidungen:
   - regel_id: entscheidung:test
     label: Test
     beschreibung: Test
+    cost:
+      budget: 1
+      politisches_kapital: 1
+    effects:
+      - ziel: indikatoren
+        tag: infrastruktur
+        delta: 1
 `;
 
     const ergebnis = loadPack(yamlInhalt, 'fehlend.pack.yaml');
@@ -554,6 +645,13 @@ entscheidungen:
   - regel_id: entscheidung:test
     label: Test
     beschreibung: Test
+    cost:
+      budget: 1
+      politisches_kapital: 1
+    effects:
+      - ziel: indikatoren
+        tag: infrastruktur
+        delta: 1
 `;
 
     const ergebnis = loadPack(ungültigesYaml, 'boese.pack.yaml');
@@ -596,6 +694,8 @@ describe('US-M4-04: Merge-Policy Override vs. Shadow (FR-034)', () => {
         regel_id: 'entscheidung:investition',
         label: 'Investition',
         beschreibung: 'Investiert in Infrastruktur',
+        cost: { budget: 5, politisches_kapital: 2 },
+        effects: [{ ziel: 'indikatoren', tag: 'infrastruktur', delta: 3 }],
       },
     ],
   };
@@ -612,25 +712,29 @@ describe('US-M4-04: Merge-Policy Override vs. Shadow (FR-034)', () => {
         tag: 'arbeitnehmer',
         zufriedenheit: 30,
         bevölkerungsanteil: 40,
-        gewichte: { infrastruktur: 0.7, bildung: 0.3 }, // ersetzt Base komplett
+        gewichte: { infrastruktur: 0.7, bildung: 0.3 },
       },
       {
         tag: 'landwirte',
         zufriedenheit: 40,
         bevölkerungsanteil: 40,
-        gewichte: { infrastruktur: 0.7, bildung: 0.3 }, // neue Gruppe
+        gewichte: { infrastruktur: 0.7, bildung: 0.3 },
       },
     ],
     entscheidungen: [
       {
-        regel_id: 'entscheidung:investition', // ersetzt Base komplett
+        regel_id: 'entscheidung:investition',
         label: 'Infrastruktur-Investition',
         beschreibung: 'Investiert stark in Infrastruktur',
+        cost: { budget: 5, politisches_kapital: 2 },
+        effects: [{ ziel: 'indikatoren', tag: 'infrastruktur', delta: 3 }],
       },
       {
-        regel_id: 'entscheidung:reform', // neue Entscheidung
+        regel_id: 'entscheidung:reform',
         label: 'Reform',
         beschreibung: 'Eine neue Reform',
+        cost: { budget: 3, politisches_kapital: 1 },
+        effects: [{ ziel: 'indikatoren', tag: 'bildung', delta: 2 }],
       },
     ],
   };
@@ -647,25 +751,29 @@ describe('US-M4-04: Merge-Policy Override vs. Shadow (FR-034)', () => {
         tag: 'arbeitnehmer',
         zufriedenheit: 99,
         bevölkerungsanteil: 99,
-        gewichte: { infrastruktur: 0.99, bildung: 0.01 }, // wird ignoriert (Shadow)
+        gewichte: { infrastruktur: 0.99, bildung: 0.01 },
       },
       {
         tag: 'landwirte',
         zufriedenheit: 40,
         bevölkerungsanteil: 40,
-        gewichte: { infrastruktur: 0.7, bildung: 0.3 }, // neue Gruppe
+        gewichte: { infrastruktur: 0.7, bildung: 0.3 },
       },
     ],
     entscheidungen: [
       {
-        regel_id: 'entscheidung:investition', // wird ignoriert (Shadow)
+        regel_id: 'entscheidung:investition',
         label: 'Ignoriert',
         beschreibung: 'Wird nicht angewendet',
+        cost: { budget: 5, politisches_kapital: 2 },
+        effects: [{ ziel: 'indikatoren', tag: 'infrastruktur', delta: 3 }],
       },
       {
-        regel_id: 'entscheidung:reform', // neue Entscheidung
+        regel_id: 'entscheidung:reform',
         label: 'Reform',
         beschreibung: 'Eine neue Reform',
+        cost: { budget: 3, politisches_kapital: 1 },
+        effects: [{ ziel: 'indikatoren', tag: 'bildung', delta: 2 }],
       },
     ],
   };
@@ -824,6 +932,13 @@ entscheidungen:
   - regel_id: entscheidung:test
     label: Test
     beschreibung: Test
+    cost:
+      budget: 1
+      politisches_kapital: 1
+    effects:
+      - ziel: indikatoren
+        tag: infrastruktur
+        delta: 1
 `;
 
   const basisPackMitDiminishing = `
@@ -845,6 +960,13 @@ entscheidungen:
   - regel_id: entscheidung:test
     label: Test
     beschreibung: Test
+    cost:
+      budget: 1
+      politisches_kapital: 1
+    effects:
+      - ziel: indikatoren
+        tag: infrastruktur
+        delta: 1
 `;
 
   it('Pack ohne diminishing_at → Pack abgelehnt', () => {
@@ -876,6 +998,13 @@ entscheidungen:
   - regel_id: entscheidung:test
     label: Test
     beschreibung: Test
+    cost:
+      budget: 1
+      politisches_kapital: 1
+    effects:
+      - ziel: indikatoren
+        tag: infrastruktur
+        delta: 1
 `;
 
     const ergebnis = loadPack(yamlInhalt, 'ohne-diminishing-wirkung.pack.yaml');
@@ -917,6 +1046,13 @@ entscheidungen:
   - regel_id: entscheidung:test
     label: Test
     beschreibung: Test
+    cost:
+      budget: 1
+      politisches_kapital: 1
+    effects:
+      - ziel: indikatoren
+        tag: infrastruktur
+        delta: 1
 `;
 
     const ergebnis = loadPack(yamlInhalt, 'grenzwerte.pack.yaml');
