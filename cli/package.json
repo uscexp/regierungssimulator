@@ -4,6 +4,9 @@
   "private": true,
   "type": "module",
   "description": "Text-UI für M0 + AutoSim-Balance-Harness",
+  "dependencies": {
+    "@staatslenker/loader": "0.0.0"
+  },
   "exports": {
     ".": "./dist/index.js",
     "./content-pack": "./dist/content-pack.js",

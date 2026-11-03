@@ -6,6 +6,7 @@
  * den Grund und beendet mit Exit-Code 1, statt still auf Defaults zu fallen.
  */
 import { stdin as input } from 'node:process';
+import { readFileSync } from 'node:fs';
 
 import { STANDARD_SETUP, tickRegelnFürMitSetup } from '@staatslenker/cli/content-pack';
 import { setupState } from '@staatslenker/cli/setup-phase';
@@ -13,6 +14,7 @@ import type { SchwierigkeitId } from '@staatslenker/cli/autosim';
 import { tick } from '@staatslenker/core/tick';
 import { demonstration } from '@staatslenker/cli/turn';
 import { interaktiverLoop, type LoopOptionen } from '@staatslenker/cli/repl';
+import { packManager, type PackManagerErgebnis } from '@staatslenker/loader';
 
 /** Die Startwerte des Boot: Seed 1234 (derselbe Seed wie das RNG-Golden-Fixture), Schwierigkeit normal. */
 export const STANDARD_SEED = 1234;
@@ -21,6 +23,14 @@ export const STANDARD_JAHRE = 6;
 export interface CliOptionen extends LoopOptionen {
   /** true erzwingt die nicht-interaktive Demonstration (CI-Boot). */
   readonly demo: boolean;
+  /** Pack-Liste anzeigen */
+  readonly packList: boolean;
+  /** Pack aktivieren */
+  readonly packEnable: string | undefined;
+  /** Pack deaktivieren */
+  readonly packDisable: string | undefined;
+  /** Pack laden */
+  readonly packLoad: string | undefined;
 }
 
 export type ParseErgebnis =
@@ -28,11 +38,24 @@ export type ParseErgebnis =
   | { readonly ok: false; readonly grund: string };
 
 export function optionsAusArgs(args: readonly string[]): ParseErgebnis {
-  const optionen: { seed: number; schwierigkeit: SchwierigkeitId; jahre: number; demo: boolean } = {
+  const optionen: {
+    seed: number;
+    schwierigkeit: SchwierigkeitId;
+    jahre: number;
+    demo: boolean;
+    packList: boolean;
+    packEnable: string | undefined;
+    packDisable: string | undefined;
+    packLoad: string | undefined;
+  } = {
     seed: STANDARD_SEED,
     schwierigkeit: 'normal',
     jahre: STANDARD_JAHRE,
     demo: false,
+    packList: false,
+    packEnable: undefined,
+    packDisable: undefined,
+    packLoad: undefined,
   };
 
   for (let i = 0; i < args.length; i++) {
@@ -70,18 +93,93 @@ export function optionsAusArgs(args: readonly string[]): ParseErgebnis {
       case '--demo':
         optionen.demo = true;
         break;
+      case '--pack-list':
+        optionen.packList = true;
+        break;
+      case '--pack-enable': {
+        if (!wert) {
+          return { ok: false, grund: `--pack-enable braucht einen Pack-Namen` };
+        }
+        optionen.packEnable = wert;
+        i++;
+        break;
+      }
+      case '--pack-disable': {
+        if (!wert) {
+          return { ok: false, grund: `--pack-disable braucht einen Pack-Namen` };
+        }
+        optionen.packDisable = wert;
+        i++;
+        break;
+      }
+      case '--pack-load': {
+        if (!wert) {
+          return { ok: false, grund: `--pack-load braucht eine Datei` };
+        }
+        optionen.packLoad = wert;
+        i++;
+        break;
+      }
       default:
         return {
           ok: false,
-          grund: `Unbekannte Flag "${flag}" — bekannt sind --seed, --schwierigkeit, --jahre, --demo`,
+          grund: `Unbekannte Flag "${flag}" — bekannt sind --seed, --schwierigkeit, --jahre, --demo, --pack-list, --pack-enable, --pack-disable, --pack-load`,
         };
     }
   }
 
-  return { ok: true, optionen };
+  return { ok: true, optionen: optionen as CliOptionen };
 }
 
-/** Der Boot-Report: der Kern ist geladen und der Turn-Runner ist vorhanden (US-M0-14). */
+/**
+ * Führt Pack-Operationen aus (laden, aktivieren, deaktivieren, auflisten).
+ * Gibt true zurück, wenn eine Pack-Operation ausgeführt wurde und das Programm beendet werden soll.
+ */
+export function packOperation(optionen: CliOptionen): { durchgefuehrt: boolean; meldung: string } {
+  if (optionen.packList) {
+    const packe = packManager.listePacks();
+    if (packe.length === 0) {
+      return { durchgefuehrt: true, meldung: 'Keine Packs geladen.' };
+    }
+    const zeilen = packe.map(
+      (p) => `  ${p.aktiv ? '[x]' : '[ ]'} ${p.name} (${p.datei})`,
+    );
+    return {
+      durchgefuehrt: true,
+      meldung: `Geladene Packs:
+${zeilen.join('\n')}`,
+    };
+  }
+
+  if (optionen.packEnable) {
+    const ergebnis = packManager.aktivierePack(optionen.packEnable);
+    return { durchgefuehrt: true, meldung: ergebnis.meldung };
+  }
+
+  if (optionen.packDisable) {
+    const ergebnis = packManager.deaktivierePack(optionen.packDisable);
+    return { durchgefuehrt: true, meldung: ergebnis.meldung };
+  }
+
+  if (optionen.packLoad) {
+    try {
+      const yamlInhalt = readFileSync(optionen.packLoad, 'utf-8');
+      const ergebnis = packManager.ladePack(yamlInhalt, optionen.packLoad);
+      return { durchgefuehrt: true, meldung: ergebnis.meldung };
+    } catch (e) {
+      return {
+        durchgefuehrt: true,
+        meldung: `Pack-Laden fehlgeschlagen: ${e instanceof Error ? e.message : String(e)}`,
+      };
+    }
+  }
+
+  return { durchgefuehrt: false, meldung: '' };
+}
+
+/**
+ * Der Boot-Report: der Kern ist geladen und der Turn-Runner ist vorhanden (US-M0-14).
+ */
 export function boot(optionen: CliOptionen): string {
   const kernGeladen = typeof tick === 'function';
   return (
@@ -90,7 +188,9 @@ export function boot(optionen: CliOptionen): string {
   );
 }
 
-/** Der Einstieg: mit TTY interaktiv spielen, ohne TTY die deterministische Demonstration. */
+/**
+ * Der Einstieg: mit TTY interaktiv spielen, ohne TTY die deterministische Demonstration.
+ */
 export async function main(args: readonly string[]): Promise<number> {
   const parsed = optionsAusArgs(args);
   if (!parsed.ok) {
@@ -98,29 +198,24 @@ export async function main(args: readonly string[]): Promise<number> {
     return 1;
   }
 
-  const optionen = parsed.optionen;
-  console.log(boot(optionen));
-
-  if (!optionen.demo && input.isTTY === true) {
-    await interaktiverLoop(optionen);
+  // Pack-Operationen zuerst ausführen (bevor das Spiel startet)
+  const packOp = packOperation(parsed.optionen);
+  if (packOp.durchgefuehrt) {
+    console.log(packOp.meldung);
     return 0;
   }
 
-  // Nicht interaktiv: ein echter Turn-Loop, deterministisch über den Seed im State (FR-004). Der
-  // Standard-Setup wird vor Turn 1 angewendet (US-M1-02/D22): der Gate ist eine Kern-Datenregel aus
-  // dem Register, ohne Setup würde der dev-Tick werfen — der Boot spielt ihn daher zuerst.
-  const regeln = tickRegelnFürMitSetup(optionen.schwierigkeit);
-  console.log(
-    `Setup (Standard): Regierungsform ${STANDARD_SETUP.regierungsform}, Konstitution ${STANDARD_SETUP.konstitutions_ids.length} Entscheidungen.`,
-  );
-  for (const zeile of demonstration(
-    optionen.seed,
-    optionen.schwierigkeit,
-    optionen.jahre,
-    regeln,
-    (seed: number) => setupState(seed, STANDARD_SETUP.regierungsform),
-  )) {
-    console.log(zeile);
+  if (parsed.optionen.demo) {
+    await demonstration(
+      parsed.optionen.seed,
+      parsed.optionen.schwierigkeit,
+      parsed.optionen.jahre,
+      tickRegelnFürMitSetup(parsed.optionen.schwierigkeit),
+      (seed: number) => setupState(seed, STANDARD_SETUP.regierungsform),
+    );
+    return 0;
   }
+
+  await interaktiverLoop(parsed.optionen);
   return 0;
 }
