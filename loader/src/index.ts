@@ -25,15 +25,15 @@ export type PackSchemaVersion = typeof PACK_SCHEMA_VERSIONS[number];
 const LEVEL = z.number().finite().min(0).max(100);
 const TAG = z.string().min(1).regex(/^[a-z][a-z0-9_]*$/);
 
-/** Eine Indikator-Regel: tag muss auf einen bekannten Indikator verweisen. */
+/** Eine Indikator-Regel: tag muss auf einen bekannten Indikator verweisen. diminishing_at und diminishing_wirkung sind Pflichtfelder (US-M4-05). */
 export const indikatorRegelSchema = z
   .object({
     regel_id: z.string().min(1).optional(),
     tag: TAG,
     verschleiß: z.number().finite().nonnegative(),
     budget_wirkung: z.number().finite().nonnegative(),
-    diminishing_at: LEVEL.optional(),
-    diminishing_wirkung: z.number().finite().nonnegative().optional(),
+    diminishing_at: LEVEL,
+    diminishing_wirkung: z.number().finite().nonnegative(),
     gate: z.object({ indikator: TAG, min: LEVEL }).optional(),
   })
   .strict();

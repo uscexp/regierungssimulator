@@ -28,8 +28,8 @@ function summe(werte: readonly number[]): number {
 export const gateSchema = z.object({ indikator: TAG, min: LEVEL }).strict();
 
 /**
- * Eine Indikator-Regel. `diminishing_at` und `diminishing_wirkung` sind ein Paar — beide oder
- * keines. Ein Schwellenwert ohne abgesenkte Wirkung ist ein Balance-Fehler, kein Default (FR-002,
+ * Eine Indikator-Regel. `diminishing_at` und `diminishing_wirkung` sind Pflichtfelder (US-M4-05).
+ * Ein Schwellenwert ohne abgesenkte Wirkung ist ein Balance-Fehler, kein Default (FR-002,
  * Lens-Blocker zu PR #5): das Schema lehnt ihn ab, statt auf 0 zu fallen.
  */
 export const indikatorRegelSchema = z
@@ -39,15 +39,11 @@ export const indikatorRegelSchema = z
     tag: TAG,
     verschleiß: z.number().finite().nonnegative(),
     budget_wirkung: z.number().finite().nonnegative(),
-    diminishing_at: LEVEL.optional(),
-    diminishing_wirkung: z.number().finite().nonnegative().optional(),
+    diminishing_at: LEVEL,
+    diminishing_wirkung: z.number().finite().nonnegative(),
     gate: gateSchema.optional(),
   })
-  .strict()
-  .refine(
-    (regel) => (regel.diminishing_at === undefined) === (regel.diminishing_wirkung === undefined),
-    { message: 'diminishing_at und diminishing_wirkung sind ein Paar — beide oder keines' },
-  );
+  .strict();
 
 /** Die Steuermodell-Schlüssel sind Kern-Vokabular (core/zufriedenheit), vier feste Felder. */
 const steuermodellSchluessel = z
