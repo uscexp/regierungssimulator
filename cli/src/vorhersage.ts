@@ -17,22 +17,12 @@
  * Zuteilung ergeben dieselbe Prognose. Die Kaputt-Probe wirft im Dev-Modus laut (eine kaputte Regel
  * wäre ein Bug, kein Spielzustand); der `produktion`-Modus überspringt die kaputte Regel wie der Tick.
  */
+import { prognose as kernPrognose, type Prognose } from '@staatslenker/core/tick';
 import type { GameState } from '@staatslenker/core/state';
-import { tick, type TickRegeln } from '@staatslenker/core/tick';
+import type { TickRegeln } from '@staatslenker/core/tick';
 import type { Modus } from '@staatslenker/core/invariant';
 
-/** Der verlorene Machtcheck, den die Prognose in den nächsten Jahren vorhersagt. */
-export interface Prognose {
-  /** Das Jahr, in dem der Machtcheck aus dieser Zuteilung heraus verloren geht. */
-  readonly jahr: number;
-  /** Ursache aus dem Pack (`wahl:gewichtete_unter_47` bzw. `wahl:schwächste_unter_35`). */
-  readonly grund_id: string;
-  /** Die gemessenen Werte hängen von der gereichten Mechanik ab (US-M1-03): nur die Wahl hat Ø und schwächste Gruppe. */
-  readonly gewichtete_zufriedenheit?: number;
-  readonly schwächste_gruppe?: string;
-  /** Die Zustimmung der parlamentarischen Mehrheit als Anteil (0–1), aus der Mehrheit-Variante. */
-  readonly zustimmung?: number;
-}
+export type { Prognose };
 
 /** Nach so vielen Jahren bricht die Prognose ab — der Session-Hard-Cap ist 50 Jahre (§7). */
 const PROGNOSE_CAP = 50;
@@ -49,30 +39,5 @@ export function prognose(
   modus: Modus = 'dev',
   capJahre: number = PROGNOSE_CAP,
 ): Prognose | null {
-  // Ein bereits verlorenes Spiel hat keine zukünftige Warnung — der Loop meldet das Spielende.
-  if (state.wahl_niederlage !== undefined) return null;
-
-  let aktuell = state;
-  for (let schritt = 0; schritt < capJahre; schritt++) {
-    const ergebnis = tick(aktuell, { zuteilung }, regeln, modus);
-    const wahl = ergebnis.wahl;
-    if (wahl !== undefined && !wahl.gewonnen) {
-      // Die gemessenen Werte kommen aus der gereichten Variante (US-M1-03): nur die Wahl hat
-      // Ø und schwächste Gruppe, die Mehrheit hat die Zustimmung, die Putsch-Roll keine Messwert-Zeile.
-      return Object.freeze({
-        jahr: aktuell.jahr,
-        grund_id: wahl.grund_id,
-        ...(wahl.typ === 'praesidentialwahl'
-          ? {
-              gewichtete_zufriedenheit: wahl.gewichtete_zufriedenheit,
-              schwächste_gruppe: wahl.schwächste_gruppe,
-            }
-          : wahl.typ === 'parlamentmehrheit'
-            ? { zustimmung: wahl.zustimmung }
-            : {}),
-      });
-    }
-    aktuell = ergebnis.state;
-  }
-  return null;
+  return kernPrognose(state, regeln, zuteilung, modus, capJahre);
 }

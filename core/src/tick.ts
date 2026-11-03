@@ -59,6 +59,7 @@ import type {
   GruppenTag,
   GameState,
   IndikatorTag,
+  RngState,
 } from './state.js';
 import type { Wahlprüfung } from './wahl.js';
 
@@ -719,4 +720,72 @@ function zufriedenheitsSpuren(
   }
 
   return spuren;
+}
+
+/**
+ * Der verlorene Machtcheck, den die Prognose in den nächsten Jahren vorhersagt.
+ */
+export interface Prognose {
+  /** Das Jahr, in dem der Machtcheck aus dieser Zuteilung heraus verloren geht. */
+  readonly jahr: number;
+  /** Ursache aus dem Pack (`wahl:gewichtete_unter_47` bzw. `wahl:schwächste_unter_35`). */
+  readonly grund_id: string;
+  /** Die gemessenen Werte hängen von der gereichten Mechanik ab (US-M1-03): nur die Wahl hat Ø und schwächste Gruppe. */
+  readonly gewichtete_zufriedenheit?: number;
+  readonly schwächste_gruppe?: string;
+  /** Die Zustimmung der parlamentarischen Mehrheit als Anteil (0–1), aus der Mehrheit-Variante. */
+  readonly zustimmung?: number;
+}
+
+/**
+ * Prognose des nächsten verlorenen Machtchecks bei unveränderter Zuteilung (US-M3-02, FR-028).
+ *
+ * Die Prognose ist ein Dry-Run des echten Kern-Loops: Sie ruft `tick` wiederholt mit
+ * derselben Zuteilung auf und meldet den ersten verlorenen Machtcheck. Der RNG-Zustand
+ * wird geforkt (ADR-009): der echte State-RNG bleibt unverbraucht, die Prognose arbeitet
+ * mit einem geklonten RNG-Zustand.
+ *
+ * `null` heißt: innerhalb des Caps verliert dieser Lauf keinen Machtcheck.
+ */
+export function prognose(
+  state: GameState,
+  regeln: TickRegeln,
+  zuteilung: Readonly<Record<string, number>>,
+  modus: Modus = 'dev',
+  capJahre: number = 50,
+): Prognose | null {
+  if (state.wahl_niederlage !== undefined) return null;
+
+  // RNG-Fork: klone den RNG-Zustand, damit der echte RNG-Stream unverbraucht bleibt (ADR-009)
+  let prognoseRng: RngState = { ...state.rng };
+  let aktuell = Object.freeze({ ...state, rng: prognoseRng }) as GameState;
+
+  for (let schritt = 0; schritt < capJahre; schritt++) {
+    const ergebnis = tick(aktuell, { zuteilung }, regeln, modus);
+    const wahl = ergebnis.wahl;
+
+    if (wahl !== undefined && !wahl.gewonnen) {
+      return Object.freeze({
+        jahr: aktuell.jahr,
+        grund_id: wahl.grund_id,
+        ...(wahl.typ === 'praesidentialwahl'
+          ? {
+              gewichtete_zufriedenheit: wahl.gewichtete_zufriedenheit,
+              schwächste_gruppe: wahl.schwächste_gruppe,
+            }
+          : wahl.typ === 'parlamentmehrheit'
+            ? { zustimmung: wahl.zustimmung }
+            : {}),
+      });
+    }
+
+    // Für den nächsten Durchlauf: verwende den neuen RNG-Zustand des Ergebnisses.
+    // Der ursprüngliche state.rng bleibt unverändert (tick ist pure, ADR-002).
+    aktuell = Object.freeze({
+      ...ergebnis.state,
+      rng: ergebnis.state.rng,
+    }) as GameState;
+  }
+
+  return null;
 }
