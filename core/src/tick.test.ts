@@ -1845,7 +1845,7 @@ describe('tick — dauerhafte Regelsatz-Modifikatoren der Konstitution (US-M1-06
         ...staatGesundheitNiedrig,
         indikatoren: { ...START_INDICATOREN, gesundheit: 40, radikalisierung: 40 },
       });
-      const gesundheitVorher = staatGesundheit40.indikatoren.gesundheit;
+      const gesundheitVorher = staatGesundheit40.indikatoren.gesundheit ?? 0;
       const ergebnis = tick(
         staatGesundheit40,
         {
