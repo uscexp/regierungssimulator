@@ -70,6 +70,8 @@ export interface TickKarte {
   readonly pk_kosten: number;
   readonly wirkung: readonly Effekt[];
   readonly wirkdauer_jahre?: number;
+  /** Cooldown in Jahren (US-M3-04, FR-030): Karte ist nach dem Spielen für cooldown Jahre gesperrt. */
+  readonly cooldown?: number;
   /** Constraints: Regierungsform und Indikator-Bedingungen müssen erfüllt sein (US-M3-03, FR-032). */
   readonly constraints?: readonly {
     indikator?: { tag: string; min?: number; max?: number };
@@ -530,9 +532,10 @@ export function tick(
 
   // 3) Karten: PK zuerst prüfen und verbrauchen, dann ins Entscheidungsgedächtnis schreiben.
   let mitKarten = aktuell;
+  let neueCooldowns = { ...aktuell.cooldowns };
   for (const karte of action.karten ?? []) {
-    // Constraints prüfen (US-M3-03, FR-032): Regierungsform und Indikator-Bedingungen
-    if (!karteErfuelltConstraints(karte, aktuell)) {
+    // Constraints prüfen (US-M3-03, FR-032): Regierungsform, Indikator-Bedingungen, Cooldown
+    if (!karteErfuelltConstraints(karte, aktuell, mitKarten.cooldowns)) {
       throw new TypeError(
         `Karte "${karte.regel_id}" verletzt Constraints — nicht spielbar unter aktuellen Bedingungen`,
       );
@@ -548,8 +551,12 @@ export function tick(
       wirkung: karte.wirkung,
       wirkdauer_jahre: karte.wirkdauer_jahre ?? BESCHLUSS_WIRKDAUER,
     });
+    // Cooldown setzen (US-M3-04, FR-030): Karte ist für karte.cooldown Jahre gesperrt
+    if (karte.cooldown !== undefined) {
+      neueCooldowns = { ...neueCooldowns, [karte.regel_id]: aktuell.jahr + karte.cooldown };
+    }
   }
-  aktuell = mitKarten;
+  aktuell = Object.freeze({ ...mitKarten, cooldowns: neueCooldowns });
 
   // 3b) Legitimität (US-M1-10, FR-019):
   // Legitimität steigt mit Zufriedenheit + Konstitutionstreue, sinkt mit Skandalen/Zensur.

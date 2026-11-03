@@ -123,6 +123,8 @@ export interface GameState {
   readonly zufriedenheits_trace: Readonly<Record<GruppenTag, readonly DeltaGrund[]>>;
   /** Entscheidungsgedächtnis (FR-006, US-M0-08) — Beschlüsse, die noch wirken. */
   readonly beschlüsse: readonly AktiverBeschluss[];
+  /** Cooldowns pro Entscheidungskarte (US-M3-04, FR-030): Regel-ID → Jahr bis (inklusive) gesperrt. */
+  readonly cooldowns: Readonly<Record<string, number>>;
   /** Verlorener Machtcheck (US-M0-12) — gesetzt, wenn eine Wahl verloren wurde; der CLI zeigt das Spielende. */
   readonly wahl_niederlage?: WahlNiederlage;
 }
@@ -135,8 +137,9 @@ export const SCHEMA_VERSION = 1;
  * immer leer, und `erzeugeGameState` schreibt das leere Array, damit der Snapshot überall
  * denselben Shape hat (Save-Roundtrip, ADR-005).
  */
-export type Startkonfiguration = Omit<GameState, 'schema_version' | 'beschlüsse'> & {
+export type Startkonfiguration = Omit<GameState, 'schema_version' | 'beschlüsse' | 'cooldowns'> & {
   readonly beschlüsse?: readonly AktiverBeschluss[];
+  readonly cooldowns?: Readonly<Record<string, number>>;
 };
 
 /** Tiefes Einfrieren eines Snapshot-Werts. Der Kern erzeugt keine mutierbaren Objekte. */
@@ -217,6 +220,7 @@ export function erzeugeGameState(konfiguration: Startkonfiguration): GameState {
   return freezeSnapshot({
     ...konfiguration,
     beschlüsse: konfiguration.beschlüsse ?? [],
+    cooldowns: konfiguration.cooldowns ?? {},
     schema_version: SCHEMA_VERSION,
   }) as GameState;
 }
