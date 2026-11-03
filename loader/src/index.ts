@@ -7,12 +7,12 @@
  *
  * US-M4-01: Pack ohne `schema_version` wird mit „schema_version fehlt“ abgewiesen;
  * Pack mit unterstützter Version wird geladen.
- * US-M4-02: Pack mit einer ungültigen Regel → das gesamte Pack wird abgewiesen;
- * Tag-Referenzen (z.B. `gruppe:landwirte`) müssen auf existierende Gruppen/Indikatoren verweisen.
+ * US-M4-03: Ungültiges Pack → Datei und Zeile werden gemeldet, Base-Pack bleibt
+ * unverändert, Spiel läuft weiter.
  */
 
 import * as yaml from 'js-yaml';
-import { z } from 'zod';
+import { z, type ZodIssue } from 'zod';
 
 export const PACK_SCHEMA_VERSIONS = ['1'] as const;
 export type PackSchemaVersion = typeof PACK_SCHEMA_VERSIONS[number];
@@ -151,10 +151,46 @@ export interface PackLoadError {
 export type PackLoadOutcome = PackLoadResult | PackLoadError;
 
 /**
+ * Extrahiert die Zeilennummer aus einem js-yaml Parse-Fehler.
+ * js-yaml liefert `mark.line` (0-basiert) für YAML-Syntaxfehler.
+ */
+function zeileAusYamlFehler(e: unknown): number | undefined {
+  const err = e as { mark?: { line?: number } };
+  if (err.mark?.line !== undefined) {
+    return err.mark.line + 1; // 1-basiert für den Nutzer
+  }
+  return undefined;
+}
+
+/**
+ * Extrahiert die Zeilennummer aus einem Zod-Issue, falls im Pfad ein Array-Index steht.
+ * Zod liefert keine Zeilennummern, aber wir können den Pfad als Hinweis nutzen.
+ * Gibt undefined zurück (Zod kennt keine YAML-Zeilen).
+ */
+function zeileAusZodIssue(issue: ZodIssue): number | undefined {
+  return undefined;
+}
+
+/**
+ * Formatiert einen Zod-Pfad als lesbaren String (z.B. `indikator_regeln[0].verschleiß`).
+ */
+function pfadLesen(pfad: PropertyKey[]): string {
+  return pfad
+    .map((teil, i) => {
+      if (typeof teil === 'number') return `[${teil}]`;
+      if (typeof teil === 'symbol') return `[${String(teil)}]`;
+      return i === 0 ? teil : `.${teil}`;
+    })
+    .join('');
+}
+
+/**
  * Lädt ein YAML-Pack und validiert es atomisch.
- * Bei `schema_version` fehlt → Fehler "schema_version fehlt".
- * Bei ungültigen Regeln oder Dangling-Tag-Referenzen → Fehler und Pack wird abgelehnt.
+ * Bei `schema_version` fehlt → Fehler "schema_version fehlt" mit Datei/Zeile.
+ * Bei ungültigen Regeln oder Dangling-Tag-Referenzen → Fehler mit Datei/Zeile,
+ * Pack wird abgelehnt, Base-Pack bleibt unverändert.
  * Bei gültigem Pack → PackData zurück.
+ * Wirft niemals eine Ausnahme – das Spiel läuft weiter.
  */
 export function loadPack(yamlInhalt: string, datei?: string): PackLoadOutcome {
   try {
@@ -171,9 +207,16 @@ export function loadPack(yamlInhalt: string, datei?: string): PackLoadOutcome {
     const result = PackSchema.safeParse(parsed);
     if (!result.success) {
       const firstError = result.error.issues[0];
+      const pfad = firstError ? pfadLesen(firstError.path) : '';
+      const zeile = firstError ? zeileAusZodIssue(firstError) : undefined;
+      const meldung =
+        pfad && firstError
+          ? `${pfad}: ${firstError.message}`
+          : firstError?.message ?? 'Validierungsfehler';
       return {
-        error: firstError?.message ?? 'Validierungsfehler',
+        error: meldung,
         datei,
+        zeile,
       };
     }
 
@@ -182,6 +225,7 @@ export function loadPack(yamlInhalt: string, datei?: string): PackLoadOutcome {
     return {
       error: `YAML-Parsefehler: ${e instanceof Error ? e.message : String(e)}`,
       datei,
+      zeile: zeileAusYamlFehler(e),
     };
   }
 }

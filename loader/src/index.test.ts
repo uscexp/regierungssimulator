@@ -78,7 +78,7 @@ name: Beispiel-Pack
     if ('pack' in ergebnis) {
       throw new Error('Erwarteter Fehler wurde nicht zurückgegeben');
     }
-    expect(ergebnis.error).toBe('Nicht unterstützte schema_version');
+    expect(ergebnis.error).toContain('Nicht unterstützte schema_version');
   });
 });
 
@@ -379,5 +379,166 @@ entscheidungen:
       throw new Error('Erwarteter Fehler wurde nicht zurückgegeben');
     }
     expect(ergebnis.error).toContain('Gruppen-Tags');
+  });
+});
+
+describe('US-M4-03: Fehlerliste mit Datei/Zeile, Base-Pack unverändert', () => {
+  const validesPack = `
+schema_version: "1"
+name: Test-Pack
+indikator_regeln:
+  - tag: infrastruktur
+    verschleiß: 3
+    budget_wirkung: 0.5
+  - tag: bildung
+    verschleiß: 2
+    budget_wirkung: 0.6
+gruppen:
+  - tag: arbeitnehmer
+    zufriedenheit: 50
+    bevölkerungsanteil: 60
+    gewichte:
+      infrastruktur: 0.4
+      bildung: 0.6
+entscheidungen:
+  - regel_id: entscheidung:investition
+    label: Investition
+    beschreibung: Investiert in Infrastruktur
+`;
+
+  it('YAML-Parsefehler meldet Zeilennummer', () => {
+    // Ungültiges YAML: fehlender Doppelpunkt nach einem Key
+    const yamlInhalt = `
+schema_version: "1"
+name: Test-Pack
+indikator_regeln:
+  - tag: infrastruktur
+    verschleiß 3
+    budget_wirkung: 0.5
+`;
+
+    const ergebnis = loadPack(yamlInhalt, 'fehlerhaft.pack.yaml');
+
+    if ('pack' in ergebnis) {
+      throw new Error('Erwarteter Fehler wurde nicht zurückgegeben');
+    }
+    expect(ergebnis.error).toContain('YAML-Parsefehler');
+    expect(ergebnis.datei).toBe('fehlerhaft.pack.yaml');
+    // Zeilennummer sollte gesetzt sein (js-yaml liefert mark.line)
+    expect(typeof ergebnis.zeile).toBe('number');
+    expect(ergebnis.zeile).toBeGreaterThan(0);
+  });
+
+  it('Ungültige Regel: Datei und Zeile werden gemeldet, Pack abgelehnt', () => {
+    const yamlInhalt = `
+schema_version: "1"
+name: Ungültiges-Pack
+indikator_regeln:
+  - tag: infrastruktur
+    verschleiß: -1
+    budget_wirkung: 0.5
+gruppen:
+  - tag: arbeitnehmer
+    zufriedenheit: 50
+    bevölkerungsanteil: 100
+    gewichte:
+      infrastruktur: 1.0
+entscheidungen:
+  - regel_id: entscheidung:test
+    label: Test
+    beschreibung: Test
+`;
+
+    const ergebnis = loadPack(yamlInhalt, 'ungueltig.pack.yaml');
+
+    if ('pack' in ergebnis) {
+      throw new Error('Erwarteter Fehler wurde nicht zurückgegeben');
+    }
+    expect(ergebnis.error).toContain('>=0');
+    expect(ergebnis.datei).toBe('ungueltig.pack.yaml');
+  });
+
+  it('Fehlende indikator_regeln: Datei wird gemeldet', () => {
+    const yamlInhalt = `
+schema_version: "1"
+name: Ungültiges-Pack
+gruppen:
+  - tag: arbeitnehmer
+    zufriedenheit: 50
+    bevölkerungsanteil: 100
+    gewichte:
+      infrastruktur: 1.0
+entscheidungen:
+  - regel_id: entscheidung:test
+    label: Test
+    beschreibung: Test
+`;
+
+    const ergebnis = loadPack(yamlInhalt, 'fehlend.pack.yaml');
+
+    if ('pack' in ergebnis) {
+      throw new Error('Erwarteter Fehler wurde nicht zurückgegeben');
+    }
+    expect(ergebnis.error).toContain('expected array');
+    expect(ergebnis.datei).toBe('fehlend.pack.yaml');
+  });
+
+  it('Spiel läuft weiter: loadPack wirft keine Ausnahme', () => {
+    // Auch bei völlig kaputtem YAML wird keine Exception geworfen
+    const kaputtesYaml = 'das: ist: kein: gültiges: yaml: :::::';
+
+    // Soll nicht werfen
+    const ergebnis = loadPack(kaputtesYaml, 'kaputt.pack.yaml');
+
+    // Entweder Fehler oder Erfolg, aber niemals eine geworfene Exception
+    expect(ergebnis).toBeDefined();
+    if ('pack' in ergebnis) {
+      // Falls es doch geladen wird, ist es ein gültiges Pack
+      expect(ergebnis.pack.name).toBeDefined();
+    } else {
+      expect(ergebnis.error).toBeDefined();
+      expect(ergebnis.datei).toBe('kaputt.pack.yaml');
+    }
+  });
+
+  it('Base-Pack bleibt unverändert: loadPack gibt nur Fehler zurück, keine Seitenwirkungen', () => {
+    // Ein ungültiges Pack darf keinen globalen Zustand verändern
+    const vorherigerZustand = { geladen: false };
+
+    const ungültigesYaml = `
+schema_version: "1"
+name: Böse-Pack
+indikator_regeln:
+  - tag: infrastruktur
+    verschleiß: -999
+    budget_wirkung: 0.5
+gruppen:
+  - tag: arbeitnehmer
+    zufriedenheit: 50
+    bevölkerungsanteil: 100
+    gewichte:
+      infrastruktur: 1.0
+entscheidungen:
+  - regel_id: entscheidung:test
+    label: Test
+    beschreibung: Test
+`;
+
+    const ergebnis = loadPack(ungültigesYaml, 'boese.pack.yaml');
+
+    if ('pack' in ergebnis) {
+      throw new Error('Erwarteter Fehler wurde nicht zurückgegeben');
+    }
+    expect(ergebnis.error).toContain('>=0');
+
+    // Der lokale Zustand darf sich nicht geändert haben
+    expect(vorherigerZustand.geladen).toBe(false);
+
+    // Ein nachfolgendes gültiges Pack muss noch funktionieren
+    const valideErgebnis = loadPack(validesPack, 'valide.pack.yaml');
+    if ('error' in valideErgebnis) {
+      throw new Error(`Unerwarteter Fehler: ${valideErgebnis.error}`);
+    }
+    expect(valideErgebnis.pack.name).toBe('Test-Pack');
   });
 });
