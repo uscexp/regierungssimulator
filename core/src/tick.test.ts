@@ -19,10 +19,14 @@ import type { SteuerlastTabelle } from '@staatslenker/core/zufriedenheit';
 import type { EreignisRegel } from '@staatslenker/core/ereignisse';
 import {
   BILDUNG_FORSCHUNG_KARTEN,
+  REFORMEN_VERFASSUNG_KARTEN,
+  SICHERHEIT_JUSTIZ_KARTEN,
   SOZIALES_GESUNDHEIT_KARTEN,
   START_INDICATOREN,
   WIRTSCHAFT_BUDGET_KARTEN,
 } from '@staatslenker/content-base';
+import { type SchwierigkeitsPack } from '@staatslenker/core/indikatoren';
+import { pkRegeneration } from '@staatslenker/core/kapital';
 import type {
   KonstitutionsEntscheidung,
   RegierungRegel,
@@ -1858,6 +1862,91 @@ describe('tick — dauerhafte Regelsatz-Modifikatoren der Konstitution (US-M1-06
       expect(ergebnis.state.indikatoren.gesundheit).toBe(
         gesundheitVorher + 1, // +3 Karte, −2 Verschleiß
       );
+    });
+  });
+
+  describe('PK-Kosten Budgetierung (US-M3-12, FR-011, NFR-Balance)', () => {
+    const regelnAlleKarten: TickRegeln = {
+      ...regelnMit({ regierung: regierungParlamentarisch }),
+      karten_katalog: [
+        ...BILDUNG_FORSCHUNG_KARTEN,
+        ...WIRTSCHAFT_BUDGET_KARTEN,
+        ...SOZIALES_GESUNDHEIT_KARTEN,
+        ...SICHERHEIT_JUSTIZ_KARTEN,
+        ...REFORMEN_VERFASSUNG_KARTEN,
+      ],
+    };
+
+    it('Alle Karten haben PK-Kosten 1–3', () => {
+      for (const karte of regelnAlleKarten.karten_katalog ?? []) {
+        expect(karte.pk_kosten).toBeGreaterThanOrEqual(1);
+        expect(karte.pk_kosten).toBeLessThanOrEqual(3);
+      }
+    });
+
+    it('Nicht alle Karten in einem Jahr spielbar (PK-Limit 12, Slots 2–5)', () => {
+      const gesamtKosten = regelnAlleKarten.karten_katalog!.reduce(
+        (summe, karte) => summe + karte.pk_kosten,
+        0,
+      );
+      expect(gesamtKosten).toBeGreaterThan(12); // Mehr als max PK
+      expect(gesamtKosten).toBeGreaterThan(5 * 3); // Mehr als max Slots × max Kosten
+    });
+
+    it('PK-Regeneration: Legitimität 50, normal → 5 PK', () => {
+      const regen = pkRegeneration(50, SCHWIERIGKEIT_NORMAL);
+      expect(regen).toBe(5); // 50/10 × 1.0 = 5
+    });
+
+    it('PK-Regeneration: Legitimität 0 → Minimum 1', () => {
+      const regen = pkRegeneration(0, SCHWIERIGKEIT_NORMAL);
+      expect(regen).toBe(1); // Minimum 1
+    });
+
+    it('PK-Regeneration: Legitimität 70, leicht → 8.4', () => {
+      const leicht: SchwierigkeitsPack = {
+        ...SCHWIERIGKEIT_NORMAL,
+        verschleiß_multiplikator: 0.7,
+        pk_regeneration: 1.2,
+      };
+      const regen = pkRegeneration(70, leicht);
+      expect(regen).toBe(8.4); // 70/10 × 1.2 = 8.4
+    });
+
+    it('PK-Regeneration: Legitimität 100, schwer → 8', () => {
+      const schwer: SchwierigkeitsPack = {
+        ...SCHWIERIGKEIT_NORMAL,
+        verschleiß_multiplikator: 1.0,
+        pk_regeneration: 0.8,
+      };
+      const regen = pkRegeneration(100, schwer);
+      expect(regen).toBe(8); // 100/10 × 0.8 = 8
+    });
+
+    it('Tick mit mehr Karten als PK erlaubt → TypeError', () => {
+      const staatTest = stateMit({
+        setup: { regierungsform: 'parlamentarisch', konstitutions_ids: [] },
+        politisches_kapital: 5,
+        legitimitaet: 50,
+      });
+      const regelnTest: TickRegeln = {
+        ...regelnMit({ regierung: regierungParlamentarisch }),
+        karten_katalog: [
+          ...BILDUNG_FORSCHUNG_KARTEN,
+          ...WIRTSCHAFT_BUDGET_KARTEN,
+          ...SOZIALES_GESUNDHEIT_KARTEN,
+          ...SICHERHEIT_JUSTIZ_KARTEN,
+          ...REFORMEN_VERFASSUNG_KARTEN,
+        ],
+      };
+      const zuVieleKarten: TickAction = {
+        zuteilung: {},
+        karten: [
+          ...regelnTest.karten_katalog!.slice(0, 5),
+          ...regelnTest.karten_katalog!.slice(0, 5),
+        ],
+      };
+      expect(() => tick(staatTest, zuVieleKarten, regelnTest, 'dev')).toThrow();
     });
   });
 });
