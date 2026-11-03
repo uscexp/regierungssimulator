@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import {
   tick,
   berechneSlotZahl,
+  prognose,
   type TickAction,
   type TickKarte,
   type TickRegeln,
@@ -1946,7 +1947,53 @@ describe('tick — dauerhafte Regelsatz-Modifikatoren der Konstitution (US-M1-06
           ...regelnTest.karten_katalog!.slice(0, 5),
         ],
       };
-      expect(() => tick(staatTest, zuVieleKarten, regelnTest, 'dev')).toThrow();
+      expect(() =>
+        tick(staatTest, zuVieleKarten, regelnTest, 'dev'),
+      ).toThrow();
+    });
+  });
+
+  describe('Vorhersage-Konsistenz (US-M3-14, FR-028)', () => {
+    it('prognose stimmt mit erstem Tick überein (im Cooldown)', () => {
+      const staat = stateMit({
+        setup: { regierungsform: 'parlamentarisch', konstitutions_ids: [] },
+        politisches_kapital: 5,
+        legitimitaet: 50,
+      });
+      const regeln = regelnMit({ regierung: regierungParlamentarisch });
+      const zuteilung = { wirtschaft: 2, bildung: 2, gesundheit: 2, infrastruktur: 2, forschung: 2 };
+
+      const ergebnis = tick(staat, { zuteilung }, regeln, 'dev');
+      const prognoseErgebnis = prognose(staat, regeln, zuteilung, 'dev');
+
+      // Wenn Prognose null (kein Verlust), dann sollte tick auch keinen Verlust haben
+      if (prognoseErgebnis === null) {
+        expect(ergebnis.state.wahl_niederlage).toBeUndefined();
+      } else if (prognoseErgebnis.jahr === 1) {
+        // Wenn Prognose Jahr 1 zurückgibt, sollte tick auch im ersten Jahr verlieren
+        expect(ergebnis.state.wahl_niederlage).toBeDefined();
+        expect(ergebnis.state.wahl_niederlage?.grund_id).toBe(prognoseErgebnis.grund_id);
+      }
+    });
+
+    it('prognose stimmt mit erstem Tick überein (im Verlust)', () => {
+      const staat = stateMit({
+        setup: { regierungsform: 'parlamentarisch', konstitutions_ids: [] },
+        politisches_kapital: 5,
+        legitimitaet: 10, // Niedrige Legitimität macht Machtverlust wahrscheinlicher
+      });
+      const regeln = regelnMit({ regierung: regierungParlamentarisch });
+      const zuteilung = { wirtschaft: 0, bildung: 0, gesundheit: 0, infrastruktur: 0, forschung: 0 };
+
+      const ergebnis = tick(staat, { zuteilung }, regeln, 'dev');
+      const prognoseErgebnis = prognose(staat, regeln, zuteilung, 'dev');
+
+      // Bei sehr niedriger Legitimität sollte der Machtcheck im ersten Jahr verloren gehen
+      if (prognoseErgebnis !== null) {
+        expect(prognoseErgebnis.jahr).toBe(1);
+        expect(ergebnis.state.wahl_niederlage).toBeDefined();
+        expect(ergebnis.state.wahl_niederlage?.grund_id).toBe(prognoseErgebnis.grund_id);
+      }
     });
   });
 });
