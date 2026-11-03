@@ -48,6 +48,7 @@ describe('Flag-Parsing', () => {
         packEnable: undefined,
         packDisable: undefined,
         packLoad: undefined,
+        packBalance: false,
       });
     }
   });

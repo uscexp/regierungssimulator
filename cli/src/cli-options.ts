@@ -15,6 +15,7 @@ import { tick } from '@staatslenker/core/tick';
 import { demonstration } from '@staatslenker/cli/turn';
 import { interaktiverLoop, type LoopOptionen } from '@staatslenker/cli/repl';
 import { packManager, type PackManagerErgebnis } from '@staatslenker/loader';
+import { balanceCheckGegenAllePacks, formatiereBalanceReport } from './balance-harness.js';
 
 /** Die Startwerte des Boot: Seed 1234 (derselbe Seed wie das RNG-Golden-Fixture), Schwierigkeit normal. */
 export const STANDARD_SEED = 1234;
@@ -31,6 +32,8 @@ export interface CliOptionen extends LoopOptionen {
   readonly packDisable: string | undefined;
   /** Pack laden */
   readonly packLoad: string | undefined;
+  /** Balance-Harness gegen alle geladenen Packs ausführen */
+  readonly packBalance: boolean;
 }
 
 export type ParseErgebnis =
@@ -47,6 +50,7 @@ export function optionsAusArgs(args: readonly string[]): ParseErgebnis {
     packEnable: string | undefined;
     packDisable: string | undefined;
     packLoad: string | undefined;
+    packBalance: boolean;
   } = {
     seed: STANDARD_SEED,
     schwierigkeit: 'normal',
@@ -56,6 +60,7 @@ export function optionsAusArgs(args: readonly string[]): ParseErgebnis {
     packEnable: undefined,
     packDisable: undefined,
     packLoad: undefined,
+    packBalance: false,
   };
 
   for (let i = 0; i < args.length; i++) {
@@ -120,10 +125,13 @@ export function optionsAusArgs(args: readonly string[]): ParseErgebnis {
         i++;
         break;
       }
+      case '--balance-check':
+        optionen.packBalance = true;
+        break;
       default:
         return {
           ok: false,
-          grund: `Unbekannte Flag "${flag}" — bekannt sind --seed, --schwierigkeit, --jahre, --demo, --pack-list, --pack-enable, --pack-disable, --pack-load`,
+          grund: `Unbekannte Flag "${flag}" — bekannt sind --seed, --schwierigkeit, --jahre, --demo, --pack-list, --pack-enable, --pack-disable, --pack-load, --balance-check`,
         };
     }
   }
@@ -172,6 +180,11 @@ ${zeilen.join('\n')}`,
         meldung: `Pack-Laden fehlgeschlagen: ${e instanceof Error ? e.message : String(e)}`,
       };
     }
+  }
+
+  if (optionen.packBalance) {
+    const report = balanceCheckGegenAllePacks(optionen.schwierigkeit as 'leicht' | 'normal' | 'schwer');
+    return { durchgefuehrt: true, meldung: formatiereBalanceReport(report) };
   }
 
   return { durchgefuehrt: false, meldung: '' };
