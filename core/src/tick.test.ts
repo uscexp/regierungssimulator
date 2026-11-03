@@ -17,7 +17,11 @@ import {
 } from '@staatslenker/core/state';
 import type { SteuerlastTabelle } from '@staatslenker/core/zufriedenheit';
 import type { EreignisRegel } from '@staatslenker/core/ereignisse';
-import { BILDUNG_FORSCHUNG_KARTEN, START_INDICATOREN } from '@staatslenker/content-base';
+import {
+  BILDUNG_FORSCHUNG_KARTEN,
+  START_INDICATOREN,
+  WIRTSCHAFT_BUDGET_KARTEN,
+} from '@staatslenker/content-base';
 import type {
   KonstitutionsEntscheidung,
   RegierungRegel,
@@ -185,11 +189,6 @@ const putschMitRisiko: WahlregelVariant = Object.freeze({
   militaer_min: 60,
   legitimitaet_min: 40,
   wahrscheinlichkeit: 0.5,
-});
-const parlamentmehrheit: WahlregelVariant = Object.freeze({
-  typ: 'parlamentmehrheit',
-  regel_id: 'mehrheit_test',
-  mehrheit: 0.5,
 });
 
 /** Gruppen, die die Putsch-Bedingung erfüllen (elite und militaer über der Schwelle). */
@@ -774,40 +773,6 @@ describe('tick — dauerhafte Regelsatz-Modifikatoren der Konstitution (US-M1-06
       legitimitaet: 30, // < 40 → Radikalisierung kann wachsen
       radikalisierung: 50, // hoher Startwert für Opposition > 40
     });
-    const staatParlamentarisch = stateMit({
-      setup: {
-        regierungsform: 'parlamentarisch',
-        konstitutions_ids: [],
-      },
-    });
-
-    // Zustand: Zustimmung ~0.4 (< 0.5 für Misstrauen)
-    const niedrigZustand = stateMit({
-      ...staatParlamentarisch,
-      indikatoren: {
-        wirtschaft: 10,
-        bildung: 10,
-        gesundheit: 80,
-        infrastruktur: 80,
-        forschung: 80,
-      },
-      gruppen: [
-        {
-          tag: 'unternehmen',
-          zufriedenheit: 16,
-          bevölkerungsanteil: 60,
-          gewichte: { wirtschaft: 1 },
-        },
-        {
-          tag: 'arbeitnehmer',
-          zufriedenheit: 16,
-          bevölkerungsanteil: 40,
-          gewichte: { bildung: 1 },
-        },
-      ],
-      legitimitaet: 50,
-    });
-
     it('Radikalisierung wächst wenn Opposition > 40 UND Legitimität < 40', () => {
       const ergebnis = tick(
         stateRadikalisierung,
@@ -987,7 +952,7 @@ describe('tick — dauerhafte Regelsatz-Modifikatoren der Konstitution (US-M1-06
     });
 
     // Zustand: Zustimmung ~0.4 (< 0.5 für Misstrauen)
-    const niedrigZustand = stateMit({
+    const _niedrigZustandUnused = stateMit({
       ...staatParlamentarisch,
       indikatoren: {
         wirtschaft: 10,
@@ -1043,7 +1008,7 @@ describe('tick — dauerhafte Regelsatz-Modifikatoren der Konstitution (US-M1-06
     it('parlamentarisch + mehrheit05 + Zustimmung 0.4 → Misstrauen feuert statt Gesetzes-Mehrheit', () => {
       expect(() =>
         tick(
-          niedrigZustand,
+          _niedrigZustandUnused,
           kartenAktion,
           regelnMit({
             regierung: regierungParlamentarisch,
@@ -1578,6 +1543,151 @@ describe('tick — dauerhafte Regelsatz-Modifikatoren der Konstitution (US-M1-06
             karten: [{ ...BILDUNG_FORSCHUNG_KARTEN[5] }],
           },
           regelnMitBildungForschungKarten,
+          'dev',
+        ),
+      ).toThrow(/verletzt Constraints/);
+    });
+  });
+
+  describe('Wirtschaft/Budget-Karten im Katalog (US-M3-08, FR-033)', () => {
+    const staatWirtschaftNiedrig = stateMit({
+      setup: { regierungsform: 'parlamentarisch', konstitutions_ids: [] },
+      indikatoren: { ...START_INDICATOREN, wirtschaft: 30, forschung: 40 },
+      schulden: 50,
+      politisches_kapital: 5,
+      legitimitaet: 50,
+    });
+
+    const staatWirtschaftHoch = stateMit({
+      ...staatWirtschaftNiedrig,
+      indikatoren: { ...START_INDICATOREN, wirtschaft: 70, forschung: 70 },
+    });
+
+    const regelnMitWirtschaftBudgetKarten: TickRegeln = {
+      ...regelnMit({ regierung: regierungParlamentarisch }),
+      karten_katalog: WIRTSCHAFT_BUDGET_KARTEN,
+    };
+
+    it('Alle 6 Karten sind gültige TickKarte', () => {
+      expect(WIRTSCHAFT_BUDGET_KARTEN).toHaveLength(6);
+      for (const karte of WIRTSCHAFT_BUDGET_KARTEN) {
+        expect(karte.regel_id).toMatch(/^karte:/);
+        expect(karte.pk_kosten).toBeGreaterThanOrEqual(1);
+        expect(karte.pk_kosten).toBeLessThanOrEqual(3);
+        expect(karte.wirkung).toBeDefined();
+        expect(karte.wirkung.length).toBeGreaterThan(0);
+      }
+    });
+
+    it('karte:wirtschaft_investition → spielbar ohne Constraints', () => {
+      const ergebnis = tick(
+        staatWirtschaftNiedrig,
+        {
+          zuteilung: {},
+          karten: [{ ...WIRTSCHAFT_BUDGET_KARTEN[0] }],
+        },
+        regelnMitWirtschaftBudgetKarten,
+        'dev',
+      );
+      expect(ergebnis.state.indikatoren.wirtschaft).toBe(
+        staatWirtschaftNiedrig.indikatoren.wirtschaft + 1, // +3 Karte, −2 Verschleiß
+      );
+    });
+
+    it('karte:wirtschaft_stimulus → Constraint wirtschaft ≤ 60 verletzt bei 70', () => {
+      expect(() =>
+        tick(
+          staatWirtschaftHoch,
+          {
+            zuteilung: {},
+            karten: [{ ...WIRTSCHAFT_BUDGET_KARTEN[1] }],
+          },
+          regelnMitWirtschaftBudgetKarten,
+          'dev',
+        ),
+      ).toThrow(/verletzt Constraints/);
+    });
+
+    it('karte:wirtschaft_stimulus → spielbar bei wirtschaft ≤ 60', () => {
+      const ergebnis = tick(
+        staatWirtschaftNiedrig,
+        {
+          zuteilung: {},
+          karten: [{ ...WIRTSCHAFT_BUDGET_KARTEN[1] }],
+        },
+        regelnMitWirtschaftBudgetKarten,
+        'dev',
+      );
+      expect(ergebnis.state.indikatoren.wirtschaft).toBe(
+        staatWirtschaftNiedrig.indikatoren.wirtschaft + 3, // +5 Karte, −2 Verschleiß
+      );
+    });
+
+    it('karte:wirtschaft_sparen → spielbar, gibt Budget-Effekt', () => {
+      const ergebnis = tick(
+        staatWirtschaftNiedrig,
+        {
+          zuteilung: {},
+          karten: [{ ...WIRTSCHAFT_BUDGET_KARTEN[2] }],
+        },
+        regelnMitWirtschaftBudgetKarten,
+        'dev',
+      );
+      expect(ergebnis.state.politisches_kapital).toBeGreaterThanOrEqual(0);
+    });
+
+    it('karte:budget_steuer_reform → Constraint wirtschaft ≥ 50 verletzt bei 30', () => {
+      expect(() =>
+        tick(
+          staatWirtschaftNiedrig,
+          {
+            zuteilung: {},
+            karten: [{ ...WIRTSCHAFT_BUDGET_KARTEN[3] }],
+          },
+          regelnMitWirtschaftBudgetKarten,
+          'dev',
+        ),
+      ).toThrow(/verletzt Constraints/);
+    });
+
+    it('karte:budget_steuer_reform → spielbar bei wirtschaft ≥ 50', () => {
+      const ergebnis = tick(
+        staatWirtschaftHoch,
+        {
+          zuteilung: {},
+          karten: [{ ...WIRTSCHAFT_BUDGET_KARTEN[3] }],
+        },
+        regelnMitWirtschaftBudgetKarten,
+        'dev',
+      );
+      expect(ergebnis.state.indikatoren.wirtschaft).toBe(
+        staatWirtschaftHoch.indikatoren.wirtschaft + 1, // +3 Karte, −2 Verschleiß
+      );
+    });
+
+    it('karte:budget_subventionen → Constraint wirtschaft ≤ 40 verletzt bei 70', () => {
+      expect(() =>
+        tick(
+          staatWirtschaftHoch,
+          {
+            zuteilung: {},
+            karten: [{ ...WIRTSCHAFT_BUDGET_KARTEN[4] }],
+          },
+          regelnMitWirtschaftBudgetKarten,
+          'dev',
+        ),
+      ).toThrow(/verletzt Constraints/);
+    });
+
+    it('karte:wirtschaft_innovation → Constraint forschung ≥ 60 verletzt bei 40', () => {
+      expect(() =>
+        tick(
+          staatWirtschaftNiedrig,
+          {
+            zuteilung: {},
+            karten: [{ ...WIRTSCHAFT_BUDGET_KARTEN[5] }],
+          },
+          regelnMitWirtschaftBudgetKarten,
           'dev',
         ),
       ).toThrow(/verletzt Constraints/);
