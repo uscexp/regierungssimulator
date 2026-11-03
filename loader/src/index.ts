@@ -155,6 +155,8 @@ export interface PackLoadError {
 
 export type PackLoadOutcome = PackLoadResult | PackLoadError;
 
+export { packManager, type PackManagerErgebnis, type GeladenesPack } from './pack-manager.js';
+
 /**
  * Extrahiert die Zeilennummer aus einem js-yaml Parse-Fehler.
  * js-yaml liefert `mark.line` (0-basiert) für YAML-Syntaxfehler.
