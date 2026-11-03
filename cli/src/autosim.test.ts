@@ -190,7 +190,7 @@ describe('Naiv-Kurve durch den echten Tick (dev-Modus, Invarianten ohne Wurf)', 
       expect(lauf.first_deficit_year).toBeNull(); // Deficit = Ausgaben − (Einnahmen − Zinsen); Unterhalt ist keine Budget-Ausgabe (§2/AC US-M0-10)
       expect(lauf.first_spar_year).toBeNull(); // Schulden bleiben 0 → kein Spar-Event (§6)
     }
-    expect(STRATEGIE_IDS.length).toBe(4);
+    expect(STRATEGIE_IDS.length).toBe(5);
   });
 });
 

@@ -41,7 +41,11 @@ export const SCHWIERIGKEITEN: readonly SchwierigkeitId[] = ['leicht', 'normal', 
  */
 export const STRATEGIEN: Readonly<
   Record<
-    'gleichmaessig' | 'infrastruktur_zuerst' | 'bildung_zuerst' | 'overspend',
+    | 'gleichmaessig'
+    | 'infrastruktur_zuerst'
+    | 'bildung_zuerst'
+    | 'overspend'
+    | 'gesundheit_zuerst',
     Readonly<Record<IndikatorTag, number>>
   >
 > = Object.freeze({
@@ -67,6 +71,8 @@ export const STRATEGIEN: Readonly<
     wirtschaft: 3,
     forschung: 2,
   }),
+  /** 4 BE Gesundheit + 2 BE Infrastruktur: Gesundheits-first Strategie für M3-12. */
+  gesundheit_zuerst: Object.freeze({ gesundheit: 4, infrastruktur: 2 }),
 });
 export const STRATEGIE_IDS: readonly string[] = Object.keys(STRATEGIEN);
 

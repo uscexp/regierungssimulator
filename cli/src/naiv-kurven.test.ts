@@ -20,10 +20,10 @@ describe('Naiv-Kurven (US-M0-20)', () => {
     expect(kurvenHash()).toBe(kurvenHash());
   });
 
-  it('genau vier Kurven, jede endet mit dem verlorenen Machtcheck Jahr 6 ohne Defizit und Schulden', () => {
+  it('fünf Kurven, jede endet mit dem verlorenen Machtcheck Jahr 6 ohne Defizit und Schulden', () => {
     const kurven = alleKurven();
     expect(kurven.map((k) => k.strategie)).toEqual(STRATEGIE_IDS);
-    expect(kurven).toHaveLength(4);
+    expect(kurven).toHaveLength(5);
     for (const k of kurven) {
       expect(k.punkte.length).toBe(6);
       const letzte = k.punkte[k.punkte.length - 1]!;
