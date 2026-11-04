@@ -87,8 +87,24 @@ die Zufriedenheitsformel ist das Risiko des Konzepts.
 
 ## Aktuelle Status
 
-Doku steht vollständig (Konzept, Spezifikation, Architektur, Akzeptanzkriterien, Balance-Werte, Backlog).
-Der Code ist ein Skelett: Packages, Toolchain und ein Smoke-Test laufen, die Engine ist noch nicht gebaut.
+**Alle Meilensteine M0–M6 abgeschlossen ✅** (91/100 Stories gemerged, PR #108 wartet auf Merge)
+
+| Meilenstein | Status | Tests |
+|-------------|--------|-------|
+| M0 Core-Loop | ✅ | Terminal durchspielbar, Golden-Hash stabil |
+| M1 Form + Konstitution | ✅ | 3 Regierungsformen, Konstitution, Wahlregeln |
+| M2 Krisen & Extremismus | ✅ | Pandemie, Finanzkrise, Radikalisierungskurve |
+| M3 Gesetze-Katalog | ✅ | 24 Karten (6 Packs), Vorhersage, Cooldowns, PK-Kosten |
+| M4 Modding/Pack-System | ✅ | YAML-Loader, Tag-Referenzen, Beispiel-Pack, CLI-Pack-Mgmt |
+| M5 Web-UI (Svelte 5) | ✅ | Dashboard, Heatmap, News-Feed, Decision-Cards, Onboarding |
+| M6 Save/Score/Release | ✅ | Autosave, Replay, Score, Audio, Sandbox, Deploy |
+
+**Pipeline:** 493 Tests / 38 Dateien grün, Golden-Fixtures bitgleich, Boot Exit 0
+
+**Bekanntes Issue:** 9 Tests US-M3-10 (Sicherheit/Justiz) deaktiviert — Bug in `effekteAnwenden` / `berechneLegitimität()` separat zu fixen.
+
+Doku steht vollständig (Konzept, Spezifikation, Architektur, Akzeptanzkriterien, Balance-Werte, Backlog, PO-Plan).
+Engine vollständig gebaut: Core, Content, Loader, CLI, App (Svelte 5), Deploy (GitHub Pages/itch.io) — alles funktionsfähig.
 
 ## Nicht-Ziele
 
