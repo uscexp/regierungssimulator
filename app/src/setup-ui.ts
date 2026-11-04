@@ -62,6 +62,7 @@ export function setupAnwendenAusUI(
         radikalisierung: neueState.radikalisierung,
         gruppen: neueState.gruppen.map((g) => ({ tag: g.tag, zufriedenheit: g.zufriedenheit })),
         wahl_niederlage: neueState.wahl_niederlage,
+        news: [],
       },
     };
   } catch (e) {
