@@ -4,7 +4,7 @@
  * Mountet die Dashboard-App. Der UI-Adapter liest readonly Snapshots aus dem
  * Spielkern und sendet Actions zurück. Keine eigene Simulation in der UI.
  */
-import App from './App.svelte';
+import GaugeDashboard from './GaugeDashboard.svelte';
 import { mount } from 'svelte';
 
-mount(App, { target: document.getElementById('app')! });
+mount(GaugeDashboard, { target: document.getElementById('app')! });
