@@ -8,6 +8,7 @@
   import IndikatorGauge from './IndikatorGauge.svelte';
   import GruppenHeatmap from './GruppenHeatmap.svelte';
   import NewsFeed from './NewsFeed.svelte';
+  import MachtRegister from './MachtRegister.svelte';
   import { erstelleUIAdapter, type UIState } from './ui-adapter.js';
 
   const adapter = erstelleUIAdapter('normal', 42);
@@ -32,7 +33,7 @@
 
 <div class="dashboard">
   <h1>Staatslenker — Dashboard (M5)</h1>
-  <p>Svelte 5 — readonly Snapshots, Indikator-Gauges und Gruppen-Heatmap</p>
+  <p>Svelte 5 — readonly Snapshots, Indikator-Gauges, Gruppen-Heatmap, News-Feed und Machtregister</p>
 
   <div class="metrics">
     <div class="metric">
@@ -73,6 +74,10 @@
 
     <section class="panel">
       <NewsFeed news={state.news} />
+    </section>
+
+    <section class="panel">
+      <MachtRegister regeln={adapter.regeln} state={state} />
     </section>
   </div>
 
