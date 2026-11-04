@@ -13,8 +13,12 @@
   "types": "./dist/index.d.ts",
   "scripts": {
     "build": "vite build && tsc -b .",
+    "build:pages": "VITE_BASE_PATH=/regierungssimulator/ vite build && tsc -b .",
+    "build:itch": "VITE_BASE_PATH=/ vite build && tsc -b .",
     "dev": "vite",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "deploy:pages": "npm run build:pages",
+    "deploy:itch": "npm run build:itch && butler push app/dist itch-io-account/staatslenker:web"
   },
   "devDependencies": {
     "vite": "^8.3.5",

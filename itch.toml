@@ -1,0 +1,3 @@
+app = "itch-io-account/staatslenker:web"
+file = "app/dist"
+html = "index.html"
