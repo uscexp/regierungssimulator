@@ -23,10 +23,11 @@ export interface UIState {
   readonly radikalisierung: number;
   readonly gruppen: readonly { readonly tag: string; readonly zufriedenheit: number }[];
   readonly wahl_niederlage?: { readonly jahr: number; readonly grund_id: string };
+  readonly news: readonly { readonly id: string; readonly text: string }[];
 }
 
 /** Wandelt einen GameState in einen readonly UIState um. Der UIState ist eine Kopie — die UI kann den Kern nicht mutieren. */
-export function uiStateAusGameState(state: GameState): UIState {
+export function uiStateAusGameState(state: GameState, news: readonly { readonly id: string; readonly text: string }[] = []): UIState {
   return {
     jahr: state.jahr,
     indikatoren: { ...state.indikatoren },
@@ -36,6 +37,7 @@ export function uiStateAusGameState(state: GameState): UIState {
     radikalisierung: state.radikalisierung,
     gruppen: state.gruppen.map((g) => ({ tag: g.tag, zufriedenheit: g.zufriedenheit })),
     wahl_niederlage: state.wahl_niederlage,
+    news,
   };
 }
 
@@ -63,7 +65,7 @@ export function erstelleUIAdapter(
     spieleTick(zuteilung: Readonly<Record<string, number>>) {
       const ergebnis = tick(current, { zuteilung }, regeln, 'dev');
       current = ergebnis.state;
-      return uiStateAusGameState(current);
+      return uiStateAusGameState(current, ergebnis.news);
     },
     reset(seedValue?: number) {
       current = startState(seedValue ?? 1234);

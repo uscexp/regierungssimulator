@@ -7,6 +7,7 @@
    */
   import IndikatorGauge from './IndikatorGauge.svelte';
   import GruppenHeatmap from './GruppenHeatmap.svelte';
+  import NewsFeed from './NewsFeed.svelte';
   import { erstelleUIAdapter, type UIState } from './ui-adapter.js';
 
   const adapter = erstelleUIAdapter('normal', 42);
@@ -68,6 +69,10 @@
 
     <section class="panel">
       <GruppenHeatmap gruppen={state.gruppen} />
+    </section>
+
+    <section class="panel">
+      <NewsFeed news={state.news} />
     </section>
   </div>
 
