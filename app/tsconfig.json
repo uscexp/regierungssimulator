@@ -3,14 +3,19 @@
   "compilerOptions": {
     "rootDir": "src",
     "outDir": "dist",
-    "types": ["node"],
     "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "module": "ESNext",
+    "moduleResolution": "bundler",
     "paths": {
       "@staatslenker/app/*": ["./src/*"]
-    }
+    },
+    "allowImportingTsExtensions": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "noEmit": true
   },
   "include": ["src/**/*.ts"],
-  "exclude": ["src/**/*.test.ts", "dist", "vite.config.ts"],
+  "exclude": ["node_modules", "dist", "vite.config.ts", "src/**/*.svelte", "src/**/*.test.ts"],
   "references": [
     { "path": "../loader" }
   ]
