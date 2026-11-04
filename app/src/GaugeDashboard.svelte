@@ -9,6 +9,7 @@
   import GruppenHeatmap from './GruppenHeatmap.svelte';
   import NewsFeed from './NewsFeed.svelte';
   import MachtRegister from './MachtRegister.svelte';
+  import Berater from './Berater.svelte';
   import { erstelleUIAdapter, type UIState } from './ui-adapter.js';
 
   const adapter = erstelleUIAdapter('normal', 42);
@@ -78,6 +79,10 @@
 
     <section class="panel">
       <MachtRegister regeln={adapter.regeln} state={state} />
+    </section>
+
+    <section class="panel">
+      <Berater />
     </section>
   </div>
 
