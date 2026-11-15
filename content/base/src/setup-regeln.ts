@@ -162,6 +162,24 @@ export const REGIERUNG_REGEL_M0 = Object.freeze({
   machtverlust: 'wahl' as const,
 });
 
+/** Die Regierungsregel für parlamentarische Form (US-M1-03): zyklisch, Machtverlust über Misstrauensvotum. */
+export const REGIERUNG_REGEL_PARLAMENTARISCH = Object.freeze({
+  typ: 'regierung' as const,
+  regel_id: 'regierung_parlamentarisch',
+  form: 'parlamentarisch' as const,
+  amt: { modus: 'zyklisch' as const, jahre: 4 },
+  machtverlust: 'misstrauen' as const,
+});
+
+/** Die Regierungsregel für Diktatur (US-M1-03): keine Amtszeit, Machtverlust über Putsch. */
+export const REGIERUNG_REGEL_DIKTATUR = Object.freeze({
+  typ: 'regierung' as const,
+  regel_id: 'regierung_diktatur',
+  form: 'diktatur' as const,
+  amt: { modus: 'keins' as const },
+  machtverlust: 'putsch' as const,
+});
+
 /** Die Wahl-Machtcheck-Variante des Basis-Packs — D18-Werte als Register-Daten (Zyklus 6, Ø 47, schwächste 35). */
 export const WAHLREGEL_VARIANT_M0 = Object.freeze({
   typ: 'praesidentialwahl' as const,
@@ -190,7 +208,7 @@ export const PUTSCH_REGEL_M0 = Object.freeze({
   wahrscheinlichkeit: 0.1,
 });
 
-export const basisSetupRegeln = [basisKonstitution, REGIERUNG_REGEL_M0, WAHLREGEL_VARIANT_M0];
+export const basisSetupRegeln = [basisKonstitution, REGIERUNG_REGEL_M0, REGIERUNG_REGEL_PARLAMENTARISCH, REGIERUNG_REGEL_DIKTATUR, WAHLREGEL_VARIANT_M0];
 
 /** Validierung des Setup-Regelsatzes gegen das Kern-Register (zwei Stufen, Feldnamen im Grund). */
 export function validiereBasisSetup(

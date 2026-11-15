@@ -139,7 +139,7 @@ describe('Interaktiver Loop über Streams (US-M0-14)', () => {
   });
 
   it('zeigt eine ungültige Form mit Grund und fragt erneut — kein Absturz', async () => {
-    const text = await spiele(['diktatur', 'banana', 'praesidential', 'ja', '2,2,2,2,2', '1', 'q']);
+    const text = await spiele(['banana', 'diktatur', 'ja', '2,2,2,2,2', '1', 'q']);
     expect(text).toContain('Diese Eingabe ist ungültig: Unbekannte Regierungsform "banana"');
     expect(text).toContain('Jahr 1');
   });

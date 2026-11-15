@@ -130,7 +130,7 @@ describe('Konstitutions-Instanzen gegen das Kern-Schema (US-M1-04)', () => {
     expect(SETUP_PFLICHT.konstitutions_ids).toEqual(
       basisKonstitution.entscheidungen.map((e) => e.regel_id),
     );
-    expect(SETUP_FORMEN).toEqual(['praesidential']);
+    expect(SETUP_FORMEN).toEqual(['praesidential', 'parlamentarisch', 'diktatur']);
     expect(STANDARD_SETUP.regierungsform).toBe('praesidential');
     expect(STANDARD_SETUP.konstitutions_ids).toEqual(SETUP_PFLICHT.konstitutions_ids);
     // Der Standard-Setup ändert das Steuermodell nicht (K2: M0-Anker bleibt flat) und setzt die

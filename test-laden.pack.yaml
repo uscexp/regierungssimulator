@@ -1,0 +1,26 @@
+
+schema_version: "1"
+name: Test-Pack
+indikator_regeln:
+  - tag: infrastruktur
+    verschleiß: 3
+    budget_wirkung: 0.5
+    diminishing_at: 70
+    diminishing_wirkung: 0.2
+gruppen:
+  - tag: arbeitnehmer
+    zufriedenheit: 50
+    bevölkerungsanteil: 100
+    gewichte:
+      infrastruktur: 1.0
+entscheidungen:
+  - regel_id: entscheidung:test
+    label: Test
+    beschreibung: Test
+    cost:
+      budget: 1
+      politisches_kapital: 1
+    effects:
+      - ziel: indikatoren
+        tag: infrastruktur
+        delta: 1

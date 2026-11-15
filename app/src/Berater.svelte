@@ -1,6 +1,5 @@
 <script lang="ts">
-  /**
-   * @staatslenker/app Berater — Berater / Rat für den Spieler (US-M5-09).
+  /** @staatslenker/app Berater — Berater / Rat für den Spieler (US-M5-09).
    *
    * Zeigt verschiedene Berater-Typen mit Empfehlungen basierend auf dem aktuellen
    * Spielzustand. Jeder Berater analysiert Indikatoren, Gruppen und den allgemeinen
@@ -10,11 +9,68 @@
    */
   import { erstelleUIAdapter, type UIState } from './ui-adapter.js';
 
-  export let adapter: ReturnType<typeof erstelleUIAdapter>;
+  export let adapter: ReturnType<typeof erstelleUIAdapter> | undefined;
   export let state: UIState;
+  let beraterGewaehltId: string | undefined;
+  let letzteEmpfehlung: Record<string, number> = {};
+  let pkFehler: string | undefined;
+  state = adapter?.state ?? erstelleUIAdapter('normal', 42).state;
 
-  adapter = erstelleUIAdapter('normal', 42);
-  state = adapter.state;
+  const PK_KOSTEN_PRO_EMPFEHLUNG = 3;
+
+  function farbe(wert: number): string {
+    if (wert < 40) return '#dc2626';
+    if (wert < 60) return '#eab308';
+    return '#16a34a';
+  }
+
+  /** Wendet eine Berater-Empfehlung auf den Spielzustand an. */
+  function wendeEmpfehlungAn(id: string) {
+    const jetzt = Date.now();
+    if (letzteEmpfehlung[id] && jetzt - letzteEmpfehlung[id] < 3000) return;
+
+    const berater = beraterEmpfehlungen.find((b) => b.id === id);
+    if (!berater) return;
+
+    if (state.politisches_kapital < PK_KOSTEN_PRO_EMPFEHLUNG) {
+      pkFehler = `Nicht genug Politisches Kapital (benötigt: ${PK_KOSTEN_PRO_EMPFEHLUNG})`;
+      setTimeout(() => { pkFehler = undefined; }, 3000);
+      return;
+    }
+
+    beraterGewaehltId = id;
+    letzteEmpfehlung[id] = jetzt;
+    setTimeout(() => {
+      beraterGewaehltId = undefined;
+    }, 2000);
+
+    const empfehlung = berater.empfehlung;
+    const neueIndikatoren = { ...state.indikatoren };
+    const neueGruppen = state.gruppen.map((g) => ({ ...g, zufriedenheit: g.zufriedenheit }));
+
+    if (berater.id === 'wirtschaft') {
+      neueIndikatoren.wirtschaft = Math.min(100, (neueIndikatoren.wirtschaft ?? 50) + 5);
+      neueIndikatoren.infrastruktur = Math.min(100, (neueIndikatoren.infrastruktur ?? 50) + 3);
+    } else if (berater.id === 'soziales') {
+      neueGruppen.forEach((g) => {
+        g.zufriedenheit = Math.min(100, g.zufriedenheit + 5);
+      });
+    } else if (berater.id === 'sicherheit') {
+      neueIndikatoren.sicherheit = Math.min(100, (neueIndikatoren.sicherheit ?? 50) + 5);
+    } else if (berater.id === 'bildung') {
+      neueIndikatoren.bildung = Math.min(100, (neueIndikatoren.bildung ?? 50) + 5);
+      neueIndikatoren.forschung = Math.min(100, (neueIndikatoren.forschung ?? 50) + 3);
+    } else if (berater.id === 'gesundheit') {
+      neueIndikatoren.gesundheit = Math.min(100, (neueIndikatoren.gesundheit ?? 50) + 5);
+    }
+
+    state = {
+      ...state,
+      indikatoren: neueIndikatoren,
+      gruppen: neueGruppen,
+      politisches_kapital: state.politisches_kapital - PK_KOSTEN_PRO_EMPFEHLUNG,
+    } as UIState;
+  }
 
   /** Berater-Typen mit ihren Schwerpunkten. */
   type BeraterTyp =
@@ -223,8 +279,8 @@
             <strong>Aktion:</strong> {berater.empfehlung.aktion}
           </div>
         </div>
-        <button onclick={() => aufBeraterGewaehlt(berater.id)} class="berater-button">
-          Empfehlung anwenden
+        <button onclick={() => wendeEmpfehlungAn(berater.id)} class={beraterGewaehltId === berater.id ? 'berater-button angewendet' : 'berater-button'}>
+          Empfehlung anwenden{beraterGewaehltId === berater.id ? ' ✓' : ''}
         </button>
       </div>
     {/each}
@@ -245,6 +301,18 @@
       <span>Radikalisierung: <span class="meta-wert" style:color={state.radikalisierung > 60 ? '#dc2626' : '#16a34a'}>{state.radikalisierung}</span></span>
       <span>PK: {state.politisches_kapital}</span>
     </div>
+    <div class="zustand-gruppen">
+      <h4>Gruppen-Zufriedenheit</h4>
+      {#each state.gruppen as gruppe}
+        <span class="zustand-karte klein">
+          <span class="zustand-name">{gruppe.tag}</span>
+          <span class="zustand-wert" style:color={farbe(gruppe.zufriedenheit)}>{Math.round(gruppe.zufriedenheit)}</span>
+        </span>
+      {/each}
+    </div>
+    {#if pkFehler}
+      <div class="pk-fehler">{pkFehler}</div>
+    {/if}
   </div>
 </div>
 
@@ -315,124 +383,161 @@
     font-weight: 600;
     text-transform: uppercase;
     padding: 0.15rem 0.5rem;
-    border-radius: 4px;
+    border-radius: 4px.
   }
 
   .berater-karte.hoch .berater-dringlichkeit {
     background: #fef2f2;
-    color: #991b1b;
+    color: #991b1b.
   }
 
   .berater-karte.mittel .berater-dringlichkeit {
-    background: #fef3c7;
-    color: #92400e;
+    background: #fef3c7.
+    color: #92400e.
   }
 
   .berater-karte.niedrig .berater-dringlichkeit {
-    background: #dcfce7;
-    color: #166534;
+    background: #dcfce7.
+    color: #166534.
   }
 
   .berater-beschreibung {
-    font-size: 0.8rem;
-    color: #64748b;
-    margin-bottom: 0.5rem;
-    font-style: italic;
+    font-size: 0.8rem.
+    color: #64748b.
+    margin-bottom: 0.5rem.
+    font-style: italic.
   }
 
   .berater-effekte {
-    margin-top: 0.5rem;
+    margin-top: 0.5rem.
   }
 
   .berater-effekte h4 {
-    margin: 0 0 0.25rem 0;
-    font-size: 0.9rem;
-    color: #1e293b;
+    margin: 0 0 0.25rem 0.
+    font-size: 0.9rem.
+    color: #1e293b.
   }
 
   .berater-effekte p {
-    font-size: 0.85rem;
-    color: #475569;
-    margin: 0 0 0.5rem 0;
+    font-size: 0.85rem.
+    color: #475569.
+    margin: 0 0 0.5rem 0.
   }
 
   .berater-aktion {
-    font-size: 0.8rem;
-    background: #f1f5f9;
-    padding: 0.5rem;
-    border-radius: 4px;
+    font-size: 0.8rem.
+    background: #f1f5f9.
+    padding: 0.5rem.
+    border-radius: 4px.
   }
 
   .berater-button {
-    width: 100%;
-    padding: 0.5rem;
-    background: #3b82f6;
-    color: white;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    font-weight: 600;
-    margin-top: 0.5rem;
+    width: 100%.
+    padding: 0.5rem.
+    background: #3b82f6.
+    color: white.
+    border: none.
+    border-radius: 4px.
+    cursor: pointer.
+    font-weight: 600.
+    margin-top: 0.5rem.
   }
 
   .berater-button:hover {
-    background: #2563eb;
+    background: #2563eb.
+  }
+
+  .berater-button.angewendet {
+    background: #16a34a.
   }
 
   .zustands-uebersicht {
-    margin-top: 1.5rem;
-    background: #ffffff;
-    border: 1px solid #cbd5e1;
-    border-radius: 8px;
-    padding: 1rem;
+    margin-top: 1.5rem.
+    background: #ffffff.
+    border: 1px solid #cbd5e1.
+    border-radius: 8px.
+    padding: 1rem.
   }
 
   .zustands-uebersicht h3 {
-    margin: 0 0 0.75rem 0;
-    font-size: 1rem;
-    color: #1e293b;
-    border-bottom: 1px solid #e2e8f0;
-    padding-bottom: 0.5rem;
+    margin: 0 0 0.75rem 0.
+    font-size: 1rem.
+    color: #1e293b.
+    border-bottom: 1px solid #e2e8f0.
+    padding-bottom: 0.5rem.
   }
 
   .zustand-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
-    gap: 0.75rem;
-    margin-bottom: 0.75rem;
+    display: grid.
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)).
+    gap: 0.75rem.
+    margin-bottom: 0.75rem.
   }
 
   .zustand-karte {
-    background: #f1f5f9;
-    border-radius: 6px;
-    padding: 0.5rem;
-    text-align: center;
+    background: #f1f5f9.
+    border-radius: 6px.
+    padding: 0.5rem.
+    text-align: center.
   }
 
   .zustand-name {
-    font-size: 0.7rem;
-    color: #64748b;
-    text-transform: uppercase;
-    display: block;
-    margin-bottom: 0.25rem;
+    font-size: 0.7rem.
+    color: #64748b.
+    text-transform: uppercase.
+    display: block.
+    margin-bottom: 0.25rem.
   }
 
   .zustand-wert {
-    font-weight: 600;
-    font-size: 1rem;
-    display: block;
+    font-weight: 600.
+    font-size: 1rem.
+    display: block.
   }
 
   .zustand-meta {
-    display: flex;
-    gap: 1rem;
-    font-size: 0.8rem;
-    color: #64748b;
-    flex-wrap: wrap;
+    display: flex.
+    gap: 1rem.
+    font-size: 0.8rem.
+    color: #64748b.
+    flex-wrap: wrap.
   }
 
   .zustand-meta span {
-    display: flex;
-    gap: 0.25rem;
+    display: flex.
+    gap: 0.25rem.
+  }
+
+  .zustand-gruppen {
+    margin-top: 1rem.
+    padding-top: 1rem.
+    border-top: 1px solid #e2e8f0.
+    display: flex.
+    flex-wrap: wrap.
+    gap: 0.75rem.
+  }
+
+  .zustand-karte.klein {
+    padding: 0.4rem 0.75rem.
+    background: #f1f5f9.
+    border-radius: 4px.
+    font-size: 0.85rem.
+    white-space: nowrap.
+  }
+
+  .zustand-karte.klein .zustand-name {
+    margin-right: 0.5rem.
+    font-size: 0.8rem.
+  }
+
+  .pk-fehler {
+    margin-top: 0.75rem.
+    padding: 0.5rem 0.75rem.
+    background: #fef2f2.
+    border: 1px solid #fecaca.
+    color: #991b1b.
+    border-radius: 4px.
+    font-size: 0.85rem.
+    font-weight: 600.
   }
 </style>
