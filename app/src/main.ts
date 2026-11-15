@@ -1,10 +1,11 @@
 /**
  * @staatslenker/app main — Svelte 5 + Vite Einstieg (M5).
  *
- * Mountet die Dashboard-App. Der UI-Adapter liest readonly Snapshots aus dem
- * Spielkern und sendet Actions zurück. Keine eigene Simulation in der UI.
+ * Mountet die App-Komponente. Zeigt zuerst das Setup-UI (Regierungsform +
+ * Konstitution, US-M5-02). Nach Abschluss wird das Dashboard mit dem
+ * Setup-Ergebnis montiert.
  */
-import GaugeDashboard from './GaugeDashboard.svelte';
 import { mount } from 'svelte';
+import App from './App.svelte';
 
-mount(GaugeDashboard, { target: document.getElementById('app')! });
+mount(App, { target: document.getElementById('app')! });

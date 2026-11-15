@@ -1,9 +1,12 @@
 <script lang="ts">
   /**
-   * @staatslenker/app GaugeDashboard — Dashboard mit Indikator-Gauges und Gruppen-Heatmap (M5-03/M5-04).
+   * @staatslenker/app GaugeDashboard — Dashboard mit Indikator-Gauges und
+   * Gruppen-Heatmap (M5-03/M5-04).
    *
-   * Zeigt alle Indikatoren als farbkodierte Gauges und alle Bevölkerungsgruppen als
-   * farbkodierte Heatmap an. Nutzt den UI-Adapter für readonly Snapshots und Tick-Aktionen.
+   * Zeigt alle Indikatoren als farbkodierte Gauges und alle Bevölkerungsgruppen
+   * als farbkodierte Heatmap an. Nutzt den UI-Adapter für readonly Snapshots und
+   * Tick-Aktionen. Wenn ein `state`-Prop übergeben wird (aus dem Setup), wird
+   * dieser statt des internen Adapters verwendet.
    */
   import IndikatorGauge from './IndikatorGauge.svelte';
   import GruppenHeatmap from './GruppenHeatmap.svelte';
@@ -11,24 +14,25 @@
   import MachtRegister from './MachtRegister.svelte';
   import Berater from './Berater.svelte';
   import { erstelleUIAdapter, type UIState } from './ui-adapter.js';
+  import { $props } from 'svelte';
+
+  const props = $props<{ state?: UIState }>();
 
   const adapter = erstelleUIAdapter('normal', 42);
-  let state = $state(adapter.state);
+  let state = $state(props.state ?? adapter.state);
 
   function spieleTick() {
-    state = $state(
-      adapter.spieleTick({
-        infrastruktur: 2,
-        bildung: 2,
-        gesundheit: 2,
-        wirtschaft: 2,
-        forschung: 2,
-      }),
-    );
+    state = adapter.spieleTick({
+      infrastruktur: 2,
+      bildung: 2,
+      gesundheit: 2,
+      wirtschaft: 2,
+      forschung: 2,
+    });
   }
 
   function reset() {
-    state = $state(adapter.reset(42));
+    state = adapter.reset(42);
   }
 </script>
 

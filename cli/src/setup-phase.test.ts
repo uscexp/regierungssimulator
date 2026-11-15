@@ -26,9 +26,9 @@ describe('Form-Eingabe (FR-047: zuerst die Form)', () => {
   });
 
   it('lehnt eine unbekannte Form mit Grund ab — das Register liefert die Formen, der Kern nicht', () => {
-    const parsed = formAusText('diktatur');
+    const parsed = formAusText('banana');
     expect(parsed.ok).toBe(false);
-    if (!parsed.ok) expect(parsed.grund).toContain('Unbekannte Regierungsform "diktatur"');
+    if (!parsed.ok) expect(parsed.grund).toContain('Unbekannte Regierungsform "banana"');
     expect(formAusText('2,2,2,2,2').ok).toBe(false);
     expect(formAusText('').ok).toBe(false);
   });
